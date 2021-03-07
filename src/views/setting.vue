@@ -20,8 +20,26 @@
             <v-divider inset></v-divider>
             <v-text-field label='網站網址' v-model='siteLocation'></v-text-field>
             <v-text-field label='系統版本' v-model='version'></v-text-field>
+            <tiptap-vuetify v-model="changeLog" :extensions="extensions" min-height='10vh' max-height='20vh' class='text-left' placeholder='請不要留白'/>
             <div class='text-h5 text-center pt-5 font-weight-black'>權限設定</div>
             <v-divider inset></v-divider>
+            <div class='text-subtitle-2 font-weight-blod'>用戶連線中定時更新時間</div>
+            <div class='red--text text-caption'>這裡指的是用戶端多久跟伺服器更新同時線上用戶、用戶權限的等待時間</div>
+            <v-slider
+              label='用戶連線中定時更新時間（分鐘）'
+              min='5'
+              max='120'
+              v-model="userCheckTime"
+              thumb-label
+            ></v-slider>
+            <div class='text-subtitle-2 font-weight-blod'>用戶連線逾時時間</div>
+            <v-slider
+              label='用戶連線逾時時間（秒）'
+              min='1'
+              max='10'
+              v-model="connectionTimeout"
+              thumb-label
+            ></v-slider>
             <div class='text-subtitle-2 font-weight-blod'>授權系統設定功能的使用者標籤</div>
             <tag-filter :single='false' @plusItem='plusTag' :selectedItem='selectedSysTags' @valueUpdated='updateSysTag' :candidatedItem='savedUserTags' :createable='true' label='請輸入授權系統設定功能的使用者標籤' />
             <div class='text-subtitle-2 font-weight-blod'>授權用戶管理功能的使用者標籤</div>
@@ -69,6 +87,13 @@
     </v-main>
 </template>
 
+<style scoped>
+.tiptap-vuetify-editor .ProseMirror {
+  min-height: 100px;
+  max-height: 200px;
+}
+</style>
+
 <script>
 // @ is an alias to /src
 import Vue from 'vue';
@@ -76,60 +101,86 @@ import { library } from '@fortawesome/fontawesome-svg-core';
 import { faCog, faBomb, faRobot, faCommentDots } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import TagFilter from './modules/TagFilter';
+import TurndownService from 'turndown';
+import marked from 'marked';
+import { TiptapVuetify, Heading, Bold, Italic, Strike, Underline, Code, Paragraph, BulletList, OrderedList, ListItem, Link, Blockquote, HardBreak, HorizontalRule, History } from 'tiptap-vuetify';
+import 'tiptap-vuetify/dist/main.css';
 
 import '@fortawesome/fontawesome-free/css/all.css';
 library.add(faCog, faBomb, faRobot, faCommentDots);
 Vue.component('font-awesome-icon', FontAwesomeIcon);
-Vue.config.productionTip = false;
+
+const turndownService = new TurndownService();
 
 export default {
   name: 'settings',
   components: {
-    TagFilter
+    TagFilter,
+    TiptapVuetify
   },
-  created () {
+  beforeDestroy () {
+    this.$socket.client.off('setSetting', this.socketsetSetting);
+    this.$socket.client.off('getTags', this.socketgetTags);
+    this.$socket.client.off('getRobotUsers', this.socketgetRobotUsers);
+    this.$socket.client.off('getGlobalSettings', this.socketgetGlobalSettings);
+    this.$socket.client.off('getRobotSetting', this.socketgetRobotSetting);
+  },
+  mounted () {
     this.$emit('viewIn', {
       text: '系統設定',
-      icon: faCog
+      icon: faCog,
+      module: '設定模組'
     });
-    let oriobj = this;
     this.$socket.client.emit('getTags');
     this.$socket.client.emit('getRobotUsers');
     this.$socket.client.emit('getGlobalSettings');
     this.$socket.client.emit('getRobotSetting');
-    this.$socket.$subscribe('setSetting', (data) => {
-      oriobj.icontype = 'cloud-upload-alt';
-    });
-    this.$socket.$subscribe('getTags', (data) => {
-      oriobj.savedUserTags = data;
-    });
-    this.$socket.$subscribe('getRobotUsers', (data) => {
-      oriobj.savedUsers = data;
-    });
-    this.$socket.$subscribe('getGlobalSettings', (data) => {
-      oriobj.selectedSysTags = data.settingTags;
-      oriobj.selectedUsrTags = data.userTags;
-      oriobj.selectedflowTags = data.projectTags;
-      oriobj.selectedrobotTag = data.robotTag;
-      oriobj.siteLocation = data.siteLocation;
-    });
-    this.$socket.$subscribe('getRobotSetting', (data) => {
-      oriobj.mailAccount = data.mailAccount;
-      oriobj.mailPassword = data.mailPassword;
-      oriobj.robotDeadLine = data.robotDeadLine;
-      oriobj.patrolHour = data.patrolHour;
-      oriobj.reportDuration = data.reportDuration;
-      oriobj.LINENotifyKey = data.LINENotifyKey;
-      oriobj.LINESecretKey = data.LINESecretKey;
-      oriobj.nobodyAccount = data.nobodyAccount;
-      oriobj.PatrolAccount = data.PatrolAccount;
-      oriobj.LastPatrol = data.LastPatrol;
-      oriobj.mailSSL = data.mailSSL;
-      oriobj.mailSMTP = data.mailSMTP;
-      oriobj.mailPort = data.mailPort;
-    });
+    this.$socket.client.on('setSetting', this.socketsetSetting);
+    this.$socket.client.on('getTags', this.socketgetTags);
+    this.$socket.client.on('getRobotUsers', this.socketgetRobotUsers);
+    this.$socket.client.on('getGlobalSettings', this.socketgetGlobalSettings);
+    this.$socket.client.on('getRobotSetting', this.socketgetRobotSetting);
   },
   methods: {
+    socketgetRobotSetting: function (data) {
+      this.mailAccount = data.mailAccount;
+      this.mailPassword = data.mailPassword;
+      this.robotDeadLine = data.robotDeadLine;
+      this.patrolHour = data.patrolHour;
+      this.reportDuration = data.reportDuration;
+      this.LINENotifyKey = data.LINENotifyKey;
+      this.LINESecretKey = data.LINESecretKey;
+      this.nobodyAccount = data.nobodyAccount;
+      this.PatrolAccount = data.PatrolAccount;
+      this.LastPatrol = data.LastPatrol;
+      this.mailSSL = data.mailSSL;
+      this.mailSMTP = data.mailSMTP;
+      this.mailPort = data.mailPort;
+    },
+    socketgetGlobalSettings: function (data) {
+      this.selectedSysTags = data.settingTags;
+      this.selectedUsrTags = data.userTags;
+      this.selectedflowTags = data.projectTags;
+      this.selectedrobotTag = data.robotTag;
+      this.siteLocation = data.siteLocation;
+      this.userCheckTime = data.userCheckTime;
+      this.changeLog = this.HTMLConverter(data.changeLog);
+      this.version = data.version;
+      this.connectionTimeout = data.connectionTimeout;
+    },
+    socketgetRobotUsers: function (data) {
+      this.savedUsers = data;
+    },
+    socketgetTags: function (data) {
+      this.savedUserTags = data;
+    },
+    socketsetSetting: function () {
+      this.icontype = 'cloud-upload-alt';
+    },
+    HTMLConverter: function (msg) {
+      msg = msg === null || msg == undefined ? '**test**' : msg;
+      return marked(msg);
+    },
     saveSetting: function () {
       this.icontype = 'spinner';
       this.$socket.client.emit('setSetting', {
@@ -150,7 +201,10 @@ export default {
         mailPort: this.mailPort,
         mailSSL: this.mailSSL,
         siteLocation: this.siteLocation,
-        version: this.version
+        version: this.version,
+        userCheckTime: this.userCheckTime,
+        connectionTimeout: this.connectionTimeout,
+        changeLog: turndownService.turndown(this.changeLog)
       });
     },
     plusTag: function (val) {
@@ -179,10 +233,32 @@ export default {
   },
   watch: {
   },
-  mounted () {
-  },
   data () {
       return {
+        extensions: [
+          History,
+          Blockquote,
+          Link,
+          Underline,
+          Strike,
+          Italic,
+          ListItem,
+          BulletList,
+          OrderedList,
+          [Heading, {
+            options: {
+              levels: [1, 2, 3]
+            }
+          }],
+          Bold,
+          Code,
+          HorizontalRule,
+          Paragraph,
+          HardBreak
+        ],
+        connectionTimeout: 2,
+        userCheckTime: 10,
+        changeLog: '',
         version: '',
         siteLocation: '',
         mailSSL: true,

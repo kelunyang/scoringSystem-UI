@@ -341,7 +341,6 @@ import '@fortawesome/fontawesome-free/css/all.css';
 momentDurationFormatSetup(moment);
 library.add(fas, faFileAlt);
 Vue.component('font-awesome-icon', FontAwesomeIcon);
-Vue.config.productionTip = false;
 Vue.use(VueAxios, axios);
 Object.defineProperty(Vue.prototype, '$siteconfig', { value: SiteConfig });
 

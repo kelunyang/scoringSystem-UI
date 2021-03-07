@@ -461,7 +461,6 @@ import '@fortawesome/fontawesome-free/css/all.css';
 
 library.add(faNetworkWired);
 Vue.component('font-awesome-icon', FontAwesomeIcon);
-Vue.config.productionTip = false;
 
 export default {
     name: 'createKB',
@@ -568,7 +567,7 @@ export default {
                 });
             });
         },
-        uploadTitle: function (value, key) {
+        uploadTitle: function (value) {
             alert(value);
         },
         insertMCata: function () {
@@ -836,7 +835,8 @@ export default {
     created () {
         this.$emit('viewIn', {
             text: '編輯知識點',
-            icon: faNetworkWired
+            icon: faNetworkWired,
+            module: '知識節點模組'
         });
     }
 };

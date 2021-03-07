@@ -432,7 +432,6 @@ import '@fortawesome/fontawesome-free/css/all.css';
 momentDurationFormatSetup(moment);
 library.add(fas, faVideo);
 Vue.component('font-awesome-icon', FontAwesomeIcon);
-Vue.config.productionTip = false;
 
 export default {
   name: 'videoReview',
@@ -593,7 +592,8 @@ export default {
   created () {
     this.$emit('viewIn', {
       text: '影片審查：太陽餅裡沒有太陽',
-      icon: faVideo
+      icon: faVideo,
+      module: '審查模組'
     });
   },
   mounted () {
@@ -665,7 +665,7 @@ export default {
     currentPos: function () {
       let oriobj = this;
       let flag = false;
-      let result = this.issues.filter((item, index, array) => {
+      let result = this.issues.filter((item) => {
         if (item.version === this.currentVersion.date) {
           if (Math.abs(Math.floor(item.timestamp) - Math.floor(oriobj.currentPos)) < 10) {
             flag = true;
@@ -676,7 +676,7 @@ export default {
         } else {
           return false;
         }
-      }).map((item, index, array) => {
+      }).map((item) => {
         return item.id;
       });
       this.issuelistViewer = flag ? result : [];

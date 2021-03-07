@@ -63,10 +63,13 @@
                       v-model='message.type'
                     ></v-select>
                     <v-text-field label='公告標題' v-model='message.title'></v-text-field>
-                    <v-textarea
-                      label='請輸入公告內容'
-                      v-model='message.body'
-                    ></v-textarea>
+                    <tiptap-vuetify
+                      v-model="message.body"
+                      :extensions="extensions"
+                      min-height="10vh"
+                      max-height="20vh"
+                      placeholder='請不要留白'
+                    />
                     <v-file-input prepend-icon="fa-paperclip" v-model="msgFile" label='輔助說明文件／圖片上傳' :loading="uploadprogress !== 0">
                       <template v-slot:progress>
                         <v-progress-circular :value="uploadprogress"></v-progress-circular>進度：{{ uploadstatus }}
@@ -191,13 +194,13 @@
             <v-divider inset></v-divider>
             <div class='red--text text-caption'>提示：全域廣播只有目前正在使用的人會看到</div>
             <v-text-field label='公告標題' v-model='broadcastTitle'></v-text-field>
-            <v-textarea
-              solo
-              label="輸入你想發送的LINE通知"
-              rows="4"
-              row-height="40"
+            <tiptap-vuetify
               v-model="broadcastBody"
-            ></v-textarea>
+              :extensions="extensions"
+              min-height="10vh"
+              max-height="20vh"
+              placeholder='請不要留白'
+            />
             <v-btn @click='sendBroadcast' class='ma-3'>
                 發出全域廣播
             </v-btn>
@@ -210,13 +213,13 @@
           <v-col class='d-flex flex-column'>
             <div class='text-h5 text-center pt-5 font-weight-black'>LINE Notify</div>
             <v-divider inset></v-divider>
-            <v-textarea
-              solo
-              label="輸入你想發送的LINE通知"
-              rows="4"
-              row-height="40"
+            <tiptap-vuetify
               v-model="LINEbody"
-            ></v-textarea>
+              :extensions="extensions"
+              min-height="10vh"
+              max-height="20vh"
+              placeholder='請不要留白'
+            />
             <v-btn @click='sendLINEnotify' class='ma-3'>
               發出LINE通知
             </v-btn>
@@ -292,6 +295,13 @@
     </v-main>
 </template>
 
+<style scoped>
+.tiptap-vuetify-editor .ProseMirror {
+  min-height: 100px;
+  max-height: 200px;
+}
+</style>
+
 <script>
 // @ is an alias to /src
 import Vue from 'vue';
@@ -301,77 +311,107 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import { v4 as uuidv4 } from 'uuid';
 import moment from 'moment';
 import prettyBytes from 'pretty-bytes';
+import TurndownService from 'turndown';
+import marked from 'marked';
+import { TiptapVuetify, Heading, Bold, Italic, Strike, Underline, Code, Paragraph, BulletList, OrderedList, ListItem, Link, Blockquote, HardBreak, HorizontalRule, History } from 'tiptap-vuetify';
+import 'tiptap-vuetify/dist/main.css';
 
 import '@fortawesome/fontawesome-free/css/all.css';
 library.add(faCog, faBomb, faRobot, faCommentDots);
 Vue.component('font-awesome-icon', FontAwesomeIcon);
-Vue.config.productionTip = false;
 let files = [];
+
+const turndownService = new TurndownService();
 
 export default {
   name: 'messageMgnt',
-  created () {
+  components: { TiptapVuetify },
+  beforeDestroy () {
+    this.$socket.client.off('getMessages', this.socketgetMessages);
+    this.$socket.client.off('msgFileUploadDone', this.soketmsgFileUploadDone);
+    this.$socket.client.off('getmsgAttachment', this.socketgetmsgAttachment);
+    this.$socket.client.off('getMessage', this.socketgetMessage);
+    this.$socket.client.off('removeMessage', this.socketremoveMessage);
+    this.$socket.client.off('msgFileUploadError', this.socketmsgFileUploadError);
+    this.$socket.client.off('msgFileDeleteError', this.socketFileDeleteError);
+    this.$socket.client.off('requestMsgSlice', this.socketrequestMsgSlice);
+    this.$socket.client.off('getLINElog', this.socketgetLINElog);
+    this.$socket.client.off('getbroadcastLog', this.socketgetbroadcastLog);
+    this.$socket.client.off('sendLINEnotify', this.socketLINEnotify);
+    this.$socket.client.off('removeMessageError', this.socketremoveMessageError);
+    this.$socket.client.off('addMsg', this.socketaddMsg);
+    this.$socket.client.off('saveMessage', this.socketsaveMessage);
+  },
+  mounted () {
     this.$emit('viewIn', {
       text: '系統訊息管理',
-      icon: faCog
+      icon: faCog,
+      module: '訊息模組'
     });
-    let oriobj = this;
     this.$socket.client.emit('getMessages');
-    this.$socket.$subscribe('getMessages', (data) => {
-      this.histroyListPopulated = true;
-      this.messageList = data;
-    });
-    this.$socket.$subscribe('msgFileUploadDone', (data) => {
-      if (data === oriobj.message._id) {
-        oriobj.$socket.client.emit('getmsgAttachment', data);
-        oriobj.msgFile = undefined;
-        oriobj.uploadprogress = 100;
-        oriobj.uploadstatus = '完成！';
-        setTimeout(() => {
-          oriobj.uploadprogress = 0;
-          oriobj.uploadstatus = '';
-        }, 1000);
+    this.$socket.client.on('getMessages', this.socketgetMessages);
+    this.$socket.client.on('msgFileUploadDone', this.soketmsgFileUploadDone);
+    this.$socket.client.on('getmsgAttachment', this.socketgetmsgAttachment);
+    this.$socket.client.on('getMessage', this.socketgetMessage);
+    this.$socket.client.on('removeMessage', this.socketremoveMessage);
+    this.$socket.client.on('msgFileUploadError', this.socketmsgFileUploadError);
+    this.$socket.client.on('msgFileDeleteError', this.socketFileDeleteError);
+    this.$socket.client.on('requestMsgSlice', this.socketrequestMsgSlice);
+    this.$socket.client.on('getLINElog', this.socketgetLINElog);
+    this.$socket.client.on('getbroadcastLog', this.socketgetbroadcastLog);
+    this.$socket.client.on('sendLINEnotify', this.socketLINEnotify);
+    this.$socket.client.on('removeMessageError', this.socketremoveMessageError);
+    this.$socket.client.on('addMsg', this.socketaddMsg);
+    this.$socket.client.on('saveMessage', this.socketsaveMessage);
+  },
+  methods: {
+    socketsaveMessage: function (data) {
+      if (data) {
+        this.message.title = '';
+        this.message._id = undefined;
+        this.message.body = '';
+        this.message.type = 0;
+        this.message.status = true;
+        this.message.attachments = [];
+        this.doneW = true;
+        this.doneType = '編輯公告';
+        this.doneMsg = '編輯完成！';
+        this.editMsgW = false;
+        this.msgsaveBtn = '儲存公告';
+        this.msgsaveIcon = 'cloud-upload-alt';
       }
-    });
-    this.$socket.$subscribe('getmsgAttachment', (data) => {
-      oriobj.message.attachments = data;
-    });
-    this.$socket.$subscribe('getMessage', (data) => {
-      oriobj.message._id = data._id;
-      oriobj.message.title = data.title;
-      oriobj.message.body = data.body;
-      oriobj.message.type = data.type;
-      oriobj.message.status = data.status;
-      oriobj.message.attachments = data.attachments;
-      oriobj.editMsgW = true;
-    });
-    this.$socket.$subscribe('removeMessage', (data) => {
-      oriobj.doneW = true;
-      oriobj.doneType = '刪除公告';
-      oriobj.doneMsg = '刪除完成！';
-    });
-    this.$socket.$subscribe('msgFileUploadError', (data) => {
-      oriobj.doneW = true;
-      oriobj.doneType = '新增檔案';
-      oriobj.doneMsg = '上傳失敗（原因：' + data + '），請聯絡管理員';
-      oriobj.uploadprogress = 0;
-      oriobj.uploadstatus = '';
-    });
-    this.$socket.$subscribe('msgFileDeleteError', (data) => {
-      oriobj.doneW = true;
-      oriobj.doneType = '刪除檔案';
-      oriobj.doneMsg = '刪除檔案失敗（原因：' + data + '），請聯絡管理員';
-      oriobj.uploadprogress = 0;
-      oriobj.uploadstatus = '';
-    });
-    this.$socket.$subscribe('requestMsgSlice', (data) => {
+    },
+    socketaddMsg: function (data) {
+      this.message._id = data;
+      this.editMsgW = true;
+    },
+    socketremoveMessageError: function (data) {
+      this.doneW = true;
+      this.doneType = '刪除訊息失敗';
+      this.doneMsg = '無法刪除' + data + '個附件檔案，請聯絡管理員';
+    },
+    socketLINEnotify: function (data) {
+      this.doneW = true;
+      this.doneType = 'LINE訊息';
+      this.doneMsg = '發送了' + (parseInt(data.success, 10) + parseInt(data.failed, 10)) + '則LINE notify訊息，' + parseInt(data.success, 10) + '則成功，' + parseInt(data.failed, 10) + '則失敗';
+    },
+    socketgetbroadcastLog: function (data) {
+      this.broadcastLog = data;
+      this.broadcastListPopulated = true;
+    },
+    socketgetLINElog: function (data) {
+      this.lineLog = data;
+      this.LINEListPopulated = true;
+    },
+    socketrequestMsgSlice: function (data) {
+      let oriobj = this;
       let place = data.currentSlice * 100000;
       let slice = files[data.uuid].file.slice(place, place + Math.min(100000, files[data.uuid].file.size - place));
       this.uploadprogress = (Math.ceil(place / files[data.uuid].file.size) * 100);
       this.uploadstatus = (Math.ceil(place / files[data.uuid].file.size) * 100) + '%';
       let fileReader = new FileReader();
       fileReader.readAsArrayBuffer(slice);
-      fileReader.onload = (evt) => {
+      fileReader.onload = () => {
         var arrayBuffer = fileReader.result;
         oriobj.$socket.client.emit('sendMsgFile', {
           uid: files[data.uuid]._id,
@@ -382,47 +422,61 @@ export default {
           data: arrayBuffer
         });
       };
-    });
-    this.$socket.$subscribe('getLINElog', (data) => {
-      oriobj.lineLog = data;
-      oriobj.LINEListPopulated = true;
-    });
-    this.$socket.$subscribe('getbroadcastLog', (data) => {
-      oriobj.broadcastLog = data;
-      oriobj.broadcastListPopulated = true;
-    });
-    this.$socket.$subscribe('sendLINEnotify', (data) => {
-      oriobj.doneW = true;
-      oriobj.doneType = 'LINE訊息';
-      oriobj.doneMsg = '發送了' + (parseInt(data.success, 10) + parseInt(data.failed, 10)) + '則LINE notify訊息，' + parseInt(data.success, 10) + '則成功，' + parseInt(data.failed, 10) + '則失敗';
-    });
-    this.$socket.$subscribe('removeMessageError', (data) => {
-      oriobj.doneW = true;
-      oriobj.doneType = '刪除訊息失敗';
-      oriobj.doneMsg = '無法刪除' + data + '個附件檔案，請聯絡管理員';
-    });
-    this.$socket.$subscribe('addMsg', (data) => {
-      oriobj.message._id = data;
-      oriobj.editMsgW = true;
-    });
-    this.$socket.$subscribe('saveMessage', (data) => {
-      if (data) {
-        oriobj.message.title = '';
-        oriobj.message._id = undefined;
-        oriobj.message.body = '';
-        oriobj.message.type = 0;
-        oriobj.message.status = true;
-        oriobj.message.attachments = [];
-        oriobj.doneW = true;
-        oriobj.doneType = '編輯公告';
-        oriobj.doneMsg = '編輯完成！';
-        oriobj.editMsgW = false;
-        oriobj.msgsaveBtn = '儲存公告';
-        oriobj.msgsaveIcon = 'cloud-upload-alt';
+    },
+    socketFileDeleteError: function (data) {
+      this.doneW = true;
+      this.doneType = '刪除檔案';
+      this.doneMsg = '刪除檔案失敗（原因：' + data + '），請聯絡管理員';
+      this.uploadprogress = 0;
+      this.uploadstatus = '';
+    },
+    socketmsgFileUploadError: function (data) {
+      this.doneW = true;
+      this.doneType = '新增檔案';
+      this.doneMsg = '上傳失敗（原因：' + data + '），請聯絡管理員';
+      this.uploadprogress = 0;
+      this.uploadstatus = '';
+    },
+    socketremoveMessage: function () {
+      this.doneW = true;
+      this.doneType = '刪除公告';
+      this.doneMsg = '刪除完成！';
+    },
+    socketgetMessage: function (data) {
+      this.message._id = data._id;
+      this.message.title = data.title;
+      this.message.body = this.HTMLConverter(data.body);
+      this.message.type = data.type;
+      this.message.status = data.status;
+      this.message.attachments = data.attachments;
+      this.editMsgW = true;
+    },
+    socketgetmsgAttachment: function (data) {
+      this.message.attachments = data;
+    },
+    soketmsgFileUploadDone: function (data) {
+      let oriobj = this;
+      if (data === this.message._id) {
+        this.$socket.client.emit('getmsgAttachment', data);
+        this.msgFile = undefined;
+        this.uploadprogress = 100;
+        this.uploadstatus = '完成！';
+        window.clearTimeout(this.timer);
+        this.timer = setTimeout(() => {
+          oriobj.uploadprogress = 0;
+          oriobj.uploadstatus = '';
+          window.clearTimeout(oriobj.timer);
+        }, 1000);
       }
-    });
-  },
-  methods: {
+    },
+    socketgetMessages: function (data) {
+      this.histroyListPopulated = true;
+      this.messageList = data;
+    },
+    HTMLConverter: function (msg) {
+      msg = msg === null || msg == undefined ? '**test**' : msg;
+      return marked(msg);
+    },
     msgstatusConverter: function (status) {
       return status ? '顯示訊息' : '隱藏訊息';
     },
@@ -464,14 +518,14 @@ export default {
     },
     sendLINEnotify: function () {
       this.$socket.client.emit('sendLINEnotify', {
-        body: this.LINEbody,
+        body: turndownService.turndown(this.LINEbody),
         type: 0
       });
     },
     sendBroadcast: function () {
       this.$socket.client.emit('sendBroadcast', {
         title: this.broadcastTitle,
-        body: this.broadcastBody
+        body: turndownService.turndown(this.broadcastBody)
       });
     },
     dateConvert: function (time) {
@@ -507,7 +561,7 @@ export default {
             file: this.msgFile
           };
           fileReader.readAsArrayBuffer(slice);
-          fileReader.onload = (evt) => {
+          fileReader.onload = () => {
               var arrayBuffer = fileReader.result;
               oriobj.$socket.client.emit('sendMsgFile', {
                 uid: this.message._id,
@@ -522,10 +576,30 @@ export default {
       }
     }
   },
-  mounted () {
-  },
   data () {
       return {
+        timer: null,
+        extensions: [
+          History,
+          Blockquote,
+          Link,
+          Underline,
+          Strike,
+          Italic,
+          ListItem,
+          BulletList,
+          OrderedList,
+          [Heading, {
+            options: {
+              levels: [1, 2, 3]
+            }
+          }],
+          Bold,
+          Code,
+          HorizontalRule,
+          Paragraph,
+          HardBreak
+        ],
         broadcastTitle: '',
         broadcastBody: '',
         broadcastListPopulated: false,
@@ -552,9 +626,7 @@ export default {
           }
         ],
         msgFile: undefined,
-        uploadMsgFileIcon: 'fa-paperclip',
         msgsaveIcon: 'cloud-upload-alt',
-        fileaveIcon: 'cloud-upload-alt',
         msgsaveBtn: '儲存公告',
         icontype: 'cloud-upload-alt',
         LINEbody: '',

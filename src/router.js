@@ -3,89 +3,77 @@ import Router from 'vue-router';
 import Home from './views/Home.vue';
 
 Vue.use(Router);
-
-export default new Router({
+const DEFAULT_TITLE = '臺北市學科影片線上審查平台';
+const router = new Router({
   routes: [
     {
       path: '/',
-      name: 'home',
-      meta: { auth: true },
+      name: '首頁',
       component: Home
     },
     {
       path: '/error',
-      name: 'error',
-      meta: { auth: true },
+      name: '錯誤',
       component: () =>
         import(/* webpackChunkName: 'about' */ './views/Error.vue')
     },
     {
       path: '/videoProp',
       name: 'videoProp',
-      meta: { auth: true },
       component: () =>
         import(/* webpackChunkName: 'about' */ './views/videoProp.vue')
     },
     {
       path: '/messageMgnt',
-      name: 'messageMgnt',
-      meta: { auth: true },
+      name: '訊息管理',
       component: () =>
         import(/* webpackChunkName: 'about' */ './views/messageMgnt.vue')
     },
     {
       path: '/videoReview',
-      name: 'videoReview',
-      meta: { auth: true },
+      name: '審查',
       component: () =>
         import(/* webpackChunkName: 'about' */ './views/videoReview.vue')
     },
     {
       path: '/userDashBoard',
-      name: 'userDashBoard',
-      meta: { auth: true },
+      name: 'DashBoard',
       component: () =>
         import(/* webpackChunkName: 'about' */ './views/userDashBoard.vue')
     },
     {
       path: '/flowSetting',
       name: 'flowSetting',
-      meta: { auth: true },
       component: () =>
         import(/* webpackChunkName: 'about' */ './views/flowSetting.vue')
     },
     {
       path: '/userMgnt',
-      name: 'userMgnt',
-      meta: { auth: true },
+      name: '使用者管理',
       component: () =>
         import(/* webpackChunkName: 'about' */ './views/userMgnt.vue')
     },
     {
       path: '/resetUser',
       name: 'resetUser',
-      meta: { auth: true },
       component: () =>
         import(/* webpackChunkName: 'about' */ './views/resetUser.vue')
     },
     {
       path: '/setting',
-      name: 'setting',
-      meta: { auth: true },
+      name: '系統設定',
       component: () =>
         import(/* webpackChunkName: 'about' */ './views/setting.vue')
     },
     {
       path: '/user',
-      name: 'user',
-      meta: { auth: true },
+      name: '使用者資料',
       component: () =>
         import(/* webpackChunkName: 'about' */ './views/user.vue')
     },
     {
       path: '/login',
-      name: 'login',
-      meta: { auth: true },
+      name: '登入',
       // route level code-splitting
       // this generates a separate chunk (about.[hash].js) for this route
       // which is lazy-loaded when the route is visited.
@@ -95,7 +83,6 @@ export default new Router({
     {
       path: '/Chart',
       name: 'chart',
-      meta: { auth: true },
       // route level code-splitting
       // this generates a separate chunk (about.[hash].js) for this route
       // which is lazy-loaded when the route is visited.
@@ -104,8 +91,7 @@ export default new Router({
     },
     {
       path: '/Info',
-      name: 'Info',
-      meta: { auth: true },
+      name: '關於本站',
       // route level code-splitting
       // this generates a separate chunk (about.[hash].js) for this route
       // which is lazy-loaded when the route is visited.
@@ -113,19 +99,8 @@ export default new Router({
         import(/* webpackChunkName: 'about' */ './views/Info.vue')
     },
     {
-      path: '/Finalization',
-      name: 'Finalization',
-      meta: { auth: true },
-      // route level code-splitting
-      // this generates a separate chunk (about.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
-      component: () =>
-        import(/* webpackChunkName: 'about' */ './views/Finalization.vue')
-    },
-    {
       path: '/createKB',
-      name: 'createKB',
-      meta: { auth: true },
+      name: '知識點編輯器',
       // route level code-splitting
       // this generates a separate chunk (about.[hash].js) for this route
       // which is lazy-loaded when the route is visited.
@@ -134,8 +109,7 @@ export default new Router({
     },
     {
       path: '/logout',
-      name: 'logout',
-      meta: { auth: true },
+      name: '登出',
       // route level code-splitting
       // this generates a separate chunk (about.[hash].js) for this route
       // which is lazy-loaded when the route is visited.
@@ -144,3 +118,9 @@ export default new Router({
     }
   ]
 });
+router.afterEach((to/* , from */) => {
+  Vue.nextTick(() => {
+    document.title = !('name' in to) ? DEFAULT_TITLE : to.name === null ? DEFAULT_TITLE : DEFAULT_TITLE + ' | ' + to.name;
+  });
+});
+export default router;

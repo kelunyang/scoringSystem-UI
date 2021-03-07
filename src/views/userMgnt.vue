@@ -317,6 +317,8 @@
                 <v-badge
                   color="red"
                   :content="selectedUsers.length"
+                  :value="selectedUsers.length"
+                  overlap
                 >
                   <v-btn
                     fab
@@ -337,6 +339,8 @@
                 <v-badge
                   color="red"
                   :content="selectedUsers.length"
+                  :value="selectedUsers.length"
+                  overlap
                 >
                   <v-btn
                     fab
@@ -448,7 +452,7 @@
                 </v-list-item-subtitle>
               </v-list-item-content>
               <v-list-item-action class='d-flex flex-row'>
-                <v-tooltip bottom v-if='item.lineDate > 0'>
+                <v-tooltip bottom>
                   <template v-slot:activator="{ on, attrs }">
                     <v-btn icon v-bind="attrs" v-on="on" @click='modUser(item)'>
                       <font-awesome-icon icon='pencil-alt' />
@@ -456,7 +460,7 @@
                   </template>
                   <span>編輯用戶</span>
                 </v-tooltip>
-                <v-tooltip bottom v-if='item.lineDate > 0'>
+                <v-tooltip bottom>
                   <template v-slot:activator="{ on, attrs }">
                     <v-btn icon v-bind="attrs" v-on="on" @click='passwordReset(item)'>
                       <font-awesome-icon icon='key' />
@@ -464,7 +468,7 @@
                   </template>
                   <span>寄出密碼遺忘信</span>
                 </v-tooltip>
-                <v-tooltip bottom v-if='item.lineDate > 0'>
+                <v-tooltip bottom>
                   <template v-slot:activator="{ on, attrs }">
                     <v-btn icon v-bind="attrs" v-on="on" @click='setEmail(item)'>
                       <font-awesome-icon icon='at' />
@@ -491,82 +495,47 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import moment from 'moment';
 import TagFilter from './modules/TagFilter';
 import validator from 'validator';
+import _ from 'lodash';
 
 import '@fortawesome/fontawesome-free/css/all.css';
 
 library.add(faUsersCog, faSlackHash, faEnvelopeOpen);
 Vue.component('font-awesome-icon', FontAwesomeIcon);
-Vue.config.productionTip = false;
 
 export default {
     name: 'userMgnt',
-    created () {
+    beforeDestroy () {
+      this.$socket.client.off('getTags', this.socketgetTags);
+      this.$socket.client.off('checkTagUsers', this.socketcheckTagUsers);
+      this.$socket.client.off('getUsers', this.socketgetUsers);
+      this.$socket.client.off('getGlobalSettings', this.socketgetGlobalSettings);
+      this.$socket.client.off('createUsers', this.socketcreateUsers);
+      this.$socket.client.off('modUserTags', this.socketmodUserTags);
+      this.$socket.client.off('removeUser', this.socketremoveUser);
+      this.$socket.client.off('passwordReset', this.socketpasswordReset);
+      this.$socket.client.off('checkEmail', this.socketcheckEmail);
+      this.$socket.client.off('setEmail', this.socketsetEmail);
+      this.$socket.client.off('modUsers', this.socketmodUsers);
+    },
+    mounted () {
       this.$emit('viewIn', {
         text: '使用者管理',
-        icon: faUsersCog
+        icon: faUsersCog,
+        module: '帳號模組'
       });
-      let oriobj = this;
       this.$socket.client.emit('getTags');
       this.$socket.client.emit('getGlobalSettings');
-      this.$socket.$subscribe('getTags', (data) => {
-        oriobj.savedUserTags = data;
-      });
-      this.$socket.$subscribe('getTags', (data) => {
-        oriobj.savedUserTags = data;
-      });
-      this.$socket.$subscribe('checkTagUsers', (data) => {
-        data.forEach((item) => {
-          let tagObj = oriobj.tagList.find((tag) => {
-            return tag.id === item.id;
-          });
-          tagObj.count = item.count;
-        });
-      });
-      this.$socket.$subscribe('getUsers', (data) => {
-        oriobj.userList = data;
-        oriobj.selectedUsers = [];
-      });
-      this.$socket.$subscribe('getGlobalSettings', (data) => {
-        this.$socket.client.emit('getUsers');
-        oriobj.robotTag = data.robotTag;
-      });
-      this.$socket.$subscribe('modUserTags', (data) => {
-        this.doneW = true;
-        this.doneType = '修改' + data.planned + '個用戶的使用者標籤';
-        this.doneMsg = '為' + data.processed + '/' + data.planned + '個用戶的加上' + data.tags + '個使用者標籤已完成';
-        if (data.zeroTag.length > 0) {
-          this.doneMsg += '，' + JSON.stringify(data.zeroTag) + '等標籤由於剩餘用戶數小於1，因此無法將用戶移出';
-        }
-      });
-      this.$socket.$subscribe('removeUser', (data) => {
-        this.doneW = true;
-        this.doneType = '刪除' + data.planned + '個用戶的使用者標籤';
-        this.doneMsg = '刪除' + data.processed + '/' + data.planned + '個用戶已完成';
-      });
-      this.$socket.$subscribe('passwordReset', (data) => {
-        this.doneW = true;
-        this.doneType = '重置' + data.name + '的密碼';
-        this.doneMsg = data.name + '的密碼已重置，記得通知用戶去收信啊';
-        this.editingUser = {
-          name: '',
-          tags: []
-        };
-      });
-      this.$socket.$subscribe('checkEmail', (data) => {
-        this.doneW = true;
-        this.doneType = '查詢Email重複';
-        this.doneMsg = 'Email：' + data.email + '有' + data.count + '個重複';
-      });
-      this.$socket.$subscribe('setEmail', (data) => {
-        this.doneW = true;
-        this.doneType = '重設Email';
-        this.doneMsg = data ? '修改完成' : '修改失敗，可能為該Email已重複';
-      });
-      this.$socket.$subscribe('modUsers', (data) => {
-        this.doneW = true;
-        this.doneType = '修改用戶資訊';
-        this.doneMsg = data.name + '的用戶資訊修改完成';
-      });
+      this.$socket.client.on('getTags', this.socketgetTags);
+      this.$socket.client.on('checkTagUsers', this.socketcheckTagUsers);
+      this.$socket.client.on('getUsers', this.socketgetUsers);
+      this.$socket.client.on('getGlobalSettings', this.socketgetGlobalSettings);
+      this.$socket.client.on('createUsers', this.socketcreateUsers);
+      this.$socket.client.on('modUserTags', this.socketmodUserTags);
+      this.$socket.client.on('removeUser', this.socketremoveUser);
+      this.$socket.client.on('passwordReset', this.socketpasswordReset);
+      this.$socket.client.on('checkEmail', this.socketcheckEmail);
+      this.$socket.client.on('setEmail', this.socketsetEmail);
+      this.$socket.client.on('modUsers', this.socketmodUsers);
     },
     components: {
       TagFilter
@@ -575,8 +544,6 @@ export default {
       filterColor: function () {
         return this.selectedFilterTags.length > 0 || this.queryTerm !== '' ? '#B71C1C' : '#00B0FF';
       }
-    },
-    mounted () {
     },
     watch: {
       newEmail: function () {
@@ -617,16 +584,18 @@ export default {
             });
           });
           oriobj.tagList = [];
-          (Array.from(tags.flatMap(x => x))).forEach((item) => {
+          let flatTag = _.flatten(tags);
+          for(let i = 0; i < flatTag.length; i++) {
+            let tag = flatTag[i];
             let tagObj = oriobj.savedUserTags.find((stag) => {
-              return stag._id === item;
+              return stag._id === tag;
             });
             oriobj.tagList.push({
               id: tagObj._id,
               name: tagObj.name,
               count: '請點選查詢按鈕'
             });
-          });
+          }
         }
       },
       robotFilter: function () {
@@ -663,6 +632,70 @@ export default {
       }
     },
     methods: {
+      socketmodUsers: function (data) {
+        this.doneW = true;
+        this.doneType = '修改用戶資訊';
+        this.doneMsg = data.name + '的用戶資訊修改完成';
+      },
+      socketsetEmail: function (data) {
+        this.doneW = true;
+        this.doneType = '重設Email';
+        this.doneMsg = data ? '修改完成' : '修改失敗，可能為該Email已重複';
+      },
+      socketcheckEmail: function (data) {
+        this.doneW = true;
+        this.doneType = '查詢Email重複';
+        this.doneMsg = 'Email：' + data.email + '有' + data.count + '個重複';
+      },
+      socketpasswordReset: function (data) {
+        this.doneW = true;
+        this.doneType = '重置' + data.name + '的密碼';
+        this.doneMsg = data.name + '的密碼已重置，記得通知用戶去收信啊';
+        this.editingUser = {
+          name: '',
+          tags: []
+        };
+      },
+      socketremoveUser: function (data) {
+        this.delUserW = false;
+        this.doneW = true;
+        this.doneType = '刪除' + data.planned + '個用戶的使用者標籤';
+        this.doneMsg = '刪除' + data.processed + '/' + data.planned + '個用戶已完成';
+      },
+      socketmodUserTags: function (data) {
+        this.doneW = true;
+        this.doneType = '修改' + data.planned + '個用戶的使用者標籤';
+        this.doneMsg = '為' + data.processed + '/' + data.planned + '個用戶的加上' + data.tags + '個使用者標籤已完成';
+        if (data.zeroTag.length > 0) {
+          this.doneMsg += '，' + JSON.stringify(data.zeroTag) + '等標籤由於剩餘用戶數小於1，因此無法將用戶移出';
+        }
+      },
+      socketcreateUsers: function (data) {
+        this.addUserW = false;
+        this.doneW = true;
+        this.doneType = '新增' + data.planned + '個用戶';
+        this.doneMsg = '新增' + data.processed + '/' + data.planned + '個用戶已完成';
+      },
+      socketgetGlobalSettings: function (data) {
+        this.$socket.client.emit('getUsers');
+        this.robotTag = data.robotTag;
+      },
+      socketgetUsers: function (data) {
+        this.userList = data;
+        this.selectedUsers = [];
+      },
+      socketcheckTagUsers: function (data) {
+        let oriobj = this;
+        data.forEach((item) => {
+          let tagObj = oriobj.tagList.find((tag) => {
+            return tag._id === item._id[0]._id;
+          });
+          tagObj.count = item.count;
+        });
+      },
+      socketgetTags: function (data) {
+        this.savedUserTags = data;
+      },
       closeEmailW: function () {
         this.emailW = false;
         this.editingUser = {

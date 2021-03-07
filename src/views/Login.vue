@@ -86,13 +86,12 @@ import Vue from 'vue';
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { faSkull, faGrinWink, faSignInAlt, faBomb, faRobot, faCommentDots } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
-import { setTimeout } from 'timers';
 import moment from 'moment';
 import axios from 'axios';
+import _ from 'lodash';
 
 library.add(faSkull, faGrinWink, faSignInAlt, faBomb, faRobot, faCommentDots);
 Vue.component('font-awesome-icon', FontAwesomeIcon);
-Vue.config.productionTip = false;
 
 export default {
   name: 'login',
@@ -109,6 +108,7 @@ export default {
   },
   data: function () {
     return {
+      timer: null,
       currentUser: null,
       loginW: false,
       loginMsg: '',
@@ -123,6 +123,31 @@ export default {
     };
   },
   methods: {
+    socketgetCurrentUser: function (data) {
+      let oriobj = this;
+      oriobj.currentUser = data;
+      if(!_.isNil(data)) {
+        window.clearTimeout(oriobj.timer);
+        oriobj.timer = setTimeout(() => {
+          window.clearTimeout(oriobj.timer);
+          if (!_.isNil(oriobj.currentUser)) {
+            if ('firstRun' in oriobj.currentUser) {
+              if (oriobj.currentUser.firstRun) {
+                window.location.replace('https://' + window.location.host + '/#/user');
+              } else {
+                window.location.replace('https://' + window.location.host + '/#/userDashBoard');
+              }
+            } else {
+              window.location.replace('https://' + window.location.host + '/#/userDashBoard');
+            }
+          }
+        }, 1000);
+      }
+    },
+    socketpasswordClientReset: function (data) {
+      this.resetW = true;
+      this.resetMsg = data.name === undefined ? '您輸入的帳號有誤，無法重設' : data.name + '密碼已重設，請檢查Email';
+    },
     passwordReset: function () {
       this.$socket.client.emit('passwordClientReset', this.name);
     },
@@ -150,32 +175,18 @@ export default {
         }
     }
   },
+  beforeDestroy () {
+    this.$socket.client.off('passwordClientReset', this.socketpasswordClientReset);
+    this.$socket.client.off('getCurrentUser', this.socketgetCurrentUser);
+  },
   created () {
-    let oriobj = this;
     this.$emit('viewIn', {
       text: '使用者登入',
-      icon: faSignInAlt
+      icon: faSignInAlt,
+      module: '登入模組'
     });
-    this.$socket.$subscribe('passwordClientReset', (data) => {
-      this.resetW = true;
-      this.resetMsg = data.name === undefined ? '您輸入的帳號有誤，無法重設' : data.name + '密碼已重設，請檢查Email';
-    });
-    this.$socket.$subscribe('getCurrentUser', (data) => {
-      oriobj.currentUser = data;
-      setTimeout(() => {
-        if (oriobj.currentUser !== null) {
-          if (oriobj.currentUser.hasOwnProperty('firstRun')) {
-            if (oriobj.currentUser.firstRun) {
-              window.location.replace('https://' + window.location.host + '/#/user');
-            } else {
-              window.location.replace('https://' + window.location.host + '/#/userDashBoard');
-            }
-          } else {
-            window.location.replace('https://' + window.location.host + '/#/userDashBoard');
-          }
-        }
-      }, 1000);
-    });
+    this.$socket.client.on('passwordClientReset', this.socketpasswordClientReset);
+    this.$socket.client.on('getCurrentUser', this.socketgetCurrentUser);
     this.$socket.client.emit('getCurrentUser');
   }
 };

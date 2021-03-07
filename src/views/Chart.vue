@@ -15,8 +15,6 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 library.add(faChartLine);
 Vue.component('font-awesome-icon', FontAwesomeIcon);
 
-Vue.config.productionTip = false;
-
 export default {
   data () {
     return {

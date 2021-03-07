@@ -38,7 +38,6 @@ import '@fortawesome/fontawesome-free/css/all.css';
 
 library.add(faUserCog);
 Vue.component('font-awesome-icon', FontAwesomeIcon);
-Vue.config.productionTip = false;
 
 export default {
   name: 'resetUser',

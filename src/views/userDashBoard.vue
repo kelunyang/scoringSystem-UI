@@ -97,8 +97,6 @@ import '@fortawesome/fontawesome-free/css/all.css';
 library.add(faTachometerAlt, faSnapchatGhost, faPhotoVideo, faClipboard, faVideo, faSearch, faSkullCrossbones, faExclamationTriangle, faPencilAlt);
 Vue.component('font-awesome-icon', FontAwesomeIcon);
 
-Vue.config.productionTip = false;
-
 export default {
   name: 'userDashBoard',
   components: {
@@ -165,7 +163,7 @@ export default {
       externalCommands: [
         {
           icon: 'pencil-alt',
-          Fn: function (val) {
+          Fn: function () {
             location.href = '#/videoProp';
           }
         }
@@ -404,7 +402,8 @@ export default {
   created () {
     this.$emit('viewIn', {
       text: 'DashBoard',
-      icon: faTachometerAlt
+      icon: faTachometerAlt,
+      module: '審查模組'
     });
   }
 };

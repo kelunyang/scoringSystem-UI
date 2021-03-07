@@ -16,7 +16,7 @@
         <v-expansion-panel-content>
           <div class='d-flex flex-column text-left'>
             <div class='text-subtitle-2 font-weight-bold'>{{ item.title }}</div>
-            <div class='text-body-2'>{{ item.body }}</div>
+            <div class='text-body-2' v-html="HTMLConverter(item.body)"></div>
             <div class='d-flex flex-row'>
               <v-chip
                 v-for='file in item.attachments'
@@ -40,14 +40,26 @@ import { faPhotoVideo, faBomb, faRobot, faCommentDots, faClipboard, faVideo, faS
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import moment from 'moment';
 import prettyBytes from 'pretty-bytes';
+import marked from 'marked';
 
 library.add(faSnapchatGhost, faBomb, faRobot, faCommentDots, faPhotoVideo, faClipboard, faVideo, faSearch, faSkullCrossbones, faExclamationTriangle, faPencilAlt);
 Vue.component('font-awesome-icon', FontAwesomeIcon);
 
-Vue.config.productionTip = false;
-
 export default {
   methods: {
+    socketgetsiteSetting: function (data) {
+      this.siteSetting = data;
+    },
+    socketgetCurrentUser: function (data) {
+      this.currentUser = data;
+    },
+    socketgetIndexMessages: function (data) {
+      this.announcements = data;
+    },
+    HTMLConverter: function (msg) {
+      msg = msg === null || msg == undefined ? '**test**' : msg;
+      return marked(msg);
+    },
     filenameConvert: function (file) {
       let str = file.name;
       str += file.status !== 1 ? '(暫不可用)' : '';
@@ -57,7 +69,7 @@ export default {
     downloadFile: function (file) {
       if (file.status === 1) {
         let element = document.createElement('a');
-        element.setAttribute('href', this.siteSetting.siteLocation + '/' + file._id);
+        element.setAttribute('href', this.siteSetting.siteLocation + '/storages/' + file._id);
         element.setAttribute('download', file.name);
         element.style.display = 'none';
         document.body.appendChild(element);
@@ -103,24 +115,23 @@ export default {
       siteSetting: null
     };
   },
-  created () {
+  beforeDestroy () {
+    this.$socket.client.off('getIndexMessages', this.socketgetIndexMessages);
+    this.$socket.client.off('getCurrentUser', this.socketgetCurrentUser);
+    this.$socket.client.off('getsiteSetting', this.socketgetsiteSetting);
+  },
+  mounted () {
     this.$emit('viewIn', {
       text: '首頁',
-      icon: faSnapchatGhost
+      icon: faSnapchatGhost,
+      module: '首頁模組'
     });
-    let oriobj = this;
-    this.$socket.$subscribe('getIndexMessages', (data) => {
-      oriobj.announcements = data;
-    });
+    this.$socket.client.on('getIndexMessages', this.socketgetIndexMessages);
     this.$socket.client.emit('getsiteSetting');
     this.$socket.client.emit('getIndexMessages');
     this.$socket.client.emit('getCurrentUser');
-    this.$socket.$subscribe('getCurrentUser', (data) => {
-      oriobj.currentUser = data;
-    });
-    this.$socket.$subscribe('getsiteSetting', (data) => {
-      oriobj.siteSetting = data;
-    });
+    this.$socket.client.on('getCurrentUser', this.socketgetCurrentUser);
+    this.$socket.client.on('getsiteSetting', this.socketgetsiteSetting);
   }
 };
 </script>

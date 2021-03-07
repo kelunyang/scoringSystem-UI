@@ -17,14 +17,11 @@ import Vue from 'vue';
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
-import { setTimeout } from 'timers';
 import axios from 'axios';
 
 library.add(faSignOutAlt);
 
 Vue.component('font-awesome-icon', FontAwesomeIcon);
-
-Vue.config.productionTip = false;
 
 export default {
   name: 'logout',
@@ -37,17 +34,21 @@ export default {
             pass: this.propass,
             name: this.propname,
             icon: this.proicon,
-            msg: this.promsg
+            msg: this.promsg,
+            timer: null
         };
     },
   methods: {
     async logout () {
+        let oriobj = this;
         let result = await axios.post('https://' + window.location.host + '/backend/logout', {
           withCredentials: true
         });
         if (result.data.loginStatus === 1) {
           this.logoutText = '登出進行中... 完成！';
-          setTimeout(() => {
+          window.clearTimeout(this.timer);
+          this.timer = setTimeout(() => {
+            window.clearTimeout(oriobj.timer);
             window.location.href = 'https://' + window.location.host + '/';
           }, 3000);
         }
@@ -59,7 +60,8 @@ export default {
   created () {
       this.$emit('viewIn', {
         text: '使用者登出',
-        icon: faSignOutAlt
+        icon: faSignOutAlt,
+        module: '登入模組'
       });
   }
 };

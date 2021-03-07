@@ -46,6 +46,12 @@
     </v-fab-transition>
     <v-row>
       <v-col class="text-left">
+          <v-alert
+            type="error"
+            v-show='currentUser.firstRun === true'
+          >
+            第一次登入嗎？請記得填入你的密碼，並且務必綁定LINE notify喔！
+          </v-alert>
           <v-avatar size="62">
               <img :src='"https://avatars.dicebear.com/api/" + currentUser.types + "/" + encodeURIComponent(currentUser.name + "@" + currentUser.unit) + ".svg"' />
           </v-avatar>
@@ -91,10 +97,9 @@
   }
 
   @keyframes blinkBorder{
-    0%{     border: 2px solid maroon;    }
-    49%{    border: none; }
-    80%{    border: 1px solid maroon; }
-    100%{   border: none;    }
+    0%{     border: 2px solid rgb(83, 0, 0);    }
+    50%{    border: 2px solid red; }
+    100%{   border: 2px solid white;    }
   }
 </style>
 
@@ -114,34 +119,28 @@ import '@fortawesome/fontawesome-free/css/all.css';
 
 library.add(faUserCog, faSlackHash, faGoogle, faLine, faLink);
 Vue.component('font-awesome-icon', FontAwesomeIcon);
-Vue.config.productionTip = false;
 
 export default {
   name: 'userSetting',
-  created () {
-    let oriobj = this;
+  beforeDestroy () {
+    this.$socket.client.off('getCurrentUser', this.socketgetCurrentUser);
+    this.$socket.client.off('getRobotSetting', this.socketgetRobotSetting);
+    this.$socket.client.off('setCurrentUser', this.socketsetCurrentUser);
+    this.$socket.client.off('getsiteSetting', this.socketgetsiteSetting);
+  },
+  mounted () {
     this.$emit('viewIn', {
       text: '使用者設定',
-      icon: faUserCog
+      icon: faUserCog,
+      module: '帳號模組'
     });
-    this.$socket.$subscribe('getCurrentUser', (data) => {
-      oriobj.currentUser = data;
-    });
-    this.$socket.$subscribe('getRobotSetting', (data) => {
-      oriobj.lineKey = data.LINENotifyKey;
-    });
-    this.$socket.$subscribe('setCurrentUser', (data) => {
-      oriobj.modify = data.modify;
-      setTimeout(() => {
-        oriobj.modify = false;
-      }, 5000);
-    });
+    this.$socket.client.on('getCurrentUser', this.socketgetCurrentUser);
+    this.$socket.client.on('getRobotSetting', this.socketgetRobotSetting);
+    this.$socket.client.on('setCurrentUser', this.socketsetCurrentUser);
     this.$socket.client.emit('getCurrentUser');
     this.$socket.client.emit('getRobotSetting');
     this.$socket.client.emit('getsiteSetting');
-    this.$socket.$subscribe('getsiteSetting', (data) => {
-      oriobj.siteSetting = data;
-    });
+    this.$socket.client.on('getsiteSetting', this.socketgetsiteSetting);
   },
   components: {
       Password
@@ -151,6 +150,7 @@ export default {
       if (this.currentUser.firstRun) {
         return 'firstRun';
       }
+      return '';
     },
     randomColors: function () {
         let color = randomColor({
@@ -166,6 +166,24 @@ export default {
     }
   },
   methods: {
+    socketgetsiteSetting: function (data) {
+      this.siteSetting = data;
+    },
+    socketsetCurrentUser: function (data) {
+      let oriobj = this;
+      this.modify = data.modify;
+      window.clearTimeout(this.timer);
+      this.timer = setTimeout(() => {
+        oriobj.modify = false;
+        window.clearTimeout(oriobj.timer);
+      }, 5000);
+    },
+    socketgetRobotSetting: function (data) {
+      this.lineKey = data.LINENotifyKey;
+    },
+    socketgetCurrentUser: function (data) {
+      this.currentUser = data;
+    },
     dateConvert: function (time) {
         return moment.unix(time).format('YYYY/MM/DD HH:mm:ss');
     },
@@ -185,6 +203,7 @@ export default {
   },
   data () {
       return {
+        timer: null,
         siteSetting: '',
         lineKey: '',
         modify: false,

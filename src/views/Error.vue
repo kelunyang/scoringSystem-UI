@@ -13,14 +13,14 @@ import { faBug } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 library.add(faBug);
 Vue.component('font-awesome-icon', FontAwesomeIcon);
-Vue.config.productionTip = false;
 
 export default {
   name: 'error',
   created () {
     this.$emit('viewIn', {
       text: '發生錯誤',
-      icon: faBug
+      icon: faBug,
+      module: '錯誤模組'
     });
   }
 };

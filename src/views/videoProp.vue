@@ -110,7 +110,6 @@ import '@fortawesome/fontawesome-free/css/all.css';
 
 library.add(faTasks);
 Vue.component('font-awesome-icon', FontAwesomeIcon);
-Vue.config.productionTip = false;
 
 export default {
     name: 'videoProp',

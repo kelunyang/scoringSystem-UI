@@ -210,7 +210,6 @@ import 'vue-ctk-date-time-picker/dist/vue-ctk-date-time-picker.css';
 library.add(faSlidersH);
 Vue.component('font-awesome-icon', FontAwesomeIcon);
 Vue.component('VueCtkDateTimePicker', VueCtkDateTimePicker);
-Vue.config.productionTip = false;
 
 export default {
     name: 'flowSetting',
