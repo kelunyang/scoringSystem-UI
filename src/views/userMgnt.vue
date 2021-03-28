@@ -7,7 +7,7 @@
       >
         <v-card>
           <v-card-title class="headline">
-            <font-awesome-icon icon='key' />
+            <v-icon>fa-key</v-icon>
             Email修改： {{ editingUser.name }}
           </v-card-title>
           <v-card-text>
@@ -46,7 +46,7 @@
       >
         <v-card>
           <v-card-title class="headline">
-            <font-awesome-icon icon='key' />
+            <v-icon>fa-key</v-icon>
             密碼重置： {{ editingUser.name }}
           </v-card-title>
           <v-card-text>
@@ -70,40 +70,16 @@
           </v-card-actions>
         </v-card>
       </v-dialog>
-      <v-dialog
-        v-model="doneW"
-        persistent
-        max-width="50vw"
-      >
-        <v-card>
-          <v-card-title class="headline">
-            <font-awesome-icon icon='satellite-dish' />
-            {{ doneType }}
-          </v-card-title>
-          <v-card-text>
-            {{ doneMsg }}！
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn
-              color="primary"
-              @click="doneW = false"
-            >
-              關閉通知
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
       <v-dialog v-model='modUserW' fullscreen hide-overlay transition='dialog-bottom-transition'>
         <v-card>
           <v-toolbar dark color='primary'>
             <v-btn icon dark @click='closemodUser'>
-                <font-awesome-icon icon='times' />
+              <v-icon>fa-times</v-icon>
             </v-btn>
             <v-toolbar-title>修改使用者</v-toolbar-title>
             <v-spacer></v-spacer>
             <v-btn icon dark @click='savemodUser'>
-              <font-awesome-icon icon='cloud-upload-alt' />
+              <v-icon>fa-cloud-upload-alt</v-icon>
             </v-btn>
           </v-toolbar>
           <v-card-text class='pa-0 ma-0'>
@@ -130,7 +106,7 @@
                     label='用戶性別'
                   ></v-select>
                   <span class='text-subtitle-1 font-weight-bold'>使用者標籤：</span><br/>
-                  <tag-filter @plusItem='plusTag' :single='false' :selectedItem='editingUser.tags' @valueUpdated='modTagUpdated' :candidatedItem='savedUserTags' :createable='true' label='請輸入使用者歸屬的標籤' />
+                  <tag-filter :mustSelected='false' @plusItem='plusTag' :single='false' :selectedItem='editingUser.tags' @valueUpdated='modTagUpdated' :candidatedItem='savedTags' :createable='true' label='請輸入使用者歸屬的標籤' />
                 </v-col>
               </v-row>
               <v-row>
@@ -143,12 +119,12 @@
         <v-card>
           <v-toolbar dark color='primary'>
             <v-btn icon dark @click='delUserW = false'>
-              <font-awesome-icon icon='times' />
+              <v-icon>fa-times</v-icon>
             </v-btn>
             <v-toolbar-title>刪除使用者</v-toolbar-title>
             <v-spacer></v-spacer>
             <v-btn icon dark @click='removeUsers'>
-              <font-awesome-icon icon='cloud-upload-alt' />
+              <v-icon>fa-cloud-upload-alt</v-icon>
             </v-btn>
           </v-toolbar>
           <v-card-text class='ma-0 pa-0'>
@@ -160,7 +136,7 @@
                 <v-col class='pa-0'>
                   <div class='text-subtitle-1 font-weight-bold'>要刪除的使用者分屬於以下幾個標籤</div>
                   <v-btn @click='checkTagUsers'>
-                    <font-awesome-icon :icon='checkTagUserIcon' />
+                    <v-icon>fa-sort-numeric-down</v-icon>
                     確認各標籤用戶數量
                   </v-btn>
                   <v-simple-table>
@@ -189,12 +165,12 @@
           <v-card>
               <v-toolbar dark color='primary'>
                 <v-btn icon dark @click='addUserW = false'>
-                  <font-awesome-icon icon='times' />
+                  <v-icon>fa-times</v-icon>
                 </v-btn>
                 <v-toolbar-title>新增使用者</v-toolbar-title>
                 <v-spacer></v-spacer>
                 <v-btn icon dark @click='createUsers'>
-                  <font-awesome-icon icon='cloud-upload-alt' />
+                  <v-icon>fa-cloud-upload-alt</v-icon>
                 </v-btn>
               </v-toolbar>
               <v-card-text class='ma-0 pa-0'>
@@ -204,7 +180,7 @@
                 <v-main class='pa-5'>
                   <v-row>
                     <v-col class='d-flex flex-column'>
-                      <tag-filter @plusItem='plusTag' :single='false' :selectedItem='selectedAddTags' @valueUpdated='addTagUpdated' :candidatedItem='savedUserTags' :createable='true' label='請輸入使用者歸屬的標籤' />
+                      <tag-filter :mustSelected='false' @plusItem='plusTag' :single='false' :selectedItem='selectedAddTags' @valueUpdated='addTagUpdated' :candidatedItem='savedTags' :createable='true' label='請輸入使用者歸屬的標籤' />
                       <v-textarea
                         solo
                         v-model='newEmail'
@@ -238,7 +214,7 @@
         <v-card>
           <v-card-title class="headline">設定標籤過濾</v-card-title>
           <v-card-text>
-            <tag-filter :single='true' :selectedItem='selectedFilterTags' @valueUpdated='filterTagUpdated' :candidatedItem='savedUserTags' :createable='false' label='請輸入您想篩選的使用者標籤' />
+            <tag-filter :mustSelected='false' :single='false' :selectedItem='selectedFilterTags' @valueUpdated='filterTagUpdated' :candidatedItem='savedTags' :createable='false' label='請輸入您想篩選的使用者標籤' />
           </v-card-text>
           <v-card-actions>
           <v-spacer></v-spacer>
@@ -267,7 +243,7 @@
               <v-card-title class="headline">設定用戶所屬標籤</v-card-title>
               <v-card-text>
                   <v-alert type="alert" icon="fa-exclamation-triangle" class='ma-0'>請注意選取你要複寫或是新增用戶標籤到使用者的帳號中</v-alert>
-                  <tag-filter @plusItem='plusTag' :single='false' :selectedItem='selectednewTags' @valueUpdated='newTagUpdated' :candidatedItem='savedUserTags' :createable='true' label='請輸入您想加入的使用者標籤' />
+                  <tag-filter @plusItem='plusTag' :single='false' :selectedItem='selectednewTags' @valueUpdated='newTagUpdated' :candidatedItem='savedTags' :createable='true' label='請輸入您想加入的使用者標籤' />
                   <div class='text-caption'>
                     目前選取的 {{ selectedUsers.length }} 個用戶的使用者標籤聯集為：
                     <v-simple-table>
@@ -291,7 +267,7 @@
               <v-card-actions>
               <v-spacer></v-spacer>
               <v-btn @click='checkTagUsers'>
-                <font-awesome-icon :icon='checkTagUserIcon' />
+                <v-icon>fa-sort-numeric-down</v-icon>
                 確認各標籤用戶數量
               </v-btn>
               <v-btn color="deep-orange darken-4" text @click='modUserTags(0)'>複寫 {{ selectedUsers.length }} 個用戶的使用者標籤</v-btn>
@@ -444,7 +420,7 @@
                   <span class='text-caption red--text' v-if='item.firstRun'>新用戶</span>
                   {{ item.name }} @ {{ item.unit }}</v-list-item-title>
                 <v-list-item-subtitle>
-                  <font-awesome-icon icon='envelope-open' />
+                  <v-icon>fa-envelope-open</v-icon>
                   {{item.email }}
                   <v-icon>fab fa-line</v-icon>
                   <span v-if='item.lineDate > 0'>已於 {{ dateConvert(item.lineDate) }} 綁定LINE</span>
@@ -455,7 +431,7 @@
                 <v-tooltip bottom>
                   <template v-slot:activator="{ on, attrs }">
                     <v-btn icon v-bind="attrs" v-on="on" @click='modUser(item)'>
-                      <font-awesome-icon icon='pencil-alt' />
+                      <v-icon>fa-pencil-alt</v-icon>
                     </v-btn>
                   </template>
                   <span>編輯用戶</span>
@@ -463,7 +439,7 @@
                 <v-tooltip bottom>
                   <template v-slot:activator="{ on, attrs }">
                     <v-btn icon v-bind="attrs" v-on="on" @click='passwordReset(item)'>
-                      <font-awesome-icon icon='key' />
+                      <v-icon>fa-key</v-icon>
                     </v-btn>
                   </template>
                   <span>寄出密碼遺忘信</span>
@@ -471,7 +447,7 @@
                 <v-tooltip bottom>
                   <template v-slot:activator="{ on, attrs }">
                     <v-btn icon v-bind="attrs" v-on="on" @click='setEmail(item)'>
-                      <font-awesome-icon icon='at' />
+                      <v-icon>fa-at</v-icon>
                     </v-btn>
                   </template>
                   <span>修改用戶Email</span>
@@ -505,7 +481,6 @@ Vue.component('font-awesome-icon', FontAwesomeIcon);
 export default {
     name: 'userMgnt',
     beforeDestroy () {
-      this.$socket.client.off('getTags', this.socketgetTags);
       this.$socket.client.off('checkTagUsers', this.socketcheckTagUsers);
       this.$socket.client.off('getUsers', this.socketgetUsers);
       this.$socket.client.off('getGlobalSettings', this.socketgetGlobalSettings);
@@ -517,15 +492,14 @@ export default {
       this.$socket.client.off('setEmail', this.socketsetEmail);
       this.$socket.client.off('modUsers', this.socketmodUsers);
     },
-    mounted () {
+    created () {
       this.$emit('viewIn', {
         text: '使用者管理',
-        icon: faUsersCog,
-        module: '帳號模組'
+        icon: 'fa-users-cog',
+        module: '帳號模組',
+        location: '/userMgnt'
       });
-      this.$socket.client.emit('getTags');
       this.$socket.client.emit('getGlobalSettings');
-      this.$socket.client.on('getTags', this.socketgetTags);
       this.$socket.client.on('checkTagUsers', this.socketcheckTagUsers);
       this.$socket.client.on('getUsers', this.socketgetUsers);
       this.$socket.client.on('getGlobalSettings', this.socketgetGlobalSettings);
@@ -543,6 +517,9 @@ export default {
     computed: {
       filterColor: function () {
         return this.selectedFilterTags.length > 0 || this.queryTerm !== '' ? '#B71C1C' : '#00B0FF';
+      },
+      savedTags: function () {
+        return this.$store.state.savedTags;
       }
     },
     watch: {
@@ -560,17 +537,15 @@ export default {
         }
       },
       selectedFilterTags: function () {
-        if (this.selectedFilterTags !== '') {
-          let oriobj = this;
-          this.userfilteredList = this.userList.filter((item) => {
-            if (item.tags.length > 0) {
-              return item.tags.findIndex((tag) => {
-                return tag._id === oriobj.selectedFilterTags;
-              }) > -1;
-            } else {
-              return false;
-            }
-          });
+        if (this.selectedFilterTags.length > 0) {
+          let filteredList = [];
+          for (let i = 0; i < this.selectedFilterTags.length; i++) {
+            let searchTag = this.selectedFilterTags[i];
+            filteredList.push(_.filter(this.userList, (u) => {
+              return _.includes(u.tags, searchTag);
+            }));
+          }
+          this.userfilteredList = _.flatten(filteredList);
         } else {
           this.userfilteredList = this.userList;
         }
@@ -584,12 +559,10 @@ export default {
             });
           });
           oriobj.tagList = [];
-          let flatTag = _.flatten(tags);
+          let flatTag = _.uniq(_.flatten(tags));
           for(let i = 0; i < flatTag.length; i++) {
             let tag = flatTag[i];
-            let tagObj = oriobj.savedUserTags.find((stag) => {
-              return stag._id === tag;
-            });
+            let tagObj = _.find(oriobj.savedTags, { _id: tag });
             oriobj.tagList.push({
               id: tagObj._id,
               name: tagObj.name,
@@ -633,24 +606,16 @@ export default {
     },
     methods: {
       socketmodUsers: function (data) {
-        this.doneW = true;
-        this.doneType = '修改用戶資訊';
-        this.doneMsg = data.name + '的用戶資訊修改完成';
+        this.$emit('toastPop', data.name + '的用戶資訊修改完成');
       },
       socketsetEmail: function (data) {
-        this.doneW = true;
-        this.doneType = '重設Email';
-        this.doneMsg = data ? '修改完成' : '修改失敗，可能為該Email已重複';
+        this.$emit('toastPop', data ? '修改完成' : '修改失敗，可能為該Email已重複');
       },
       socketcheckEmail: function (data) {
-        this.doneW = true;
-        this.doneType = '查詢Email重複';
-        this.doneMsg = 'Email：' + data.email + '有' + data.count + '個重複';
+        this.$emit('toastPop', 'Email：' + data.email + '有' + data.count + '個重複');
       },
       socketpasswordReset: function (data) {
-        this.doneW = true;
-        this.doneType = '重置' + data.name + '的密碼';
-        this.doneMsg = data.name + '的密碼已重置，記得通知用戶去收信啊';
+        this.$emit('toastPop', data.name + '的密碼已重置，記得通知用戶去收信啊');
         this.editingUser = {
           name: '',
           tags: []
@@ -658,23 +623,17 @@ export default {
       },
       socketremoveUser: function (data) {
         this.delUserW = false;
-        this.doneW = true;
-        this.doneType = '刪除' + data.planned + '個用戶的使用者標籤';
-        this.doneMsg = '刪除' + data.processed + '/' + data.planned + '個用戶已完成';
+        this.$emit('toastPop', '刪除' + data.processed + '/' + data.planned + '個用戶已完成');
       },
       socketmodUserTags: function (data) {
-        this.doneW = true;
-        this.doneType = '修改' + data.planned + '個用戶的使用者標籤';
-        this.doneMsg = '為' + data.processed + '/' + data.planned + '個用戶的加上' + data.tags + '個使用者標籤已完成';
+        this.$emit('toastPop', '為' + data.processed + '/' + data.planned + '個用戶的加上' + data.tags + '個使用者標籤已完成');
         if (data.zeroTag.length > 0) {
           this.doneMsg += '，' + JSON.stringify(data.zeroTag) + '等標籤由於剩餘用戶數小於1，因此無法將用戶移出';
         }
       },
       socketcreateUsers: function (data) {
         this.addUserW = false;
-        this.doneW = true;
-        this.doneType = '新增' + data.planned + '個用戶';
-        this.doneMsg = '新增' + data.processed + '/' + data.planned + '個用戶已完成';
+        this.$emit('toastPop', '新增' + data.processed + '/' + data.planned + '個用戶已完成');
       },
       socketgetGlobalSettings: function (data) {
         this.$socket.client.emit('getUsers');
@@ -686,15 +645,11 @@ export default {
       },
       socketcheckTagUsers: function (data) {
         let oriobj = this;
-        data.forEach((item) => {
-          let tagObj = oriobj.tagList.find((tag) => {
-            return tag._id === item._id[0]._id;
-          });
-          tagObj.count = item.count;
-        });
-      },
-      socketgetTags: function (data) {
-        this.savedUserTags = data;
+        for (let i = 0; i < data.length; i++) {
+          let item = data[i];
+          let tagObj = _.find(oriobj.tagList, { id: item._id });
+          tagObj.count = item.count.length;
+        }
       },
       closeEmailW: function () {
         this.emailW = false;
@@ -720,12 +675,15 @@ export default {
         };
       },
       checkTagUsers: function () {
-        this.$socket.client.emit('checkTagUsers', this.tagList);
+        this.$socket.client.emit('checkTagUsers', _.map(this.tagList, (item) => {
+          return item.id;
+        }));
       },
       savemodUser: function () {
         this.$socket.client.emit('modUsers', this.editingUser);
       },
       sendpasswordReset: function () {
+        this.$emit('toastPop', '密碼重置中，請稍後，會另有訊息通知伺服器操作已完成...');
         this.$socket.client.emit('passwordReset', this.editingUser._id);
         this.passwordW = false;
       },
@@ -742,6 +700,7 @@ export default {
         this.editingUser = obj;
       },
       createUsers: function () {
+        this.$emit('toastPop', '新增用戶中，請稍後，會另有訊息通知操作已完成...');
         this.$socket.client.emit('createUsers', {
           email: this.emailList,
           tags: this.selectedAddTags
@@ -791,13 +750,12 @@ export default {
         this.selectedAddTags = val;
       },
       modTagUpdated: function (val) {
-          this.editingUser.tags = val;
+        this.editingUser.tags = val;
       }
     },
     data () {
       return {
         emailW: false,
-        checkTagUserIcon: 'sort-numeric-down',
         passwordW: false,
         editingUser: {
           name: '',
@@ -805,9 +763,6 @@ export default {
         },
         invalidEmailList: [],
         emailList: [],
-        doneW: false,
-        doneType: '',
-        doneMsg: '',
         tagUserW: false,
         robotFilter: true,
         functionBtn: false,
@@ -822,7 +777,6 @@ export default {
         modUserW: false,
         delUserW: false,
         queryTerm: '',
-        savedUserTags: [],
         selectedFilterTags: [],
         selectedAddTags: [],
         tagList: [],

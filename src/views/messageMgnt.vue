@@ -1,34 +1,10 @@
 <template>
     <v-main class='pa-0'>
-      <v-dialog
-        v-model="doneW"
-        persistent
-        max-width="50vw"
-      >
-        <v-card>
-          <v-card-title class="headline">
-            <font-awesome-icon icon='satellite-dish' />
-            {{ doneType }}
-          </v-card-title>
-          <v-card-text>
-            {{ doneMsg }}！
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn
-              color="primary"
-              @click="doneW = false"
-            >
-              關閉通知
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
       <v-dialog v-model='editMsgW' fullscreen hide-overlay transition='dialog-bottom-transition'>
         <v-card>
             <v-toolbar dark color='primary'>
               <v-btn icon dark @click='editMsgW = false'>
-                  <font-awesome-icon icon='times' />
+                <v-icon>fa-times</v-icon>
               </v-btn>
               <v-toolbar-title>編輯公告</v-toolbar-title>
               <v-spacer></v-spacer>
@@ -38,7 +14,7 @@
                   text
                   @click='saveMsg'
                 >
-                  <font-awesome-icon :icon='msgsaveIcon' />
+                  <v-icon>{{ msgsaveIcon }}</v-icon>
                   {{ msgsaveBtn }}
                 </v-btn>
               </v-toolbar-items>
@@ -64,6 +40,7 @@
                     ></v-select>
                     <v-text-field label='公告標題' v-model='message.title'></v-text-field>
                     <tiptap-vuetify
+                      class='text-left'
                       v-model="message.body"
                       :extensions="extensions"
                       min-height="10vh"
@@ -72,10 +49,10 @@
                     />
                     <v-file-input prepend-icon="fa-paperclip" v-model="msgFile" label='輔助說明文件／圖片上傳' :loading="uploadprogress !== 0">
                       <template v-slot:progress>
-                        <v-progress-circular :value="uploadprogress"></v-progress-circular>進度：{{ uploadstatus }}
+                        <v-progress-circular :value="uploadprogress"></v-progress-circular>速度：{{ uploadstatus }}
                       </template>
                     </v-file-input>
-                    <div v-if="message.attachments.length > 0" class='d-flex flex-row'>
+                    <div v-if="message.attachments.length > 0" class='d-flex flex-row flex-wrap'>
                       <v-chip
                         v-for='file in message.attachments'
                         :key="file._id"
@@ -97,7 +74,7 @@
         <v-card>
             <v-toolbar dark color='primary'>
               <v-btn icon dark @click='lineW = false'>
-                  <font-awesome-icon icon='times' />
+                <v-icon>fa-times</v-icon>
               </v-btn>
               <v-toolbar-title>LINE訊息紀錄</v-toolbar-title>
             </v-toolbar>
@@ -105,10 +82,12 @@
               <v-alert type="info" icon="fa-exclamation-circle">
                 這裡只是保存歷史訊息供你回味，你無法刪除，也無法修改，發生過了就是發生過了
               </v-alert>
-              <span v-show='!LINEListPopulated' class='text-body-1 text-center'>
-                <font-awesome-icon icon='spinner' spin />
-                載入中，請稍後
-              </span>
+              <v-skeleton-loader
+                class="mx-auto"
+                type="card"
+                width="100%"
+                v-if='!LINEListPopulated'
+              ></v-skeleton-loader>
               <v-sheet v-show='LINEListPopulated' class='pa-0'>
                 <v-expansion-panels focusable accordion v-model='LINEExpanded' class='pa-0'>
                   <v-expansion-panel v-for='item in lineLog' :key='"line" + item._id'>
@@ -139,8 +118,8 @@
                               :key="message._id"
                             >
                               <td>
-                                <font-awesome-icon icon='check' v-if='message.status === 1' />
-                                <font-awesome-icon icon='times' v-if='message.status !== 1'/>
+                                <v-icon v-if='message.status === 1'>fa-check</v-icon>
+                                <v-icon v-if='message.status !== 1'>fa-times</v-icon>
                               </td>
                               <td>{{ dateConvert(message.tick) }}</td>
                               <td>{{ message.uid.name }}</td>
@@ -159,7 +138,7 @@
         <v-card>
             <v-toolbar dark color='primary'>
               <v-btn icon dark @click='broadcastW = false'>
-                  <font-awesome-icon icon='times' />
+                <v-icon>fa-times</v-icon>
               </v-btn>
               <v-toolbar-title>全域廣播紀錄</v-toolbar-title>
             </v-toolbar>
@@ -167,10 +146,12 @@
               <v-alert type="info" icon="fa-exclamation-circle">
                 這裡只是保存歷史訊息供你回味，你無法刪除，也無法修改，發生過了就是發生過了
               </v-alert>
-              <span v-show='!broadcastListPopulated' class='text-body-1 text-center'>
-                <font-awesome-icon icon='spinner' spin />
-                載入中，請稍後
-              </span>
+              <v-skeleton-loader
+                class="mx-auto"
+                type="card"
+                width="100%"
+                v-if='!broadcastListPopulated'
+              ></v-skeleton-loader>
               <v-sheet v-show='broadcastListPopulated' class='pa-0'>
                 <v-expansion-panels focusable accordion v-model='broadcastExpanded' class='pa-0'>
                   <v-expansion-panel v-for='item in broadcastLog' :key='item._id'>
@@ -195,6 +176,7 @@
             <div class='red--text text-caption'>提示：全域廣播只有目前正在使用的人會看到</div>
             <v-text-field label='公告標題' v-model='broadcastTitle'></v-text-field>
             <tiptap-vuetify
+              class='text-left'
               v-model="broadcastBody"
               :extensions="extensions"
               min-height="10vh"
@@ -213,13 +195,12 @@
           <v-col class='d-flex flex-column'>
             <div class='text-h5 text-center pt-5 font-weight-black'>LINE Notify</div>
             <v-divider inset></v-divider>
-            <tiptap-vuetify
+            <v-textarea
+              solo
               v-model="LINEbody"
-              :extensions="extensions"
-              min-height="10vh"
-              max-height="20vh"
+              class='text-left'
               placeholder='請不要留白'
-            />
+            ></v-textarea>
             <v-btn @click='sendLINEnotify' class='ma-3'>
               發出LINE通知
             </v-btn>
@@ -235,10 +216,12 @@
             <v-btn @click="newMessage" class='ma-3'>
               新增訊息
             </v-btn>
-            <span v-if='!histroyListPopulated' class='text-body-1 text-center'>
-              <font-awesome-icon icon='spinner' spin />
-              公告訊息列表載入中，請稍後
-            </span>
+            <v-skeleton-loader
+              class="mx-auto"
+              type="card"
+              width="100%"
+              v-if='!histroyListPopulated'
+            ></v-skeleton-loader>
             <div v-if='histroyListPopulated'>
               <span v-if='messageList.length === 0' class='text-body-1 text-center'>
                 沒有舊的公告
@@ -279,10 +262,10 @@
                       <td class="text-left">{{ message.title }}</td>
                       <td>
                         <v-btn outlined icon @click='editMsg(message._id)'>
-                          <font-awesome-icon icon='pencil-alt' />
+                          <v-icon>fa-pencil-alt</v-icon>
                         </v-btn>
                         <v-btn outlined icon @click='removeMsg(message._id)'>
-                          <font-awesome-icon icon='trash-alt' />
+                          <v-icon>fa-trash-alt</v-icon>
                         </v-btn>
                       </td>
                     </tr>
@@ -342,11 +325,12 @@ export default {
     this.$socket.client.off('addMsg', this.socketaddMsg);
     this.$socket.client.off('saveMessage', this.socketsaveMessage);
   },
-  mounted () {
+  created () {
     this.$emit('viewIn', {
       text: '系統訊息管理',
-      icon: faCog,
-      module: '訊息模組'
+      icon: 'fa-comment-dots',
+      module: '訊息模組',
+      location: '/messageMgnt'
     });
     this.$socket.client.emit('getMessages');
     this.$socket.client.on('getMessages', this.socketgetMessages);
@@ -373,12 +357,10 @@ export default {
         this.message.type = 0;
         this.message.status = true;
         this.message.attachments = [];
-        this.doneW = true;
-        this.doneType = '編輯公告';
-        this.doneMsg = '編輯完成！';
+        this.$emit('toastPop', '公告編輯完成！');
         this.editMsgW = false;
         this.msgsaveBtn = '儲存公告';
-        this.msgsaveIcon = 'cloud-upload-alt';
+        this.msgsaveIcon = 'fa-cloud-upload-alt';
       }
     },
     socketaddMsg: function (data) {
@@ -386,14 +368,10 @@ export default {
       this.editMsgW = true;
     },
     socketremoveMessageError: function (data) {
-      this.doneW = true;
-      this.doneType = '刪除訊息失敗';
-      this.doneMsg = '無法刪除' + data + '個附件檔案，請聯絡管理員';
+      this.$emit('toastPop', '無法刪除' + data + '個附件檔案，請聯絡管理員');
     },
     socketLINEnotify: function (data) {
-      this.doneW = true;
-      this.doneType = 'LINE訊息';
-      this.doneMsg = '發送了' + (parseInt(data.success, 10) + parseInt(data.failed, 10)) + '則LINE notify訊息，' + parseInt(data.success, 10) + '則成功，' + parseInt(data.failed, 10) + '則失敗';
+      this.$emit('toastPop', '發送了' + (parseInt(data.success, 10) + parseInt(data.failed, 10)) + '則LINE notify訊息，' + parseInt(data.success, 10) + '則成功，' + parseInt(data.failed, 10) + '則失敗');
     },
     socketgetbroadcastLog: function (data) {
       this.broadcastLog = data;
@@ -407,8 +385,9 @@ export default {
       let oriobj = this;
       let place = data.currentSlice * 100000;
       let slice = files[data.uuid].file.slice(place, place + Math.min(100000, files[data.uuid].file.size - place));
-      this.uploadprogress = (Math.ceil(place / files[data.uuid].file.size) * 100);
-      this.uploadstatus = (Math.ceil(place / files[data.uuid].file.size) * 100) + '%';
+      this.uploadprogress = Math.ceil((place / files[data.uuid].file.size) * 100);
+      let nowdiff = moment().valueOf() - files[data.uuid].starttick;
+      this.uploadstatus = nowdiff === 0 ? '' : prettyBytes(place / (nowdiff/1000)) + '/s';
       let fileReader = new FileReader();
       fileReader.readAsArrayBuffer(slice);
       fileReader.onload = () => {
@@ -424,23 +403,17 @@ export default {
       };
     },
     socketFileDeleteError: function (data) {
-      this.doneW = true;
-      this.doneType = '刪除檔案';
-      this.doneMsg = '刪除檔案失敗（原因：' + data + '），請聯絡管理員';
+      this.$emit('toastPop', '刪除檔案失敗（原因：' + data + '），請聯絡管理員');
       this.uploadprogress = 0;
       this.uploadstatus = '';
     },
     socketmsgFileUploadError: function (data) {
-      this.doneW = true;
-      this.doneType = '新增檔案';
-      this.doneMsg = '上傳失敗（原因：' + data + '），請聯絡管理員';
+      this.$emit('toastPop', '上傳失敗（原因：' + data + '），請聯絡管理員');
       this.uploadprogress = 0;
       this.uploadstatus = '';
     },
     socketremoveMessage: function () {
-      this.doneW = true;
-      this.doneType = '刪除公告';
-      this.doneMsg = '刪除完成！';
+      this.$emit('toastPop', '公告刪除完成！');
     },
     socketgetMessage: function (data) {
       this.message._id = data._id;
@@ -461,12 +434,10 @@ export default {
         this.msgFile = undefined;
         this.uploadprogress = 100;
         this.uploadstatus = '完成！';
-        window.clearTimeout(this.timer);
-        this.timer = setTimeout(() => {
+        Vue.nextTick(() => {
           oriobj.uploadprogress = 0;
           oriobj.uploadstatus = '';
-          window.clearTimeout(oriobj.timer);
-        }, 1000);
+        });
       }
     },
     socketgetMessages: function (data) {
@@ -493,7 +464,7 @@ export default {
       this.$socket.client.emit('removeMessage', id);
     },
     saveMsg: function () {
-      this.msgsaveIcon = 'spinner';
+      this.msgsaveIcon = 'fa-spinner';
       this.msgsaveBtn = '儲存中';
       this.$socket.client.emit('saveMessage', this.message);
     },
@@ -558,17 +529,18 @@ export default {
           let uuid = uuidv4();
           files[uuid] = {
             _id: this.message._id,
-            file: this.msgFile
+            file: this.msgFile,
+            starttick: moment().valueOf()
           };
           fileReader.readAsArrayBuffer(slice);
           fileReader.onload = () => {
               var arrayBuffer = fileReader.result;
               oriobj.$socket.client.emit('sendMsgFile', {
-                uid: this.message._id,
+                uid: oriobj.message._id,
                 uuid: uuid,
-                name: this.msgFile.name,
-                type: this.msgFile.type,
-                size: this.msgFile.size,
+                name: oriobj.msgFile.name,
+                type: oriobj.msgFile.type,
+                size: oriobj.msgFile.size,
                 data: arrayBuffer
               });
           };
@@ -578,7 +550,6 @@ export default {
   },
   data () {
       return {
-        timer: null,
         extensions: [
           History,
           Blockquote,
@@ -608,9 +579,6 @@ export default {
         broadcastLog: [],
         uploadprogress: 0,
         uploadstatus: 0,
-        doneW: false,
-        doneType: '',
-        doneMsg: '',
         messageType: [
           {
             text: '普通公告',
@@ -626,7 +594,7 @@ export default {
           }
         ],
         msgFile: undefined,
-        msgsaveIcon: 'cloud-upload-alt',
+        msgsaveIcon: 'fa-cloud-upload-alt',
         msgsaveBtn: '儲存公告',
         icontype: 'cloud-upload-alt',
         LINEbody: '',

@@ -26,7 +26,7 @@
         <template v-slot:no-data>
             <v-list-item @click="emitPlus" v-if='createable'>
                 <v-list-item-icon>
-                    <font-awesome-icon icon='plus' />
+                    <v-icon>fa-plus</v-icon>
                 </v-list-item-icon>
                 <v-list-item-content>
                     <v-list-item-title>
@@ -55,7 +55,8 @@ export default {
         selectedItem: [Array, String],
         candidatedItem: Array,
         createable: Boolean,
-        single: Boolean
+        single: Boolean,
+        mustSelected: Boolean
     },
     methods: {
         emitPlus: function () {
@@ -69,7 +70,18 @@ export default {
         },
         removeTag: function (item) {
             if (this.multipleD) {
-                if (this.selectedItems.length > 1) {
+                if (this.mustSelected) {
+                    if (this.selectedItems.length > 1) {
+                        let found = this.candidatedItem.find((element) => {
+                            return element._id === item._id;
+                        });
+                        if (found !== undefined) {
+                            this.selectedItems = this.selectedItems.filter((sitem) => {
+                                return sitem !== item._id;
+                            });
+                        }
+                    }
+                } else {
                     let found = this.candidatedItem.find((element) => {
                         return element._id === item._id;
                     });
@@ -80,7 +92,11 @@ export default {
                     }
                 }
             } else {
-                this.selectedItems = item;
+                if (!this.mustSelected) {
+                    if(this.selectedItems === item._id) {
+                        this.selectedItems = '';
+                    }
+                }
             }
         }
     },

@@ -1,8 +1,8 @@
 <template>
   <section>
-      <v-alert v-model='logoutFail' color='error'><font-awesome-icon icon='skull' />登入失敗</v-alert>
-      <v-alert v-model='logoutSuccess' color='success'><font-awesome-icon icon='grin-wink' />登入成功！三秒之後跳轉首頁</v-alert>
-      <h1 class='loginIcon'><font-awesome-icon icon='sign-out-alt' />登出頁面</h1>
+      <v-alert v-model='logoutFail' color='error'><v-icon>fa-skull</v-icon>登入失敗</v-alert>
+      <v-alert v-model='logoutSuccess' color='success'><v-icon>fa-grin-wink</v-icon>登入成功！三秒之後跳轉首頁</v-alert>
+      <h1 class='loginIcon'><v-icon>fa-sign-out-alt</v-icon>登出頁面</h1>
       {{ logoutText }}
   </section>
 </template>
@@ -40,29 +40,38 @@ export default {
     },
   methods: {
     async logout () {
-        let oriobj = this;
-        let result = await axios.post('https://' + window.location.host + '/backend/logout', {
-          withCredentials: true
-        });
-        if (result.data.loginStatus === 1) {
-          this.logoutText = '登出進行中... 完成！';
-          window.clearTimeout(this.timer);
-          this.timer = setTimeout(() => {
-            window.clearTimeout(oriobj.timer);
-            window.location.href = 'https://' + window.location.host + '/';
-          }, 3000);
-        }
+      let oriobj = this;
+      let result = await axios.post('https://' + window.location.host + '/backend/logout', {
+        withCredentials: true
+      });
+      if (result.data.loginStatus === 1) {
+        this.logoutText = '登出進行中... 完成！';
+        this.$socket.client.emit('clearCurrentUser');
+        window.clearTimeout(this.timer);
+        this.timer = setTimeout(() => {
+          window.clearTimeout(oriobj.timer);
+          this.$socket.client.emit('getCurrentUser');
+        }, this.siteSettings.connectionTimeout * 1000);
+      }
     }
   },
-  mounted () {
-      this.logout();
+  computed: {
+    siteSettings: function () {
+      return this.$store.state.siteSettings;
+    }
+  },
+  beforeDestroy () {
+    window.clearTimeout(this.timer);
+    this.timer = null;
   },
   created () {
-      this.$emit('viewIn', {
-        text: '使用者登出',
-        icon: faSignOutAlt,
-        module: '登入模組'
-      });
+    this.logout();
+    this.$emit('viewIn', {
+      text: '使用者登出',
+      icon: 'fa-sign-out-alt',
+      module: '登入模組',
+      location: '/Logout'
+    });
   }
 };
 </script>

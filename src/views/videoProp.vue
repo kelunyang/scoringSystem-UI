@@ -6,7 +6,7 @@
                     <v-toolbar-title>上傳影片</v-toolbar-title>
                 </v-toolbar>
                 <v-card-text class='pa-5'>
-                    <div class='red--text text-body-1'>上傳影片功能是廠商帳號專屬功能，審查平台會將投影片、影片都當作影片處理，因此請務必注意製作腳本時，以PowerPoint製作，並且將投影片另存為mp4檔案</div>
+                    <div class='red--text text-body-1'>上傳影片功能是廠商帳號專屬功能，審查系統會將投影片、影片都當作影片處理，因此請務必注意製作腳本時，以PowerPoint製作，並且將投影片另存為mp4檔案</div>
                     <v-file-input prepend-icon='fa-video' label='選擇影片檔' accept='video/mp4'></v-file-input>
                 </v-card-text>
                 <v-card-actions>

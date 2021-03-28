@@ -1,14 +1,14 @@
 <template>
   <v-sheet class='d-flex flex-column'>
-    <v-alert type="info" icon="fa-info-circle">歡迎進入影片審查平台，在此提醒您，請務必使用Google Chrome／Firefox／Microsoft Edge等瀏覽器審查，千萬不要用Internet Explorer，可以的話，也請盡量不要以手機操作（雖然可以相容，但本站並非為手機設計）</v-alert>
-    <v-btn v-if='currentUser === null' class='indigo darken-4 white--text ma-3 text-subtitle-2 font-weight-bold' link href="#/Login" >按此登入系統</v-btn>
-    <div v-if='currentUser !== null'>{{ currentUser.name }} 已登入 </div>
+    <v-alert type="info" icon="fa-info-circle">歡迎進入影片審查系統，在此提醒您，請務必使用Google Chrome／Firefox／Microsoft Edge等瀏覽器審查，千萬不要用Internet Explorer，可以的話，也請盡量不要以手機操作（雖然可以相容，但本站並非為手機設計）</v-alert>
+    <v-btn v-if='currentUser._id === ""' class='indigo darken-4 white--text ma-3 text-subtitle-2 font-weight-bold' link href="#/Login" >按此登入系統</v-btn>
+    <div v-if='currentUser._id !== ""'>{{ currentUser.name }} 已登入 </div>
     <v-expansion-panels focusable accordion v-model='messageExpanded'>
       <v-expansion-panel v-for='item in announcements' :key='item.id' :class='criticalConvert(item.type)'>
         <v-expansion-panel-header expand-icon="fa-chevron-down">
           <div>
             [
-            <font-awesome-icon :icon='typeConvert(item.type).icon' />
+            <v-icon>{{ typeConvert(item.type).icon }}</v-icon>
             {{ typeConvert(item.type).text }}
             @ {{ dateConvert(item.tick) }}] {{ item.title }}
           </div>
@@ -17,7 +17,7 @@
           <div class='d-flex flex-column text-left'>
             <div class='text-subtitle-2 font-weight-bold'>{{ item.title }}</div>
             <div class='text-body-2' v-html="HTMLConverter(item.body)"></div>
-            <div class='d-flex flex-row'>
+            <div class='d-flex flex-row flex-wrap'>
               <v-chip
                 v-for='file in item.attachments'
                 :key="file._id"
@@ -47,12 +47,6 @@ Vue.component('font-awesome-icon', FontAwesomeIcon);
 
 export default {
   methods: {
-    socketgetsiteSetting: function (data) {
-      this.siteSetting = data;
-    },
-    socketgetCurrentUser: function (data) {
-      this.currentUser = data;
-    },
     socketgetIndexMessages: function (data) {
       this.announcements = data;
     },
@@ -69,12 +63,10 @@ export default {
     downloadFile: function (file) {
       if (file.status === 1) {
         let element = document.createElement('a');
-        element.setAttribute('href', this.siteSetting.siteLocation + '/storages/' + file._id);
+        element.setAttribute('href', this.siteSettings.siteLocation + '/storages/' + file._id);
         element.setAttribute('download', file.name);
         element.style.display = 'none';
-        document.body.appendChild(element);
         element.click();
-        document.body.removeChild(element);
       }
     },
     criticalConvert: function (type) {
@@ -83,21 +75,29 @@ export default {
     typeConvert: function (type) {
       return type === 0
       ? {
-        icon: faCommentDots,
+        icon: 'fa-comment-dots',
         text: '普通公告'
       }
       : type === 1
       ? {
-        icon: faRobot,
+        icon: 'fa-robot',
         text: '設備公告'
       }
       : {
-        icon: faBomb,
+        icon: 'fa-bomb',
         text: '緊急公告'
       };
     },
     dateConvert: function (time) {
       return moment.unix(time).format('YYYY/MM/DD HH:mm:ss');
+    }
+  },
+  computed: {
+    currentUser: function () {
+      return this.$store.state.currentUser;
+    },
+    siteSettings: function () {
+      return this.$store.state.siteSettings;
     }
   },
   watch: {
@@ -111,27 +111,20 @@ export default {
     return {
       messageExpanded: null,
       announcements: [],
-      currentUser: null,
-      siteSetting: null
     };
   },
   beforeDestroy () {
     this.$socket.client.off('getIndexMessages', this.socketgetIndexMessages);
-    this.$socket.client.off('getCurrentUser', this.socketgetCurrentUser);
-    this.$socket.client.off('getsiteSetting', this.socketgetsiteSetting);
   },
-  mounted () {
+  created () {
     this.$emit('viewIn', {
       text: '首頁',
-      icon: faSnapchatGhost,
-      module: '首頁模組'
+      icon: 'fa-home',
+      module: '首頁模組',
+      location: '/Home'
     });
     this.$socket.client.on('getIndexMessages', this.socketgetIndexMessages);
-    this.$socket.client.emit('getsiteSetting');
     this.$socket.client.emit('getIndexMessages');
-    this.$socket.client.emit('getCurrentUser');
-    this.$socket.client.on('getCurrentUser', this.socketgetCurrentUser);
-    this.$socket.client.on('getsiteSetting', this.socketgetsiteSetting);
   }
 };
 </script>

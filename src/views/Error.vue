@@ -1,6 +1,6 @@
 <template>
   <div class='home'>
-    <font-awesome-icon icon='bug' />
+    <v-icon>fa-bug</v-icon>
     <p>發生錯誤！</p>
   </div>
 </template>
@@ -19,8 +19,9 @@ export default {
   created () {
     this.$emit('viewIn', {
       text: '發生錯誤',
-      icon: faBug,
-      module: '錯誤模組'
+      icon: 'fa-bug',
+      module: '錯誤模組',
+      location: '/Error'
     });
   }
 };

@@ -1,30 +1,6 @@
 <template> 
     <v-main class='pa-0'>
       <v-dialog
-        v-model="doneW"
-        persistent
-        max-width="50vw"
-      >
-        <v-card>
-          <v-card-title class="headline">
-            <font-awesome-icon icon='satellite-dish' />
-            {{ doneType }}
-          </v-card-title>
-          <v-card-text>
-            {{ doneMsg }}！
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn
-              color="primary"
-              @click="doneW = false"
-            >
-              關閉通知
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
-      <v-dialog
         v-model="feedbackListW"
         persistent
         max-width="50vw"
@@ -61,7 +37,7 @@
                 </v-btn>
               </v-col>
             </v-row>
-            <v-row class='d-flex flex-row ma-0 pa-0'>
+            <v-row class='d-flex flex-row ma-0 pa-0 flex-wrap'>
               <v-chip
                 v-for='type in feedbacksInView.main.type'
                 :key="type + feedbacksInView.main._id"
@@ -97,12 +73,14 @@
                   </v-row>
                   <v-row class='ma-0 pa-0'>
                     <div v-html="HTMLConverter(feedbacksInView.main.body)"></div>
-                    <v-chip
-                      v-for='file in feedbacksInView.main.attachments'
-                      :key="file._id"
-                      class="ma-2"
-                      @click="downloadFile(file)"
-                    >{{ filenameConvert(file) }}</v-chip>
+                    <div class='d-flex flex-row flex-wrap'>
+                      <v-chip
+                        v-for='file in feedbacksInView.main.attachments'
+                        :key="file._id"
+                        class="ma-2"
+                        @click="downloadFile(file)"
+                      >{{ filenameConvert(file) }}</v-chip>
+                    </div>
                   </v-row>
                 </v-row>
               </v-timeline-item>
@@ -120,7 +98,7 @@
                       </v-col>
                       <v-col>
                         <v-btn icon @click='editFeedback(singleFeedback)' v-if='editConvert(singleFeedback)'>
-                          <font-awesome-icon icon='pencil-alt' />
+                          <v-icon>fa-pencil-alt</v-icon>
                         </v-btn>
                       </v-col>
                     </v-row>
@@ -173,17 +151,17 @@
             />
             <v-file-input prepend-icon="fa-paperclip" v-model="feedbackFile" label='輔助說明文件／圖片上傳' :loading="uploadprogress !== 0">
               <template v-slot:progress>
-                <v-progress-circular :value="uploadprogress"></v-progress-circular>進度：{{ uploadstatus }}
+                <v-progress-circular :value="uploadprogress"></v-progress-circular>速度：{{ uploadstatus }}
               </template>
             </v-file-input>
-            <div v-if="feedback.attachments.length > 0" class='d-flex flex-row'>
+            <div v-if="feedback.attachments.length > 0" class='d-flex flex-row flex-wrap'>
               <v-chip
                 v-for='file in feedback.attachments'
                 :key="file._id"
                 class="ma-2"
                 close
                 close-icon="fa-times"
-                @click:close="deleteMsgFile(file)"
+                @click:close="deleteFeedbackFile(file)"
               >
                 {{ file.name }} ({{ byteConvert(file.size) }})
               </v-chip>
@@ -241,8 +219,8 @@
       <v-row ref='aboutArea'>
         <v-col class='pa-2'>
           <div class='text-h5 font-weight-bold text-left'>關於本系統</div>
-          <div class='text-body-2 text-left'>{{ version }}</div>
-          <div class='text-caption text-left' v-html="HTMLConverter(changeLog)"></div>
+          <div class='text-body-2 text-left'>{{ siteSettings.version }}</div>
+          <div class='text-caption text-left' v-html="HTMLConverter(siteSettings.changeLog)"></div>
         </v-col>
       </v-row>
       <v-row ref='teamArea'>
@@ -262,13 +240,13 @@
               <v-list-item-content class='text-left'>
                 <v-list-item-title>{{ item.name }} @ {{ item.unit }}</v-list-item-title>
                 <v-list-item-subtitle>
-                  <font-awesome-icon icon='envelope-open' />
+                  <v-icon>fa-envelope-open</v-icon>
                   {{item.email }}
                 </v-list-item-subtitle>
               </v-list-item-content>
               <v-list-item-action>
                 <v-btn v-clipboard:copy='item.email'>
-                    <font-awesome-icon icon='copy' />
+                  <v-icon>fa-copy</v-icon>
                   複製Email
                 </v-btn>
               </v-list-item-action>
@@ -283,10 +261,12 @@
             <v-icon>fa-pray</v-icon>
             我需要新的功能&amp;反映現有功能的問題！
           </v-btn>
-          <span v-if='!histroyListPopulated' class='text-body-1 text-center'>
-            <font-awesome-icon icon='spinner' spin />
-            使用者回饋載入中，請稍後
-          </span>
+          <v-skeleton-loader
+            class="mx-auto"
+            type="card"
+            width="100%"
+            v-if='!histroyListPopulated'
+          ></v-skeleton-loader>
           <div v-if='histroyListPopulated'>
             <span v-if='feedbackList.length === 0' class='text-body-1 text-center'>
               目前沒有使用者回饋
@@ -358,9 +338,10 @@ import TurndownService from 'turndown';
 import marked from 'marked';
 import { v4 as uuidv4 } from 'uuid';
 import '@fortawesome/fontawesome-free/css/all.css';
-import { TiptapVuetify, Heading, Bold, Italic, Strike, Underline, Code, Paragraph, BulletList, OrderedList, ListItem, Link, Blockquote, HardBreak, HorizontalRule, History } from 'tiptap-vuetify';
+import { TiptapVuetify, Bold, Italic, Strike, Underline, Code, Paragraph, BulletList, OrderedList, ListItem, Link, HardBreak, History } from 'tiptap-vuetify';
 import 'tiptap-vuetify/dist/main.css';
 import prettyBytes from 'pretty-bytes';
+import _ from 'lodash';
 
 library.add(faInfoCircle);
 Vue.component('font-awesome-icon', FontAwesomeIcon);
@@ -379,8 +360,9 @@ export default {
       let oriobj = this;
       let place = data.currentSlice * 100000;
       let slice = files[data.uuid].file.slice(place, place + Math.min(100000, files[data.uuid].file.size - place));
-      this.uploadprogress = (Math.ceil(place / files[data.uuid].file.size) * 100);
-      this.uploadstatus = (Math.ceil(place / files[data.uuid].file.size) * 100) + '%';
+      this.uploadprogress = Math.ceil((place / files[data.uuid].file.size) * 100);
+      let nowdiff = moment().valueOf() - files[data.uuid].starttick;
+      this.uploadstatus = nowdiff === 0 ? '' : prettyBytes(place / (nowdiff/1000)) + '/s';
       let fileReader = new FileReader();
       fileReader.readAsArrayBuffer(slice);
       fileReader.onload = () => {
@@ -396,23 +378,17 @@ export default {
       };
     },
     socketfeedbackfileDeleteError: function (data) {
-      this.doneW = true;
-      this.doneType = '刪除檔案';
-      this.doneMsg = '刪除檔案失敗（原因：' + data + '），請聯絡管理員';
+      this.$emit('toastPop', '刪除檔案失敗（原因：' + data + '），請聯絡管理員');
       this.uploadprogress = 0;
       this.uploadstatus = '';
     },
     socketfeedbackFileUploadError: function (data) {
-      this.doneW = true;
-      this.doneType = '新增檔案';
-      this.doneMsg = '上傳失敗（原因：' + data + '），請聯絡管理員';
+      this.$emit('toastPop', '上傳失敗（原因：' + data + '），請聯絡管理員');
       this.uploadprogress = 0;
       this.uploadstatus = '';
     },
     socketremoveFeedback: function () {
-      this.doneW = true;
-      this.doneType = '刪除用戶回饋';
-      this.doneMsg = '刪除完成！';
+      this.$emit('toastPop', '刪除完成！');
       this.feedbackListW = false;
       this.feedbackW = false;
     },
@@ -424,17 +400,16 @@ export default {
       this.feedback.attachments = data;
     },
     socketfeedbackFileUploadDone: function (data) {
+      let oriobj = this;
       if (data === this.feedback._id) {
         this.$socket.client.emit('getfeedbackAttachment', data);
         this.feedbackFile = undefined;
         this.uploadprogress = 100;
         this.uploadstatus = '完成！';
-        window.clearTimeout(this.timer);
-        this.timer = setTimeout(() => {
-          this.uploadprogress = 0;
-          this.uploadstatus = '';
-          window.clearTimeout(this.timer);
-        }, 1000);
+        Vue.nextTick(() => {
+          oriobj.uploadprogress = 0;
+          oriobj.uploadstatus = '';
+        });
       }
     },
     socketgetfeedbackList: function (data) {
@@ -471,45 +446,28 @@ export default {
       this.feedbackW = true;
     },
     socketsendLINEnotify: function (data) {
-      this.doneW = true;
-      this.doneType = 'LINE訊息';
-      this.doneMsg = '發送了' + (parseInt(data.success, 10) + parseInt(data.failed, 10)) + '則LINE notify訊息，' + parseInt(data.success, 10) + '則成功，' + parseInt(data.failed, 10) + '則失敗';
-    },
-    socketgetsiteSetting: function (data) {
-      this.version = data.version;
-      this.changeLog = data.changeLog;
-      this.siteLocation = data.siteLocation;
-      this.$socket.client.emit('getCurrentUser');
-    },
-    socketgetCurrentUser: function (data) {
-      this.currentUser = data;
-      this.$socket.client.emit('getfeedbackList');
+      this.$emit('toastPop', '發送了' + (parseInt(data.success, 10) + parseInt(data.failed, 10)) + '則LINE notify訊息，' + parseInt(data.success, 10) + '則成功，' + parseInt(data.failed, 10) + '則失敗');
     },
     socketgetsiteAdminUsers: function (data) {
       this.userList = data;
-      this.$socket.client.emit('getsiteSetting');
     },
     adminConvert: function () {
       let oriobj = this;
-      return this.userList.some((user) => {
+      return _.find(this.userList, (user) => {
         return user._id === oriobj.currentUser._id;
-      });
+      }) !== undefined;
     },
     ownerConvert: function (feedback) {
       let oriobj = this;
-      return feedback.users.some((user) => {
+      return _.find(feedback.users, (user) => {
         return user._id === oriobj.currentUser._id;
-      });
+      }) !== undefined;
     },
     editConvert: function (feedback) {
       let oriobj = this;
-      if(feedback.users.some((user) => {
+      return _.find(feedback.users, (user) => {
         return user._id === oriobj.currentUser._id
-      })) {
-        return true;
-      } else {
-        return false;
-      }
+      }) !== undefined;
     },
     editFeedback: function (feedback) {
       this.$socket.client.emit('editFeedback', feedback._id);
@@ -542,29 +500,29 @@ export default {
     },
     filenameConvert: function (file) {
       let str = file.name;
-      str += file.status !== 1 ? '(暫不可用)' : '';
       str += prettyBytes(file.size);
       return str;
     },
+    byteConvert: function (size) {
+      return prettyBytes(size);
+    },
     agreeConvert: function () {
       let oriobj = this;
-      if(this.feedbacksInView.main.users.some((user) => {
-        return user._id === oriobj.currentUser._id
-      })) {
-        return 'fa-star';
-      } else {
-        return 'far fa-star';
-      }
+      return _.find(this.feedbacksInView.main.users, (user) => {
+        return user._id === oriobj.currentUser._id;
+      }) !== undefined ? 'fa-star' : 'far fa-star';
     },
     ratingConvert: function (status) {
       let oriobj = this;
-      if(this.feedbacksInView.main.rating.some((user) => {
+      return _.find(this.feedbacksInView.main.rating, (user) => {
         return user._id === oriobj.currentUser._id
-      })) {
-        return status ? true : false;
-      } else {
-        return status ? false : this.feedbacksInView.main.rating.length === 0;
-      }
+      }) !== undefined ? status ? true : false : status ? false : this.feedbacksInView.main.rating.length === 0;
+    },
+    deleteFeedbackFile: function (file) {
+      this.$socket.client.emit('deleteFeedbackFile', {
+        fileID: file._id,
+        feedbackID: this.feedback._id
+      });
     },
     statusConvert: function () {
       if(this.feedbacksInView.main.status) {
@@ -589,13 +547,19 @@ export default {
     downloadFile: function (file) {
       if (file.status === 1) {
         let element = document.createElement('a');
-        element.setAttribute('href', this.siteLocation + '/storages/' + file._id);
+        element.setAttribute('href', this.siteSettings.siteLocation + '/storages/' + file._id);
         element.setAttribute('download', file.name);
         element.style.display = 'none';
-        document.body.appendChild(element);
         element.click();
-        document.body.removeChild(element);
       }
+    }
+  },
+  computed: {
+    currentUser: function () {
+      return this.$store.state.currentUser;
+    },
+    siteSettings: function () {
+      return this.$store.state.siteSettings;
     }
   },
   watch: {
@@ -609,17 +573,18 @@ export default {
           let uuid = uuidv4();
           files[uuid] = {
             _id: this.feedback._id,
-            file: this.feedbackFile
+            file: this.feedbackFile,
+            starttick: moment().valueOf()
           };
           fileReader.readAsArrayBuffer(slice);
           fileReader.onload = () => {
               var arrayBuffer = fileReader.result;
               oriobj.$socket.client.emit('sendfeedbackFile', {
-                uid: this.feedback._id,
+                uid: oriobj.feedback._id,
                 uuid: uuid,
-                name: this.feedbackFile.name,
-                type: this.feedbackFile.type,
-                size: this.feedbackFile.size,
+                name: oriobj.feedbackFile.name,
+                type: oriobj.feedbackFile.type,
+                size: oriobj.feedbackFile.size,
                 data: arrayBuffer
               });
           };
@@ -631,7 +596,6 @@ export default {
       return {
         extensions: [
           History,
-          Blockquote,
           Link,
           Underline,
           Strike,
@@ -639,31 +603,17 @@ export default {
           ListItem,
           BulletList,
           OrderedList,
-          [Heading, {
-            options: {
-              levels: [1, 2, 3]
-            }
-          }],
           Bold,
           Code,
-          HorizontalRule,
           Paragraph,
           HardBreak
         ],
-        timer: null,
-        changeLog: '**test**',
-        siteLocation: '',
-        currentUser: {
-          _id: ''
-        },
         feedbackW: false,
         feedbackListW: false,
         feedbackFile: undefined,
         uploadprogress: 0,
         uploadstatus: '',
         LINEbody: '',
-        doneW: false,
-        version: null,
         lineW: false,
         feedback: {
           type: [],
@@ -717,8 +667,6 @@ export default {
   },
   beforeDestroy () {
     this.$socket.client.off('getsiteAdminUsers', this.socketgetsiteAdminUsers);
-    this.$socket.client.off('getCurrentUser', this.socketgetCurrentUser);
-    this.$socket.client.off('getsiteSetting', this.socketgetsiteSetting);
     this.$socket.client.off('sendLINEnotify', this.socketsendLINEnotify);
     this.$socket.client.off('editFeedback', this.socketeditFeedback);
     this.$socket.client.off('addFeedback', this.socketaddFeedback);
@@ -735,14 +683,14 @@ export default {
   created () {
     this.$emit('viewIn', {
       text: '關於本系統&許願池',
-      icon: faInfoCircle,
-      module: '用戶回饋模組'
+      icon: 'fa-info-circle',
+      module: '用戶回饋模組',
+      location: '/Info'
     });
     this.$socket.client.emit('getsiteAdminUsers', [
       'settingTags'
     ]);
-    this.$socket.client.on('getCurrentUser', this.socketgetCurrentUser);
-    this.$socket.client.on('getsiteSetting', this.socketgetsiteSetting);
+    this.$socket.client.emit('getfeedbackList');
     this.$socket.client.on('getsiteAdminUsers', this.socketgetsiteAdminUsers);
     this.$socket.client.on('sendLINEnotify', this.socketsendLINEnotify);
     this.$socket.client.on('editFeedback', this.socketeditFeedback);

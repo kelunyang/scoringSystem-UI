@@ -1,447 +1,536 @@
-<template><!-- TODO: 1. 指派選單  -->
-    <v-sheet class='pa-0'>
-        <v-dialog v-model='KBeditorW' persistent width='60vw'>
-            <v-card>
-                <v-toolbar dark color='primary'>
-                    <v-toolbar-title>編輯知識點</v-toolbar-title>
-                </v-toolbar>
-                <v-card-text>
-                    <v-text-field
-                        label="知識點標題"
-                        v-model='KBtitle'
-                    ></v-text-field>
-                    <v-text-field
-                        label="對應課綱學習表現或是課本內容"
-                        v-model='KBtextbook'
-                    ></v-text-field>
-                    <v-textarea
-                        label='寫作指引'
-                        v-model='instrBody'
-                    ></v-textarea>
-                    <div class='red--text text-caption'>寫作指引是提供寫手和廠商創作的引導，您可以用簡單的幾句話回復，寫作指引會出現在所有影片起點位置（0秒）</div>
-                    <v-file-input prepend-icon='fa-paperclip' multiple label='輔助說明文件／圖片上傳'></v-file-input>
-                </v-card-text>
-                <v-card-actions>
-                    <v-btn :disabled='KBwatch' @click='editKB()'>送出寫作指引</v-btn>
-                    <v-btn @click='KBeditorW = false'>關閉對話框</v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
-        <v-dialog v-model='assignW' persistent width='60vw'>
-            <v-card>
-                <v-toolbar dark color='primary'>
-                    <v-toolbar-title>指派知識點審查者</v-toolbar-title>
-                    <template v-slot:extension>
-                        <v-tabs v-model="assignTab" background-color="primary" dark>
-                            <v-tab>審查老師群</v-tab>
-                            <v-tab>負責廠商群</v-tab>
-                            <v-tab>負責寫手群</v-tab>
-                            <v-tab>負責PM群</v-tab>
-                        </v-tabs>
-                    </template>
-                </v-toolbar>
-                <v-alert type="success" v-show='userTip'>
-                    {{ currentEditUser.text }}寫入完成！
-                </v-alert>
-                <v-card-text class='pa-0'>
-                    <v-tabs-items v-model="assignTab">
-                        <v-tab-item>
-                            <v-stepper v-model="reviewerStep" vertical>
-                                <v-stepper-step :complete="reviewerStep > 1" step="1" complete-icon='fa-check-circle'>
-                                選擇使用者標籤
-                                <small>請選擇既有的或是新建一個使用者標籤</small>
-                                </v-stepper-step>
-                                <v-stepper-content step="1">
-                                    <v-card class='pa-3'>
-                                        <v-card-text>
-                                            <tag-filter :single='true' :selectedItem='currentEditUser.reviewerTag' @valueUpdated='filterReviewerTagUpdated' :candidatedItem='savedUserTags' :createable='true' label='請輸入您想篩選的使用者標籤' />
-                                        </v-card-text>
-                                        <v-card-actions>
-                                            <v-btn color="primary" @click='loadreviewerTag()'>載入使用者標籤</v-btn>
-                                        </v-card-actions>
-                                    </v-card>
-                                </v-stepper-content>
-                                    <v-stepper-step :complete="reviewerStep > 2" step="2" complete-icon='fa-check-circle'>
-                                    設定 {{ currentEditUser.reviewerTag }} 使用者名單
-                                    <small>請選擇該標籤下的使用者名單</small>
-                                </v-stepper-step>
-                                <v-stepper-content step="2">
-                                    <v-card class='pa-3'>
-                                        <v-card-text>
-                                            <tag-filter :single='false' :selectedItem='currentEditUser.reviewers' @valueUpdated='filterReviewerUpdated' :candidatedItem='savedUsers' :createable='false' label='請輸入您想篩選的使用者' />
-                                        </v-card-text>
-                                        <v-card-actions>
-                                            <v-btn @click='reviewerStep = 1'>回上一步</v-btn>
-                                            <v-btn color="primary" @click='saveReviewer()'>確定指派</v-btn>
-                                        </v-card-actions>
-                                    </v-card>
-                                </v-stepper-content>
-                            </v-stepper>
-                        </v-tab-item>
-                        <v-tab-item>
-                            <v-stepper v-model="vendorStep" vertical>
-                                <v-stepper-step :complete="vendorStep > 1" step="1" complete-icon='fa-check-circle'>
-                                選擇使用者標籤
-                                <small>請選擇既有的或是新建一個使用者標籤</small>
-                                </v-stepper-step>
-                                <v-stepper-content step="1">
-                                    <v-card class='pa-3'>
-                                        <v-card-text>
-                                            <tag-filter :single='true' :selectedItem='currentEditUser.vendorTag' @valueUpdated='filterVendorTagUpdated' :candidatedItem='savedUserTags' :createable='true' label='請輸入您想篩選的使用者標籤' />
-                                        </v-card-text>
-                                        <v-card-actions>
-                                            <v-btn color="primary" @click='loadvendorTag()'>載入使用者標籤</v-btn>
-                                        </v-card-actions>
-                                    </v-card>
-                                </v-stepper-content>
-                                    <v-stepper-step :complete="vendorStep > 2" step="2" complete-icon='fa-check-circle'>
-                                    設定 {{ currentEditUser.vendorTag }} 使用者名單
-                                    <small>請選擇該標籤下的使用者名單</small>
-                                </v-stepper-step>
-                                <v-stepper-content step="2">
-                                    <v-card class='pa-3'>
-                                        <v-card-text>
-                                            <tag-filter :single='false' :selectedItem='currentEditUser.vendors' @valueUpdated='filterVendorUpdated' :candidatedItem='savedUsers' :createable='false' label='請輸入您想篩選的使用者' />
-                                        </v-card-text>
-                                        <v-card-actions>
-                                            <v-btn @click='vendorStep = 1'>回上一步</v-btn>
-                                            <v-btn color="primary" @click='saveVendor()'>確定指派</v-btn>
-                                        </v-card-actions>
-                                    </v-card>
-                                </v-stepper-content>
-                            </v-stepper>
-                        </v-tab-item>
-                        <v-tab-item>
-                            <v-stepper v-model="writerStep" vertical>
-                                <v-stepper-step :complete="writerStep > 1" step="1" complete-icon='fa-check-circle'>
-                                選擇使用者標籤
-                                <small>請選擇既有的或是新建一個使用者標籤</small>
-                                </v-stepper-step>
-                                <v-stepper-content step="1">
-                                    <v-card class='pa-3'>
-                                        <v-card-text>
-                                            <tag-filter :single='true' :selectedItem='currentEditUser.writerTag' @valueUpdated='filterWriterTagUpdated' :candidatedItem='savedUserTags' :createable='true' label='請輸入您想篩選的使用者標籤' />
-                                        </v-card-text>
-                                        <v-card-actions>
-                                            <v-btn color="primary" @click='loadwriterTag()'>載入使用者標籤</v-btn>
-                                        </v-card-actions>
-                                    </v-card>
-                                </v-stepper-content>
-                                    <v-stepper-step :complete="writerStep > 2" step="2" complete-icon='fa-check-circle'>
-                                    設定 {{ currentEditUser.writerTag }} 使用者名單
-                                    <small>請選擇該標籤下的使用者名單</small>
-                                </v-stepper-step>
-                                <v-stepper-content step="2">
-                                    <v-card class='pa-3'>
-                                        <v-card-text>
-                                            <tag-filter :single='false' :selectedItem='currentEditUser.writers' @valueUpdated='filterWriterUpdated' :candidatedItem='savedUsers' :createable='false' label='請輸入您想篩選的使用者' />
-                                        </v-card-text>
-                                        <v-card-actions>
-                                            <v-btn @click='writerStep = 1'>回上一步</v-btn>
-                                            <v-btn color="primary" @click='saveReviewer()'>確定指派</v-btn>
-                                        </v-card-actions>
-                                    </v-card>
-                                </v-stepper-content>
-                            </v-stepper>
-                        </v-tab-item>
-                        <v-tab-item>
-                            <v-stepper v-model="pmStep" vertical>
-                                <v-stepper-step :complete="pmStep > 1" step="1" complete-icon='fa-check-circle'>
-                                選擇使用者標籤
-                                <small>請選擇既有的或是新建一個使用者標籤</small>
-                                </v-stepper-step>
-                                <v-stepper-content step="1">
-                                    <v-card class='pa-3'>
-                                        <v-card-text>
-                                            <tag-filter :single='true' :selectedItem='currentEditUser.pmTag' @valueUpdated='filterPMTagUpdated' :candidatedItem='savedUserTags' :createable='true' label='請輸入您想篩選的使用者標籤' />
-                                        </v-card-text>
-                                        <v-card-actions>
-                                            <v-btn color="primary" @click='loadpmTag()'>載入使用者標籤</v-btn>
-                                        </v-card-actions>
-                                    </v-card>
-                                </v-stepper-content>
-                                    <v-stepper-step :complete="pmStep > 2" step="2" complete-icon='fa-check-circle'>
-                                    設定 {{ currentEditUser.pmTag }} 使用者名單
-                                    <small>請選擇該標籤下的使用者名單</small>
-                                </v-stepper-step>
-                                <v-stepper-content step="2">
-                                    <v-card class='pa-3'>
-                                        <v-card-text>
-                                            <tag-filter :single='false' :selectedItem='currentEditUser.pms' @valueUpdated='filterPMUpdated' :candidatedItem='savedUsers' :createable='false' label='請輸入您想篩選的使用者' />
-                                        </v-card-text>
-                                        <v-card-actions>
-                                            <v-btn @click='pmStep = 1'>回上一步</v-btn>
-                                            <v-btn color="primary" @click='savePM()'>確定指派</v-btn>
-                                        </v-card-actions>
-                                    </v-card>
-                                </v-stepper-content>
-                            </v-stepper>
-                        </v-tab-item>
-                    </v-tabs-items>
-                </v-card-text>
-                <v-card-actions>
-                    <v-btn @click='closeAssignW'>關閉對話框</v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
-        <v-dialog v-model='insertM' persistent width='60vw'>
-            <v-card>
-                <v-toolbar dark color='primary'>
-                    <v-toolbar-title>新增知識點大分類</v-toolbar-title>
-                </v-toolbar>
-                <v-card-text>
-                    <v-text-field
-                        label="大分類標題"
-                        v-model='mainCata'
-                    ></v-text-field>
-                </v-card-text>
-                <v-card-actions>
-                    <v-btn  :disabled='mainCata === ""' @click='insertMCata()'>新增知識點大分類</v-btn>
-                    <v-btn @click='insertM = false'>關閉對話框</v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
-        <v-dialog v-model='tagW' persistent width='60vw'>
-            <v-card>
-                <v-toolbar dark color='primary'>
-                    <v-toolbar-title>選擇科目標籤</v-toolbar-title>
-                </v-toolbar>
-                <v-card-subtitle>請選擇您要編輯的科目標籤（如：109年國中數學科），如果您需要新增，直接輸入即可</v-card-subtitle>
-                <v-card-text>
-                    <tag-filter :single='true' :selectedItem='selectedKBTag' @valueUpdated='updateKBTag' :candidatedItem='savedKBTags' :createable='true' label='請輸入知識點標籤' />
-                </v-card-text>
-                <v-card-actions>
-                    <v-btn @click='tagW = false'>載入科目</v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
-        <v-dialog v-model='timeW' persistent width='60vw'>
-            <v-card>
-                <v-toolbar dark color='primary'>
-                    <v-toolbar-title>設定科目標籤的時間參數</v-toolbar-title>
-                </v-toolbar>
-                <v-card-text class='d-flex flex-column'>
-                    <span>雖然您已經在編輯本科目了，但請設定本科目標籤最後的編輯與分配截止日期</span>
-                    <count-down-panel :editable='true' label='知識點編輯／分配' :deadline='deadlineCreate' @valueUpdated='createTimeUpdate' />
-                    <span>請設定本科目影片開始拍攝的時間，請注意，這項設定非常重要，系統會用這個時間搭配系統中已設定的各影片工期參數配置影片的預設完成日期</span>
-                    <count-down-panel :editable='true' label='設置計畫啟動時間' :deadline='deadlineStartTime' @valueUpdated='startTimeUpdate' />
-                </v-card-text>
-                <v-card-actions>
-                    <v-btn @click='timeW = false'>設定完成</v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
-        <v-speed-dial v-model="configBtn" fixed bottom right direction="top" :open-on-hover="true" transition="slide-y-reverse-transition">
-            <template v-slot:activator>
-                <v-btn
-                    v-model="configBtn"
-                    color="deep-orange darken"
-                    dark
-                    fab
-                >
-                    <v-icon v-if="configBtn">fa-chevron-up</v-icon>
-                    <v-icon v-else>fa-pencil-ruler</v-icon>
-                </v-btn>
+<template>
+  <v-sheet class='pa-0'>
+    <v-dialog
+      v-model="importW"
+      persistent
+      max-width="50vw"
+    >
+      <v-card>
+        <v-card-title class="headline">
+          匯入知識點
+        </v-card-title>
+        <v-card-text>
+          <div class='text-caption red--text text-left'>
+            知識點匯入功能，請完全按照以下說明操作
+            <ol>
+              <li><a href='/storages/importSample.zip' target='_blank'>請點這裡，下載範例檔，你也只能仿造範例檔的格式，上傳一個zip</a></li>
+              <li>請按照範例檔中的CSV修改資料，一個知識點一條</li>
+              <li>每一個知識點你都得在CSV裡給一個流水號（隨意，不重複即可），如果你的知識點說明無法使用文字描述（例如有公式），請直接將說明存成圖片，圖片檔名必須是和流水號一模一樣的圖檔（如[1].jpg）</li>
+              <li>寫匯入成功就是成功了，如果清單沒有載入，請嘗試重新整理網頁</li>
+            </ol>
+          </div>
+          <v-file-input 
+            prepend-icon="fa-paperclip" 
+            v-model="importFile" 
+            label='上傳知識點匯入檔' 
+            accept="application/zip"
+            :loading="uploadzipprogress !== 0">
+            <template v-slot:progress>
+              <v-progress-circular :value="uploadzipprogress"></v-progress-circular>速度：{{ uploadzipstatus }}
             </template>
-            <v-tooltip bottom>
-                <template v-slot:activator="{ on, attrs }">
-                    <v-btn
-                        v-bind="attrs" v-on="on"
-                        fab
-                        dark
-                        small
-                        color="deep-purple darken-2"
-                    >
-                        <v-icon>fa-hashtag</v-icon>
-                    </v-btn>
-                </template>
-                <span>切換科目標籤</span>
-            </v-tooltip>
-            <v-tooltip bottom>
-                <template v-slot:activator="{ on, attrs }">
-                    <v-btn
-                        v-bind="attrs" v-on="on"
-                        fab
-                        dark
-                        small
-                        color="green"
-                        @click.stop='timeW = true'
-                    >
-                        <v-icon>fa-stopwatch</v-icon>
-                    </v-btn>
-                </template>
-                <span>設定科目時間參數</span>
-            </v-tooltip>
-            <v-tooltip bottom>
-                <template v-slot:activator="{ on, attrs }">
-                    <v-btn
-                        v-bind="attrs" v-on="on"
-                        fab
-                        dark
-                        small
-                        color="indigo"
-                        @click='insertM = true'
-                    >
-                        <v-icon>fa-folder-plus</v-icon>
-                    </v-btn>
-                </template>
-                <span>新增知識點大分類</span>
-            </v-tooltip>
-            <v-badge
-                color="red"
-                :content="selectedDeleted.length"
+          </v-file-input>
+          <div class='text-caption'>{{ importStatus }}</div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            color="primary"
+            @click="closeImport()"
+          >
+            關閉對話框
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog v-model='KBeditorW' persistent width='60vw'>
+      <v-card>
+        <v-toolbar dark color='primary'>
+          <v-toolbar-title>編輯知識點</v-toolbar-title>
+        </v-toolbar>
+        <v-card-text>
+          <v-text-field
+            label="知識點標題"
+            v-model='currentKB.title'
+          ></v-text-field>
+          <v-text-field
+            label="對應課綱學習表現或是課本內容"
+            v-model='currentKB.textbook'
+          ></v-text-field>
+          <div class='red--text text-caption text-left'>以下兩項為寫作指引相關內容，寫作指引指的是出現在審查畫面抬頭提供參考用的資料</div>
+          <tiptap-vuetify
+            v-model="currentKB.desc"
+            :extensions="extensions"
+            max-height="20vh"
+            min-height="10vh"
+            placeholder='寫作指引，請不要留白'
+            class='text-left'
+          />
+          <v-file-input prepend-icon="fa-paperclip" v-model="KBFile" label='輔助說明文件／圖片上傳' :loading="uploadprogress !== 0">
+            <template v-slot:progress>
+              <v-progress-circular :value="uploadprogress"></v-progress-circular>速度：{{ uploadstatus }}
+            </template>
+          </v-file-input>
+          <div v-if="currentKB.descAtt.length > 0" class='d-flex flex-row flex-wrap'>
+            <v-tooltip 
+              v-for='file in currentKB.descAtt'
+              :key="file._id"
+              bottom
             >
-                <v-tooltip bottom>
+              <template v-slot:activator="{ on, attrs }">
+                <v-chip
+                  v-bind="attrs" v-on="on"
+                  class="ma-2"
+                  close
+                  close-icon="fa-times"
+                  @click:close="deleteKBFile(file)"
+                >
+                  {{ filenameConvert(file.name) }} ({{ byteConvert(file.size) }})
+                </v-chip>
+              </template>
+              <span>{{ file.name }}</span>
+            </v-tooltip>
+          </div>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn :disabled='KBwatch' @click='setKB()'>送出寫作指引</v-btn>
+          <v-btn @click='KBeditorW = false'>關閉對話框</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog
+      v-model='assignW'
+      width='60vw'
+      fullscreen
+      hide-overlay
+      transition="dialog-bottom-transition"
+    >
+      <v-card>
+        <v-toolbar dark color='primary'>
+          <v-btn
+            icon
+            dark
+            @click="closeAssign"
+          >
+            <v-icon>fa-times</v-icon>
+          </v-btn>
+          <v-toolbar-title>設定知識點編輯階段</v-toolbar-title>
+        </v-toolbar>
+        <v-card-actions>
+          <v-btn @click='addStage'>新增階段</v-btn>
+          <v-btn @click='removeStage'>刪除目前的階段</v-btn>
+          <v-btn @click='setStage'>儲存目前的階段</v-btn>
+          <v-btn @click='closeAssign'>關閉對話框</v-btn>
+        </v-card-actions>
+        <v-card-text class='pa-5'>
+          <div v-if='currentKB.stages.length === 0'>目前沒有設定階段</div>
+          <v-stepper v-model="stepPointer" v-if='currentKB.stages.length > 0'>
+            <v-stepper-header>
+              <template
+                v-for='(stage, index) in currentKB.stages'
+              >
+                <v-stepper-step
+                  :key='stage._id'
+                  :complete="stepPointer > index"
+                  :step='index + 1'
+                  editable
+                >
+                  <span v-show='(index + 1) === stepPointer'>{{ stage.name }}</span>
+                </v-stepper-step>
+                <v-divider
+                  :key='"divider" + stage._id'
+                  v-if='(index + 1) !== currentKB.stages.length'
+                ></v-divider>
+              </template>
+            </v-stepper-header>
+          </v-stepper>
+          <v-skeleton-loader
+            class="mx-auto"
+            type="card"
+            v-if='!stagePopulated'
+            width="100%"
+          ></v-skeleton-loader>
+          <div v-if='stagePopulated' v-show='currentStage._id === ""'>
+            找不到編輯階段
+          </div>
+          <div v-if='stagePopulated' v-show='currentStage._id !== ""'>
+            <div class='text-caption red--text text-left'>
+              請注意以下事項：
+              <ol>
+                <li>如果這個階段不需要有人參與，你就不需要給標籤</li>
+                <li>要把人拉入標籤，請去使用者管理中操作</li>
+                <li>所謂最終行政，指的是驗收、會計之類的，他們會看到「給予通過」這顆按鈕</li>
+              </ol>
+            </div>
+            <v-switch
+              v-model="currentStage.current"
+              label="設定為目前工作階段"
+            ></v-switch>
+            <div class='text-subtitle-2 font-weight-blod'>本階段名稱</div>
+            <v-text-field hint='請輸入本階段名稱' v-model='currentStage.name'/>
+            <div class='text-subtitle-2 font-weight-blod'>編輯階段死線</div>
+            <VueCtkDateTimePicker v-model="currentStageDate" label='請選擇日期死線' locale='zh-tw' format='YYYY-MM-DD HH:mm:ss' class='ma-2' />
+            <div class='text-subtitle-2 font-weight-blod'>編輯階段目標</div>
+            <div class='d-flex flex-row'>
+              <v-text-field solo label="請輸入你想要加入的目標名稱" hint='輸入完之後請按右側加號增加目標' v-model='objectiveAwaited'/>
+              <v-btn
+                icon
+                outlined
+                @click='plusObjective'
+              >
+                <v-icon>fa-plus</v-icon>
+              </v-btn>
+            </div>
+            <v-simple-table v-show="currentStage.objectives.length > 0">
+              <template v-slot:default>
+                <thead>
+                  <tr>
+                    <th class="text-left" style="width:25px">
+                      階段目標名稱
+                    </th>
+                    <th class="text-left" style="width:25px">
+                      &nbsp;
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="objective in currentStage.objectives"
+                    :key="objective._id"
+                  >
+                    <td class="text-left">
+                      {{ objective.name }}
+                    </td>
+                    <td class='d-flex flex-row justify-end'>
+                      <v-btn outlined icon @click='removeObjective(objective._id)'>
+                        <v-icon>fa-trash</v-icon>
+                      </v-btn>
+                    </td>
+                  </tr>
+                </tbody>
+              </template>
+            </v-simple-table>
+            <div class='text-subtitle-2 font-weight-blod'>本階段的PM標籤</div>
+            <tag-filter :mustSelected='false' @plusItem='plusTag' :single='false' :selectedItem='currentStage.pmTags' @valueUpdated='filterPMTagUpdated' :candidatedItem='savedTags' :createable='true' label='請輸入本階段的PM標籤' />
+            <div class='text-subtitle-2 font-weight-blod'>本階段的審查者標籤</div>
+            <tag-filter :mustSelected='false' @plusItem='plusTag' :single='false' :selectedItem='currentStage.reviewerTags' @valueUpdated='filterreviewerTagUpdated' :candidatedItem='savedTags' :createable='true' label='請輸入本階段的審查者標籤' />
+            <div class='text-subtitle-2 font-weight-blod'>本階段的廠商標籤</div>
+            <tag-filter :mustSelected='false' @plusItem='plusTag' :single='false' :selectedItem='currentStage.vendorTags' @valueUpdated='filtervendorTagUpdated' :candidatedItem='savedTags' :createable='true' label='請輸入本階段的廠商標籤' />
+            <div class='text-subtitle-2 font-weight-blod'>本階段的寫手標籤</div>
+            <tag-filter :mustSelected='false' @plusItem='plusTag' :single='false' :selectedItem='currentStage.writerTags' @valueUpdated='filterwriterTagUpdated' :candidatedItem='savedTags' :createable='true' label='請輸入本階段的寫手標籤' />
+            <div class='text-subtitle-2 font-weight-blod'>本階段的行政組標籤</div>
+            <tag-filter :mustSelected='false' @plusItem='plusTag' :single='false' :selectedItem='currentStage.finalTags' @valueUpdated='filterfinalTagUpdated' :candidatedItem='savedTags' :createable='true' label='請輸入本階段的行政組標籤' />
+          </div>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+    <v-dialog v-model='insertM' persistent width='60vw'>
+      <v-card>
+        <v-toolbar dark color='primary'>
+          <v-toolbar-title>新增大分類</v-toolbar-title>
+        </v-toolbar>
+        <v-card-text>
+          <v-text-field
+            label="大分類標題"
+            v-model='currentChapter.title'
+          ></v-text-field>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn :disabled='currentChapter.title === ""' @click='insertMCata()'>儲存大分類</v-btn>
+          <v-btn @click='insertM = false'>關閉對話框</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog v-model='tagW' persistent width='60vw'>
+      <v-card>
+        <v-toolbar dark color='primary'>
+          <v-toolbar-title>選擇科目標籤</v-toolbar-title>
+        </v-toolbar>
+        <v-card-text class='ma-0 pa-0'>
+          <v-alert type='info'>請選擇您要編輯的科目標籤（如：109年國中數學科），如果您需要新增，直接輸入即可</v-alert>
+          <tag-filter :mustSelected='true' @plusItem='plusTag' :single='true' :selectedItem='selectedKBTag' @valueUpdated='updateKBTag' :candidatedItem='savedTags' :createable='true' label='請輸入知識點標籤' />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn @click='loadKB()' :disabled='selectedKBTag === ""'>載入科目</v-btn>
+          <v-btn @click='tagW = false'>關閉對話框</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-fab-transition>
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn
+            v-bind="attrs" v-on="on"
+            color="pink"
+            fixed
+            fab
+            dark
+            bottom
+            right
+            style='margin-bottom: 160px'
+            @click.stop='saveSort'
+          >
+            <v-icon>fa-cloud-upload-alt</v-icon>
+          </v-btn>
+        </template>
+        <span>儲存知識點順序結構</span>
+      </v-tooltip>
+    </v-fab-transition>
+    <v-speed-dial style='margin-bottom: 80px' v-model="editBtns" fixed bottom right direction="left" :open-on-hover="true" transition="slide-y-reverse-transition">
+      <template v-slot:activator>
+        <v-btn
+          v-model="configBtn"
+          color="indigo darken-4"
+          dark
+          fab
+        >
+          <v-icon v-if="configBtn">fa-chevron-up</v-icon>
+          <v-icon v-else>fa-pencil-alt</v-icon>
+        </v-btn>
+      </template>
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn
+            v-bind="attrs" v-on="on"
+            fab
+            dark
+            small
+            color="blue darken-4"
+            @click.stop='addChapter()'
+          >
+            <v-icon>fa-folder-plus</v-icon>
+          </v-btn>
+        </template>
+        <span>新增知識點大分類</span>
+      </v-tooltip>
+      <v-badge
+        color="red"
+        overlap
+        :content='selectedKBs.length'
+        :value='selectedKBs.length'
+      >
+        <v-tooltip bottom>
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn
+              v-bind="attrs" v-on="on"
+              fab
+              dark
+              small
+              color="blue darken-4"
+              @click.stop='removeMutipleKB()'
+            >
+              <v-icon>fa-folder-minus</v-icon>
+            </v-btn>
+          </template>
+          <span>刪除知識點</span>
+        </v-tooltip>
+      </v-badge>
+      <v-badge
+        color="red"
+        overlap
+        :content='selectedKBs.length'
+        :value='selectedKBs.length'
+      >
+        <v-tooltip bottom v-if='selectedKBs.length > 0'>
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn
+              v-bind="attrs" v-on="on"
+              fab
+              dark
+              small
+              color="blue darken-4"
+              :disabled='currentKB._id === ""'
+              @click.stop='cloneStages()'
+            >
+              <v-icon>fa-copy</v-icon>
+            </v-btn>
+          </template>
+          <span>複製知識點的流程設定</span>
+        </v-tooltip>
+      </v-badge>
+    </v-speed-dial>
+    <v-speed-dial v-model="configBtns" fixed bottom right direction="left" :open-on-hover="true" transition="slide-y-reverse-transition">
+      <template v-slot:activator>
+        <v-btn
+          v-model="configBtn"
+          color="pink darken-4"
+          dark
+          fab
+        >
+          <v-icon v-if="configBtn">fa-chevron-up</v-icon>
+          <v-icon v-else>fa-toolbox</v-icon>
+        </v-btn>
+      </template>
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn
+            v-bind="attrs" v-on="on"
+            fab
+            dark
+            small
+            color="deep-purple darken-2"
+            @click.stop='tagW = true'
+          >
+            <v-icon>fa-hashtag</v-icon>
+          </v-btn>
+        </template>
+        <span>切換科目標籤</span>
+      </v-tooltip>
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn
+            v-bind="attrs" v-on="on"
+            fab
+            dark
+            small
+            color="purple darken-4"
+            @click.stop='importW = true'
+          >
+            <v-icon>fa-file-import</v-icon>
+          </v-btn>
+        </template>
+        <span>匯入知識點</span>
+      </v-tooltip>
+    </v-speed-dial>
+    <div v-if='selectedKBTag === ""' class='d-flex flex-column align-self-center'>
+      <v-btn class='white--text text-h5 indigo darken-4' @click='tagW = true'>請點這裡載入科目標籤</v-btn>
+      <div class='text-caption'>你之後可以從右下角工具箱按鈕切換至其他的科目標籤，或者是由鉛筆按鈕新增本標簽下的章節知識點</div>
+    </div>
+    <draggable group="Mitems" v-model="DB" style="min-height: 10px" handle='.handle'>
+      <template v-for="mitem in DB">
+        <v-list class='KBcata pa-0 mt-6 d-flex flex-column justify-start' dense :key='mitem._id'>
+          <div class='d-flex flex-row justify-start'>
+              <v-tooltip bottom>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn v-bind="attrs" v-on="on" icon @click="addKB(mitem)">
+                    <v-icon>fa-plus</v-icon>
+                  </v-btn>
+                </template>
+                <span>新增知識點</span>
+              </v-tooltip>
+              <v-tooltip bottom>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn v-bind="attrs" v-on="on" icon @click='removeChapter(mitem)'>
+                    <v-icon>fa-minus</v-icon>
+                  </v-btn>
+                </template>
+                <span>刪除本分類</span>
+              </v-tooltip>
+              <v-tooltip bottom v-show='mitem.collapse === false'>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn v-bind="attrs" v-on="on" icon @click='mitem.collapse = true' v-show='mitem.collapse === false'>
+                    <v-icon>fa-angle-up</v-icon>
+                  </v-btn>
+                </template>
+                <span>折起本分類</span>
+              </v-tooltip>
+              <v-tooltip bottom v-show='mitem.collapse === true'>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn v-bind="attrs" v-on="on" icon @click='mitem.collapse = false' v-show='mitem.collapse === true'>
+                    <v-icon>fa-angle-down</v-icon>
+                  </v-btn>
+                </template>
+                <span>打開本分類</span>
+              </v-tooltip>
+              <v-tooltip bottom>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn v-bind="attrs" v-on="on" icon class='handle'>
+                    <v-icon>fa-arrows-alt</v-icon>
+                  </v-btn>
+                </template>
+                <span>上下移動本分類</span>
+              </v-tooltip>
+              <div v-show='mitem.collapse === true'>
+                {{ mitem.title }}（共 {{ mitem.KBs.length }} 項）
+              </div>
+          </div>
+          <v-subheader class='black--text text-h6' v-show='mitem.collapse === false'>
+            <v-icon>fa-folder-open</v-icon>
+            {{mitem.title}}
+            <v-btn icon @click='editChapter(mitem)'>
+              <v-icon>fa-pencil-alt</v-icon>
+            </v-btn>
+          </v-subheader>
+          <draggable v-model="mitem.KBs" group="KBitems" handle=".subhandle" style="min-height: 10px" v-show='mitem.collapse === false'>
+            <template v-for="KBitem in mitem.KBs">
+              <v-row :key="KBitem._id" class='KBsub d-flex'>
+                <v-col col='1' class='flex-grow-0 flex-shrink-1 align-center'>
+                  <v-icon>fa-angle-double-right</v-icon>
+                </v-col>
+                <v-col col='8' class='flex-grow-1 text-left'>
+                  {{ KBitem.title }}
+                </v-col>
+                <v-col col='3' class='align-center flex-grow-0 flex-shrink-0 ma-0 pa-0 d-flex flex-row'>
+                  <v-checkbox v-model="selectedKBs" :value='KBitem._id' off-icon="far fa-square" on-icon="fa-check-square"></v-checkbox>
+                  <v-tooltip bottom>
                     <template v-slot:activator="{ on, attrs }">
-                        <v-btn
-                            v-bind="attrs" v-on="on"
-                            fab
-                            dark
-                            small
-                            color="cyan"
-                            @click='removeKB()'
-                        >
-                            <v-icon>fa-folder-minus</v-icon>
-                        </v-btn>
+                      <v-btn @click="loadKBEditor(KBitem)" v-bind="attrs" v-on="on" icon>
+                        <v-icon>fa-pencil-alt</v-icon>
+                      </v-btn>
                     </template>
-                    <span>刪除知識點大分類</span>
-                </v-tooltip>
-            </v-badge>
-        </v-speed-dial>
-        <draggable @change='scanItems' v-model="items" :group="'mainc'" style="min-height: 10px" handle='.handle'>
-            <template v-for="mitem in items">
-                <v-list class='KBcata pa-0 mt-6 d-flex flex-column justify-start' dense :key='mitem.key'>
-                    <div class='d-flex flex-row justify-start'>
-                        <v-checkbox v-model="selectedDeleted" :value='mitem.key' class='pa-1 ma-1' off-icon="far fa-square" on-icon="fa-check-square"></v-checkbox>
-                        <v-tooltip bottom>
-                            <template v-slot:activator="{ on, attrs }">
-                                <v-btn v-bind="attrs" v-on="on" icon @click="openSubKBW( mitem.key )">
-                                    <font-awesome-icon icon='plus' />
-                                </v-btn>
-                            </template>
-                            <span>新增知識點</span>
-                        </v-tooltip>
-                        <v-tooltip bottom>
-                            <template v-slot:activator="{ on, attrs }">
-                                <v-btn v-bind="attrs" v-on="on" icon @click='removeKB(mitem.key)'>
-                                    <font-awesome-icon icon='minus' />
-                                </v-btn>
-                            </template>
-                            <span>刪除本分類</span>
-                        </v-tooltip>
-                        <v-tooltip bottom v-show='mitem.collapse === false'>
-                            <template v-slot:activator="{ on, attrs }">
-                                <v-btn v-bind="attrs" v-on="on" icon @click='mitem.collapse = true' v-show='mitem.collapse === false'>
-                                    <font-awesome-icon icon='angle-up' />
-                                </v-btn>
-                            </template>
-                            <span>折起本分類</span>
-                        </v-tooltip>
-                        <v-tooltip bottom v-show='mitem.collapse === true'>
-                            <template v-slot:activator="{ on, attrs }">
-                                <v-btn v-bind="attrs" v-on="on" icon @click='mitem.collapse = false' v-show='mitem.collapse === true'>
-                                    <font-awesome-icon icon='angle-down' />
-                                </v-btn>
-                            </template>
-                            <span>打開本分類</span>
-                        </v-tooltip>
-                        <v-tooltip bottom>
-                            <template v-slot:activator="{ on, attrs }">
-                                <v-btn v-bind="attrs" v-on="on" icon class='handle'>
-                                    <font-awesome-icon icon='arrows-alt' />
-                                </v-btn>
-                            </template>
-                            <span>上下移動本分類</span>
-                        </v-tooltip>
-                        <div v-show='mitem.collapse === true'>
-                            {{ mitem.title }}（共 {{ mitem.KBs.length }} 項）
-                        </div>
-                    </div>
-                    <v-subheader class='black--text text-h6' v-show='mitem.collapse === false'>
-                        <font-awesome-icon icon='folder-open' />
-                        <v-text-field
-                            v-model="mitem.title"
-                            append-icon= 'fa-cloud-upload-alt'
-                            solo
-                            clear-icon="fa-eraser"
-                            clearable
-                            label="知識點大分類標題"
-                            type="text"
-                            @click:append="uploadTitle( mitem.title, mitem.key )"
-                        ></v-text-field>
-                    </v-subheader>
-                    <draggable @change='scanItems' v-model="mitem.KBs" handle=".subhandle" :group="'subc'" style="min-height: 10px" v-show='mitem.collapse === false'>
-                        <template v-for="KBitem in mitem.KBs">
-                            <v-row :key="KBitem.key" class='KBsub d-flex'>
-                                <v-col col='1' class='flex-grow-0 flex-shrink-1 align-center'>
-                                    <font-awesome-icon icon='angle-double-right' />
-                                </v-col>
-                                <v-col col='8' class='flex-grow-1 text-left'>
-                                    [{{ KBitem.textbook }}] {{ KBitem.text }}
-                                </v-col>
-                                <v-col col='3' class='align-center flex-grow-0 flex-shrink-0 ma-0 pa-0 d-flex flex-row'>
-                                    <v-checkbox v-model="selectedDeleted" :value='KBitem.key' off-icon="far fa-square" on-icon="fa-check-square"></v-checkbox>
-                                    <v-tooltip bottom>
-                                        <template v-slot:activator="{ on, attrs }">
-                                            <v-btn @click="loadKBEditor( KBitem )" v-bind="attrs" v-on="on" icon>
-                                                <font-awesome-icon icon='pencil-alt' />
-                                            </v-btn>
-                                        </template>
-                                        <span>編輯知識點</span>
-                                    </v-tooltip>
-                                    <v-tooltip bottom>
-                                        <template v-slot:activator="{ on, attrs }">
-                                            <v-btn v-bind="attrs" v-on="on" icon @click="loadReviewer( KBitem )">
-                                                <font-awesome-icon icon='users-cog' />
-                                            </v-btn>
-                                        </template>
-                                        <span>指派知識點</span>
-                                    </v-tooltip>
-                                    <v-tooltip bottom>
-                                        <template v-slot:activator="{ on, attrs }">
-                                            <v-btn v-bind="attrs" v-on="on" icon @click='removeKB(KBitem.key)'>
-                                                <font-awesome-icon icon='minus'/>
-                                            </v-btn>
-                                        </template>
-                                        <span>刪除知識點</span>
-                                    </v-tooltip>
-                                    <v-tooltip bottom>
-                                        <template v-slot:activator="{ on, attrs }">
-                                            <v-btn v-bind="attrs" v-on="on" icon class='subhandle'>
-                                                <font-awesome-icon icon='arrows-alt' />
-                                            </v-btn>
-                                        </template>
-                                        <span>上下移動知識點</span>
-                                    </v-tooltip>
-                                </v-col>
-                            </v-row>
-                        </template>
-                    </draggable>
-                </v-list>
+                    <span>編輯知識點</span>
+                  </v-tooltip>
+                  <v-tooltip bottom>
+                    <template v-slot:activator="{ on, attrs }">
+                      <v-btn @click="currentKB = KBitem" v-bind="attrs" v-on="on" icon>
+                        <v-icon>fa-copy</v-icon>
+                      </v-btn>
+                    </template>
+                    <span>設定為知識點複製範本</span>
+                  </v-tooltip>
+                  <v-tooltip bottom>
+                    <template v-slot:activator="{ on, attrs }">
+                      <v-btn v-bind="attrs" v-on="on" icon @click="loadReviewer(KBitem)">
+                        <v-icon>fa-stopwatch</v-icon>
+                      </v-btn>
+                    </template>
+                    <span>設定知識點編輯階段</span>
+                  </v-tooltip>
+                  <v-tooltip bottom>
+                    <template v-slot:activator="{ on, attrs }">
+                      <v-btn v-bind="attrs" v-on="on" icon @click='removeKB(KBitem)'>
+                        <v-icon>fa-minus</v-icon>
+                      </v-btn>
+                    </template>
+                    <span>刪除知識點</span>
+                  </v-tooltip>
+                  <v-tooltip bottom>
+                    <template v-slot:activator="{ on, attrs }">
+                      <v-btn v-bind="attrs" v-on="on" icon class='subhandle'>
+                        <v-icon>fa-arrows-alt</v-icon>
+                      </v-btn>
+                    </template>
+                    <span>上下移動知識點</span>
+                  </v-tooltip>
+                </v-col>
+              </v-row>
             </template>
-        </draggable>
-    </v-sheet>
+          </draggable>
+        </v-list>
+      </template>
+    </draggable>
+  </v-sheet>
 </template>
 
 <style scoped>
 .KBcata {
-    border-left: none;
+  border-left: none;
 }
 
 .KBcata:hover {
-    border-left: 10px solid #333;
+  border-left: 10px solid #333;
 }
 
 .KBsub {
-    border-left: none;
+  border-left: none;
 }
 
 .KBsub:hover {
-    border-left: 5px solid #AAA;
+  border-left: 5px solid #AAA;
 }
 
 .handle, .subhandle {
-    cursor: grab;
+  cursor: grab;
 }
 
 </style>
@@ -453,391 +542,649 @@ import { library } from '@fortawesome/fontawesome-svg-core';
 import { faNetworkWired } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import draggable from 'vuedraggable';
-// import moment from 'moment';
+import prettyBytes from 'pretty-bytes';
 import TagFilter from './modules/TagFilter';
-import CountDownPanel from './modules/CountDownPanel';
-
+import { TiptapVuetify, Heading, Bold, Italic, Strike, Underline, Paragraph, BulletList, OrderedList, ListItem, Link, Blockquote, HardBreak, History } from 'tiptap-vuetify';
+import 'tiptap-vuetify/dist/main.css';
+import { v4 as uuidv4 } from 'uuid';
+import marked from 'marked';
+import _ from 'lodash';
+import moment from 'moment';
+import VueCtkDateTimePicker from 'vue-ctk-date-time-picker';
+import 'vue-ctk-date-time-picker/dist/vue-ctk-date-time-picker.css';
 import '@fortawesome/fontawesome-free/css/all.css';
+
+let files = [];
 
 library.add(faNetworkWired);
 Vue.component('font-awesome-icon', FontAwesomeIcon);
+Vue.component('VueCtkDateTimePicker', VueCtkDateTimePicker);
 
 export default {
-    name: 'createKB',
-    components: {
-        TagFilter,
-        CountDownPanel,
-        draggable
-    },
-    methods: {
-        loadKBEditor: function (KB) {
-            this.KBtitle = KB.text;
-            this.KBtextbook = KB.textbook;
-            this.instrBody = KB.comment;
-            this.insertKBM = KB.parent;
-            this.KBeditorW = true;
-            this.KBkey = KB.key;
-        },
-        loadreviewerTag: function () {
-            this.reviewerStep = 2;
-        },
-        closeAssignW: function () {
-            this.assignW = false;
-            this.pmStep = 1;
-            this.vendorStep = 1;
-            this.writerStep = 1;
-            this.reviewerStep = 1;
-            this.currentEditUser = {
-                reviewers: [],
-                vendors: [],
-                pms: [],
-                writers: []
-            };
-        },
-        saveReviewer: function () {
-            let oriobj = this;
-            this.userTip = true;
-            setTimeout(() => {
-                oriobj.userTip = false;
-            }, 500);
-        },
-        loadwriterTag: function () {
-            this.writerStep = 2;
-        },
-        saveWriter: function () {
-            let oriobj = this;
-            this.userTip = true;
-            setTimeout(() => {
-                oriobj.userTip = false;
-            }, 500);
-        },
-        loadvendorTag: function () {
-            this.vendorStep = 2;
-        },
-        saveVendor: function () {
-            let oriobj = this;
-            this.userTip = true;
-            setTimeout(() => {
-                oriobj.userTip = false;
-            }, 500);
-        },
-        loadpmTag: function () {
-            this.pmStep = 2;
-        },
-        savePM: function () {
-            let oriobj = this;
-            this.userTip = true;
-            setTimeout(() => {
-                oriobj.userTip = false;
-            }, 500);
-        },
-        loadReviewer: function (item) {
-            this.currentEditUser = item;
-            this.assignW = true;
-        },
-        filterReviewerUpdated: function (val) {
-            this.currentEditUser.reviewers = val;
-        },
-        filterReviewerTagUpdated: function (val) {
-            this.currentEditUser.reviewerTag = val;
-        },
-        filterPMUpdated: function (val) {
-            this.currentEditUser.pms = val;
-        },
-        filterPMTagUpdated: function (val) {
-            this.currentEditUser.pmTag = val;
-        },
-        filterWriterUpdated: function (val) {
-            this.currentEditUser.writers = val;
-        },
-        filterWriterTagUpdated: function (val) {
-            this.currentEditUser.writerTag = val;
-        },
-        filterVendorUpdated: function (val) {
-            this.currentEditUser.vendors = val;
-        },
-        filterVendorTagUpdated: function (val) {
-            this.currentEditUser.vendorTag = val;
-        },
-        scanItems: function () {
-            let count = 0;
-            this.items.forEach((item) => {
-                item.KBs.forEach((KB) => {
-                    KB.order = count++;
-                });
-            });
-        },
-        uploadTitle: function (value) {
-            alert(value);
-        },
-        insertMCata: function () {
-            if (this.mainCata !== '') {
-                this.items.push({
-                    title: this.mainCata,
-                    key: 'm' + Math.floor(Math.random() * 100),
-                    collapse: false,
-                    KBs: []
-                });
-                this.mainCata = '';
-                this.insertM = false;
-            }
-        },
-        updateKBTag: function (value) {
-            this.selectedKBTag = value;
-        },
-        startTimeUpdate: function (value) {
-            this.deadlineStartTime = value;
-        },
-        createTimeUpdate: function (value) {
-            this.deadlineCreate = value;
-        },
-        removeKB: function (value) {
-            if (value === undefined) {
-                this.selectedDeleted.forEach((sval) => {
-                    this.items = this.items.filter((item) => {
-                        item.KBs = item.KBs.filter((subitem) => {
-                            return subitem.key !== sval;
-                        });
-                        return item.key !== sval;
-                    });
-                });
-                this.selectedDeleted = [];
-            } else {
-                this.items = this.items.filter((item) => {
-                    item.KBs = item.KBs.filter((subitem) => {
-                        return subitem.key !== value;
-                    });
-                    return item.key !== value;
-                });
-            }
-        },
-        editKB: function () {
-            if (this.KBtitle !== '') {
-                let filteredM = this.items.filter(item => item.key === this.insertKBM);
-                if (filteredM.length > 0) {
-                    let Mitem = filteredM[0];
-                    let filteredKB = Mitem.KBs.filter(item => item.key === this.KBkey);
-                    if (filteredKB.length > 0) {
-                        let KBitem = filteredKB[0];
-                        KBitem.text = this.KBtitle;
-                        KBitem.textbook = this.KBtextbook;
-                        KBitem.comment = this.instrBody;
-                        // 這裡是修改區
-                    } else {
-                        Mitem.KBs.push({
-                            text: this.KBtitle,
-                            textbook: this.KBtextbook,
-                            comment: this.instrBody,
-                            key: 's' + Math.floor(Math.random() * 100),
-                            parent: this.insertKBM,
-                            reviewerTag: '數學輔導團',
-                            vendorTag: '',
-                            pmTag: '',
-                            writerTag: '',
-                            reviewers: [],
-                            vendors: [],
-                            pms: [],
-                            writers: []
-                        });
-                    }
-                }
-            }
-            this.KBtitle = '';
-            this.KBtextbook = '';
-            this.insertKBM = '';
-            this.instrBody = '';
-            this.KBeditorW = false;
-        },
-        openSubKBW: function (value) {
-            this.KBeditorW = true;
-            this.insertKBM = value;
+  name: 'createKB',
+  components: {
+    TagFilter,
+    draggable,
+    TiptapVuetify
+  },
+  watch: {
+    stepPointer: function () {
+      if(this.stepPointer > 0) {
+        if(this.currentKB.stages.length >= this.stepPointer) {
+          this.stagePopulated = false;
+          this.$socket.client.emit('getStage', this.currentKB.stages[this.stepPointer - 1]._id);
         }
+      }
     },
-    computed: {
-        KBwatch: function () {
-            if (this.KBtitle !== '') {
-                if (this.KBtextbook !== '') {
-                    if (this.instrBody !== '') {
-                        return false;
-                    }
-                }
-            }
-            return true;
+    currentStageDate: function () {
+      this.currentStage.dueTick = moment(this.currentStageDate).unix();
+    },
+    currentStage: function () {
+      this.currentStageDate = moment.unix(this.currentStage.dueTick).format(moment.HTML5_FMT.DATETIME_LOCAL);
+    },
+    KBFile: {
+      immediate: true,
+      handler () {
+        if (this.KBFile !== undefined) {
+          let oriobj = this;
+          let fileReader = new FileReader();
+          let slice = this.KBFile.slice(0, 100000);
+          let uuid = uuidv4();
+          files[uuid] = {
+            _id: this.currentKB._id,
+            file: this.KBFile,
+            starttick: moment().valueOf()
+          };
+          fileReader.readAsArrayBuffer(slice);
+          fileReader.onload = () => {
+              var arrayBuffer = fileReader.result;
+              oriobj.$socket.client.emit('sendKBFile', {
+                uid: oriobj.currentKB._id,
+                uuid: uuid,
+                name: oriobj.KBFile.name,
+                type: oriobj.KBFile.type,
+                size: oriobj.KBFile.size,
+                data: arrayBuffer
+              });
+          };
         }
+      }
     },
-    data () {
-        return {
-            KBtextbook: '',
-            userTip: false,
-            pmStep: 1,
-            usertagLoaded: false,
-            currentEditUser: {
-                reviewerTag: '數學輔導團',
-                vendorTag: '',
-                pmTag: '',
-                writerTag: '',
-                reviewers: [],
-                vendors: [],
-                pms: [],
-                writers: []
-            },
-            assignTab: 0,
-            reviewerStep: 1,
-            vendorStep: 1,
-            writerStep: 1,
-            assignW: false,
-            insertKBM: undefined,
-            insertM: false,
-            KBtitle: '',
-            KBkey: undefined,
-            KBeditorW: false,
-            mainCata: '',
-            instrBody: '',
-            timeW: false,
-            tagW: true,
-            configBtn: true,
-            reviewerCount: 1,
-            KBeditorMessage: '',
-            deadlineCreate: 1605076442,
-            deadlineStartTime: 1605076442,
-            selectedDeleted: [],
-            savedUserTags: [
-                '數學輔導團',
-                '理化輔導團',
-                '中心PM'
-            ],
-            savedUsers: [
-                '萬磁王',
-                '測試帳號',
-                'X博士'
-            ],
-            savedKBTags: [
-                '109 年國中數學科',
-                '109 年國中理化科',
-                '109 年國中生物科'
-            ],
-            selectedKBTag: '109 年國中理化科',
-            previewW: false,
-            items: [
-                {
-                    title: '測試用大項目1',
-                    key: 'm1',
-                    collapse: false,
-                    KBs: [
-                        {
-                            text: '111a',
-                            key: 's1',
-                            order: 0,
-                            reviewerTag: '數學輔導團',
-                            vendorTag: '',
-                            pmTag: '',
-                            writerTag: '',
-                            reviewers: [],
-                            vendors: [],
-                            pms: [],
-                            writers: [],
-                            comment: '',
-                            parent: 'm1',
-                            textbook: ''
-                        },
-                        {
-                            text: '222a',
-                            key: 's2',
-                            order: 0,
-                            reviewerTag: '數學輔導團',
-                            vendorTag: '',
-                            pmTag: '',
-                            writerTag: '',
-                            reviewers: [],
-                            vendors: [],
-                            pms: [],
-                            writers: [],
-                            comment: '',
-                            parent: 'm1',
-                            textbook: ''
-                        },
-                        {
-                            text: '333a333a333a333a333a333a333a333a',
-                            key: 's3',
-                            order: 0,
-                            reviewerTag: '數學輔導團',
-                            vendorTag: '',
-                            pmTag: '',
-                            writerTag: '',
-                            reviewers: [],
-                            vendors: [],
-                            pms: [],
-                            writers: [],
-                            comment: '',
-                            parent: 'm1',
-                            textbook: ''
-                        }
-                    ]
-                },
-                {
-                    title: '測試用大項目2測試用大項目2測試用大項目2',
-                    key: 'm2',
-                    collapse: false,
-                    KBs: [
-                        {
-                            text: '111b',
-                            key: 's5',
-                            order: 0,
-                            reviewerTag: '數學輔導團',
-                            vendorTag: '',
-                            pmTag: '',
-                            writerTag: '',
-                            reviewers: [],
-                            vendors: [],
-                            pms: [],
-                            writers: [],
-                            comment: '',
-                            parent: 'm2',
-                            textbook: ''
-                        },
-                        {
-                            text: '222b222b222b222b',
-                            key: 's6',
-                            order: 0,
-                            reviewerTag: '數學輔導團',
-                            vendorTag: '',
-                            pmTag: '',
-                            writerTag: '',
-                            reviewers: [],
-                            vendors: [],
-                            pms: [],
-                            writers: [],
-                            comment: '',
-                            parent: 'm2',
-                            textbook: ''
-                        },
-                        {
-                            text: '333b',
-                            key: 's7',
-                            order: 0,
-                            reviewerTag: '數學輔導團',
-                            vendorTag: '',
-                            pmTag: '',
-                            writerTag: '',
-                            reviewers: [],
-                            vendors: [],
-                            pms: [],
-                            writers: [],
-                            comment: '',
-                            parent: 'm2',
-                            textbook: ''
-                        }
-                    ]
-                }
-            ]
-        };
-    },
-    created () {
-        this.$emit('viewIn', {
-            text: '編輯知識點',
-            icon: faNetworkWired,
-            module: '知識節點模組'
-        });
+    importFile: {
+      immediate: true,
+      handler () {
+        if (this.importFile !== undefined) {
+          let oriobj = this;
+          let fileReader = new FileReader();
+          let slice = this.importFile.slice(0, 100000);
+          let uuid = uuidv4();
+          files[uuid] = {
+            _id: this.currentKB._id,
+            file: this.importFile,
+            starttick: moment().valueOf()
+          };
+          fileReader.readAsArrayBuffer(slice);
+          fileReader.onload = () => {
+              var arrayBuffer = fileReader.result;
+              oriobj.$socket.client.emit('importKBZip', {
+                uid: oriobj.importFile._id,
+                uuid: uuid,
+                name: oriobj.importFile.name,
+                type: oriobj.importFile.type,
+                size: oriobj.importFile.size,
+                tag: oriobj.selectedKBTag,
+                data: arrayBuffer
+              });
+          };
+        }
+      }
     }
+  },
+  methods: {
+    removeObjective: function (OID) {
+      this.$emit('toastPop', '取得新的目標清單中...');
+      this.$socket.client.emit('removeObjective', {
+        OID: OID,
+        KB: this.currentStage.KB,
+        stage: this.currentStage._id
+      });
+    },
+    isodateConverter: function () {
+      this.currentStageDate = moment.unix(this.currentStage.dueTick).format(moment.HTML5_FMT.DATETIME_LOCAL);
+    },
+    closeAssign: function () {
+      this.assignW = false;
+      this.stagePopulated = false;
+    },
+    resetKB: function () {
+      this.currentKB = {
+        _id: '',
+        title: '',
+        textbook: '',
+        desc: '',
+        descAtt: [],
+        stages: []
+      };
+    },
+    resetStage: function () {
+      this.currentStage = {
+        _id: '',
+        current: false,
+        name: '',
+        dueTick: 0,
+        dueTime: '00:00:00',
+        dueDate: '1970-01-01',
+        pmTags: [],
+        reviewerTags: [],
+        vendorTags: [],
+        writerTags: [],
+        finalTags: [],
+        objectives: []
+      };
+    },
+    resetChapter: function () {
+      this.currentChapter = {
+        title: ''
+      };
+    },
+    socketgetStage: function (data) {
+      this.objectiveAwaited = '';
+      if(data === null || data === undefined) {
+        this.resetStage();
+      } else {
+        this.currentStage = data;
+      }
+      this.stagePopulated = true;
+    },
+    dateConvert: function (time) {
+      return time === null || time === undefined ? moment().format('YYYY/MM/DD HH:mm:ss') : moment.unix(time).format('YYYY/MM/DD HH:mm:ss');
+    },
+    filenameConvert: function (name) {
+      let filenameLength = name.length > 3 ? 3 : name.length;
+      return (name.substring(0, filenameLength)) + '⋯';
+    },
+    socketsetChapter: function (data) {
+      if (data) {
+        this.insertM = false;
+      }
+    },
+    socketaddChapter: function (data) {
+      this.currentChapter = data;
+      this.insertM = true;
+    },
+    socketremoveStage: function () {
+      this.resetStage();
+      this.$emit('toastPop', '知識點流程移除完成');
+      if(this.currentKB.stages.length > 0) {
+        this.stepPointer = 1;
+      } else {
+        this.stepPointer = -1;
+      }
+    },
+    removeStage: function () {
+      this.removePointer = true;
+      this.$emit('toastPop', '儲存知識點流程...');
+      this.$socket.client.emit('removeStage', {
+        stage: this.currentStage,
+        tag: this.selectedKBTag
+      });
+    },
+    setStage: function () {
+      this.$emit('toastPop', '儲存知識點流程...');
+      this.$socket.client.emit('setStage', {
+        stage: this.currentStage,
+        tag: this.selectedKBTag
+      });
+    },
+    socketsaveSort: function () {
+      this.$emit('toastPop', '知識點排序儲存完成');
+    },
+    saveSort: function () {
+      this.$emit('toastPop', '儲存知識點排序...');
+      this.$socket.client.emit('saveSort', {
+        DB: this.DB,
+        tag: this.selectedKBTag
+      });
+    },
+    editChapter: function (data) {
+      this.currentChapter = data;
+      this.insertM = true;
+    },
+    addChapter: function () {
+      this.$socket.client.emit('addChapter', this.selectedKBTag);
+    },
+    socketremoveChapter: function () {
+      this.resetChapter();
+      this.$emit('toastPop', '章節刪除完成');
+    },
+    removeChapter: function (data) {
+      this.$emit('toastPop', '刪除章節中...');
+      this.currentChapter = data;
+      this.$socket.client.emit('removeChapter', {
+        _id: this.currentChapter._id,
+        tag: this.selectedKBTag
+      });
+    },
+    socketeditKB: function (data) {
+      data.desc = marked(data.desc);
+      data.stages.sort((a,b) => {
+        return a.sort - b.sort;
+      });
+      this.currentKB = data;
+      this.KBeditorW = true;
+    },
+    socketaddKB: function () {
+      this.$emit('toastPop', '知識點新增完成');
+    },
+    socketcloneStages: function (data) {
+      if(data) {
+        this.$emit('toastPop', '知識點流程複製完成');
+      }
+    },
+    loadKB: function () {
+      this.tagW = false;
+      this.$emit('toastPop', '載入知識點中...');
+      this.$socket.client.emit('getChapters', this.selectedKBTag);
+    },
+    updateKBTag: function (val) {
+      this.selectedKBTag = val;
+    },
+    socketgetChapters: function (data) {
+      this.$emit('toastPop', '取得章節中');
+      let KBs = [];
+      for(let i=0; i< data.length; i++) {
+        let chapter = data[i];
+        chapter.collapse = false;
+        KBs.push(chapter.KBs);
+        for(let k=0; k<chapter.KBs.length; k++) {
+          let KB = chapter.KBs[k];
+          KB.desc = marked(KB.desc);
+          KB.stages.sort((a,b) => {
+            return a.sort - b.sort;
+          });
+        }
+        chapter.KBs.sort((a,b) => {
+          return a.sort - b.sort;
+        });
+      }
+      data.sort((a,b) => {
+        return a.sort - b.sort;
+      })
+      this.DB = data;
+      if(this.currentKB._id !== '') {
+        let flattenKBs = _.flatten(KBs);
+        this.currentKB = _.find(flattenKBs, (KB) => {
+          return KB._id === this.currentKB._id;
+        });
+      }
+    },
+    socketgetKB: function (data) {
+      data.desc = marked(data.desc);
+      data.stages.sort((a,b) => {
+        return a.sort - b.sort;
+      });
+      this.currentKB = data;
+    },
+    socketaddStage: function (data) {
+      if(data) {
+        this.$emit('toastPop', '新增知識點流程完成');
+      }
+    },
+    plusTag: function (val) {
+      this.$socket.client.emit('addTag', val);
+    },
+    plusObjective: function () {
+      this.$emit('toastPop', '取得新的目標清單中...');
+      this.$socket.client.emit('addObjective', {
+        name: this.objectiveAwaited,
+        KB: this.currentStage.KB,
+        stage: this.currentStage._id
+      });
+    },
+    socketrequestKBSlice: function (data) {
+      let oriobj = this;
+      let place = data.currentSlice * 100000;
+      let slice = files[data.uuid].file.slice(place, place + Math.min(100000, files[data.uuid].file.size - place));
+      this.uploadprogress = Math.ceil((place / files[data.uuid].file.size) * 100);
+      let nowdiff = moment().valueOf() - files[data.uuid].starttick;
+      this.uploadstatus = nowdiff === 0 ? '' : prettyBytes(place / (nowdiff/1000)) + '/s';
+      let fileReader = new FileReader();
+      fileReader.readAsArrayBuffer(slice);
+      fileReader.onload = () => {
+        var arrayBuffer = fileReader.result;
+        oriobj.$socket.client.emit('sendKBFile', {
+          uid: files[data.uuid]._id,
+          uuid: data.uuid,
+          name: files[data.uuid].file.name,
+          type: files[data.uuid].file.type,
+          size: files[data.uuid].file.size,
+          data: arrayBuffer
+        });
+      };
+    },
+    socketKBFileDeleteError: function (data) {
+      this.$emit('toastPop', '刪除檔案失敗（原因：' + data + '），請聯絡管理員');
+      this.uploadprogress = 0;
+      this.uploadstatus = '';
+    },
+    socketKBFileUploadError: function (data) {
+      this.$emit('toastPop', '上傳失敗（原因：' + data + '），請聯絡管理員');
+      this.uploadprogress = 0;
+      this.uploadstatus = '';
+    },
+    socketgetKBAttachment: function (data) {
+      this.currentKB.descAtt = data;
+    },
+    soketKBFileUploadDone: function (data) {
+      let oriobj = this;
+      if (data === this.currentKB._id) {
+        this.$socket.client.emit('getKBAttachment', data);
+        this.KBFile = undefined;
+        this.uploadprogress = 100;
+        this.uploadstatus = '完成！';
+        this.importW = false;
+        this.$emit('toastPop', '知識點附件上傳完成');
+        Vue.nextTick(() => {
+          oriobj.uploadprogress = 0;
+          oriobj.uploadstatus = '';
+        });
+      }
+    },
+    socketrequestKBZipSlice: function (data) {
+      let oriobj = this;
+      let place = data.currentSlice * 100000;
+      let slice = files[data.uuid].file.slice(place, place + Math.min(100000, files[data.uuid].file.size - place));
+      this.uploadzipprogress = Math.ceil((place / files[data.uuid].file.size) * 100);
+      let nowdiff = moment().valueOf() - files[data.uuid].starttick;
+      this.uploadzipstatus = nowdiff === 0 ? '' : prettyBytes(place / (nowdiff/1000)) + '/s';
+      let fileReader = new FileReader();
+      fileReader.readAsArrayBuffer(slice);
+      fileReader.onload = () => {
+        var arrayBuffer = fileReader.result;
+        oriobj.$socket.client.emit('importKBZip', {
+          uid: files[data.uuid]._id,
+          uuid: data.uuid,
+          name: files[data.uuid].file.name,
+          type: files[data.uuid].file.type,
+          size: files[data.uuid].file.size,
+          data: arrayBuffer
+        });
+      };
+    },
+    soketKBZipUploadDone: function () {
+      let oriobj = this;
+      this.importFile = undefined;
+      this.uploadzipprogress = 100;
+      this.uploadzipstatus = '完成！';
+      Vue.nextTick(() => {
+        oriobj.uploadzipprogress = 0;
+        oriobj.uploadzipstatus = '';
+      });
+    },
+    socketKBZipUploadError: function (data) {
+      this.$emit('toastPop', '上傳知識點匯入檔失敗（原因：' + data + '），請聯絡管理員');
+      this.uploadzipprogress = 0;
+      this.uploadzipstatus = '';
+    },
+    addStage: function () {
+      this.$emit('toastPop', '新增知識點流程中');
+      this.$socket.client.emit('addStage', {
+        _id: this.currentKB._id,
+        tag: this.selectedKBTag
+      });
+    },
+    deleteKBFile: function (file) {
+      this.$socket.client.emit('deleteKBFile', {
+        fileID: file._id,
+        KBID: this.currentKB._id
+      });
+    },
+    byteConvert: function (size) {
+      return prettyBytes(size);
+    },
+    filterreviewerTagUpdated: function (val) {
+      this.currentStage.reviewerTags = val;
+    },
+    filtervendorTagUpdated: function (val) {
+      this.currentStage.vendorTags = val;
+    },
+    filterwriterTagUpdated: function (val) {
+      this.currentStage.writerTags = val;
+    },
+    filterfinalTagUpdated: function (val) {
+      this.currentStage.finalTags = val;
+    },
+    filterPMTagUpdated: function (val) {
+      this.currentStage.pmTags = val;
+    },
+    loadKBEditor: function (KB) {
+      this.currentKB = KB;
+      this.KBeditorW = true;
+    },
+    loadReviewer: function (data) {
+      this.currentKB = data;
+      this.stepPointer = -1;
+      let oriobj = this;
+      if (data.stages.length > 0) {
+        Vue.nextTick(() => {
+          oriobj.stepPointer = 1;
+        });
+      }
+      this.assignW = true;
+    },
+    insertMCata: function () {
+      this.$emit('toastPop', '新增章節中');
+      this.$socket.client.emit('setChapter', {
+        _id: this.currentChapter._id,
+        title: this.currentChapter.title,
+        tag: this.selectedKBTag
+      });
+    },
+    TimeUpdate: function (value) {
+      this.currentKB.stages[this.stepPointer - 1].dueTick = value;
+    },
+    removeMutipleKB: function () {
+      this.$emit('toastPop', '刪除多個知識點...');
+      this.$socket.client.emit('removeKB', {
+        KBs: this.selectedKBs,
+        tag: this.selectedKBTag
+      });
+    },
+    removeKB: function (data) {
+      this.$emit('toastPop', '刪除知識點...');
+      this.$socket.client.emit('removeKB', {
+        KBs: [data._id],
+        tag: this.selectedKBTag
+      });
+    },
+    cloneStages: function () {
+      this.$emit('toastPop', '複製知識點流程設定...');
+      this.$socket.client.emit('cloneStages', {
+        subject: this.currentKB,
+        target: this.selectedKBs,
+        tag: this.selectedKBTag
+      });
+    },
+    setKB: function () {
+      this.$emit('toastPop', '設定知識點...');
+      this.$socket.client.emit('setKB', {
+        KB: this.currentKB,
+        tag: this.selectedKBTag
+      });
+    },
+    addKB: function (chapter) {
+      this.$emit('toastPop', '新增知識點...');
+      this.currentChapter = chapter;
+      this.$socket.client.emit('addKB', {
+        tag: this.selectedKBTag,
+        chapter: this.currentChapter._id
+      });
+    },
+    socketsetKB: function (data) {
+      if (data) {
+        this.$emit('toastPop', '設定知識點完成');
+        this.KBeditorW = false;
+      }
+    },
+    socketgetimportReport: function (data) {
+      this.importStatus = data;
+    },
+    closeImport: function () {
+      this.importW = false;
+      this.importStatus = '';
+    },
+    socketremoveKB: function () {
+      this.resetKB();
+      this.$emit('toastPop', '刪除知識點完成');
+    }
+  },
+  computed: {
+    savedTags: function () {
+      return this.$store.state.savedTags;
+    },
+    KBwatch: function () {
+      let monitor = ['title', 'textbook', 'desc'];
+      let monitorCount = 0;
+      for(let i=0; i < monitor.length; i++) {
+        if(this.currentKB[monitor[i]] === '') {
+          monitorCount++;
+        }
+      }
+      return monitorCount === monitor.length;
+    }
+  },
+  data () {
+    return {
+      currentStageDate: '1970-01-01 00:00:00',
+      stagePopulated: true,
+      currentStage: {
+        current: false,
+        name: '',
+        dueTick: 0,
+        pmTags: [],
+        reviewerTags: [],
+        vendorTags: [],
+        writerTags: [],
+        finalTags: [],
+        _id: '',
+        objectives: []
+      },
+      removePointer: false,
+      timePicker: false,
+      assignW: false,
+      configBtns: false,
+      editBtns: false,
+      DB: [],
+      uploadzipstatus: '',
+      importFile: undefined,
+      uploadzipprogress: 0,
+      importW: false,
+      insertM: false,
+      configBtn: false,
+      tagW: false,
+      selectedKBTag: '',
+      selectedKBs: [],
+      currentChapter: {
+        title: ''
+      },
+      objectiveAwaited: '',
+      importStatus: '',
+      KBeditorW: false,
+      uploadstatus: '',
+      uploadprogress: 0,
+      KBFile: undefined,
+      currentKB: {
+        _id: '',
+        title: '',
+        textbook: '',
+        desc: '',
+        descAtt: [],
+        stages: []
+      },
+      stepPointer: -1,
+      stageStatus: '',
+      extensions: [
+        History,
+        Blockquote,
+        Link,
+        Underline,
+        Strike,
+        Italic,
+        ListItem,
+        BulletList,
+        OrderedList,
+        [Heading, {
+          options: {
+            levels: [1, 2, 3]
+          }
+        }],
+        Bold,
+        Paragraph,
+        HardBreak
+      ],
+    };
+  },
+  beforeDestroy () {
+    this.$socket.client.emit('saveSort', {
+      DB: this.DB,
+      tag: this.selectedKBTag
+    });
+    this.$socket.client.off('KBFileUploadDone', this.soketKBFileUploadDone);
+    this.$socket.client.off('getKBAttachment', this.socketgetKBAttachment);
+    this.$socket.client.off('KBFileUploadError', this.socketKBFileUploadError);
+    this.$socket.client.off('KBFileDeleteError', this.socketKBFileDeleteError);
+    this.$socket.client.off('requestKBSlice', this.socketrequestKBSlice);
+    this.$socket.client.off('addStage', this.socketaddStage);
+    this.$socket.client.off('addChapter', this.socketaddChapter);
+    this.$socket.client.off('getKB', this.socketgetKB);
+    this.$socket.client.off('getChapters', this.socketgetChapters);
+    this.$socket.client.off('cloneStages', this.socketcloneStages);
+    this.$socket.client.off('KBZipUploadDone', this.soketKBZipUploadDone);
+    this.$socket.client.off('KBZipUploadError', this.socketKBFileUploadError);
+    this.$socket.client.off('requestKBZipSlice', this.socketrequestKBZipSlice);
+    this.$socket.client.off('addKB', this.socketaddKB);
+    this.$socket.client.off('editKB', this.socketeditKB);
+    this.$socket.client.off('removeChapter', this.socketremoveChapter);
+    this.$socket.client.off('saveSort', this.socketsaveSort);
+    this.$socket.client.off('removeStage', this.socketremoveStage);
+    this.$socket.client.off('setChapter', this.socketsetChapter);
+    this.$socket.client.off('setKB', this.socketsetKB);
+    this.$socket.client.off('getStage', this.socketgetStage);
+    this.$socket.client.off('KBZipReport', this.socketgetimportReport);
+    this.$socket.client.off('refreshKB', this.loadKB);
+    this.$socket.client.off('removeKB', this.socketremoveKB);
+  },
+  created () {
+    this.$emit('viewIn', {
+      text: '編輯知識點',
+      icon: 'fa-network-wired',
+      module: '知識節點模組',
+      location: '/createKB'
+    });
+    this.$socket.client.on('KBFileUploadDone', this.soketKBFileUploadDone);
+    this.$socket.client.on('getKBAttachment', this.socketgetKBAttachment);
+    this.$socket.client.on('KBFileUploadError', this.socketKBFileUploadError);
+    this.$socket.client.on('KBFileDeleteError', this.socketKBFileDeleteError);
+    this.$socket.client.on('requestKBSlice', this.socketrequestKBSlice);
+    this.$socket.client.on('addStage', this.socketaddStage);
+    this.$socket.client.on('addChapter', this.socketaddChapter);
+    this.$socket.client.on('getKB', this.socketgetKB);
+    this.$socket.client.on('getChapters', this.socketgetChapters);
+    this.$socket.client.on('cloneStages', this.socketcloneStages);
+    this.$socket.client.on('KBZipUploadDone', this.soketKBZipUploadDone);
+    this.$socket.client.on('KBZipUploadError', this.socketKBFileUploadError);
+    this.$socket.client.on('requestKBZipSlice', this.socketrequestKBZipSlice);
+    this.$socket.client.on('addKB', this.socketaddKB);
+    this.$socket.client.on('editKB', this.socketeditKB);
+    this.$socket.client.on('removeChapter', this.socketremoveChapter);
+    this.$socket.client.on('saveSort', this.socketsaveSort);
+    this.$socket.client.on('removeStage', this.socketremoveStage);
+    this.$socket.client.on('setChapter', this.socketsetChapter);
+    this.$socket.client.on('setKB', this.socketsetKB);
+    this.$socket.client.on('getStage', this.socketgetStage);
+    this.$socket.client.on('KBZipReport', this.socketgetimportReport);
+    this.$socket.client.on('refreshKB', this.loadKB);
+    this.$socket.client.on('removeKB', this.socketremoveKB);
+  }
 };
 </script>

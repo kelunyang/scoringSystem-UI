@@ -1,5 +1,67 @@
 <template>
   <v-app>
+    <v-snackbar v-model="toastOn" :timeout="toastTime">
+      {{ toastMsg }}
+      <template v-slot:action="{ attrs }">
+        <v-btn
+          color="red accent-4"
+          icon
+          v-bind="attrs"
+          @click="toastOn = false"
+        >
+          <v-icon color="white">fa-times-circle</v-icon>
+        </v-btn>
+      </template>
+    </v-snackbar>
+    <v-dialog
+      v-model="safariW"
+      persistent
+      max-width="50vw"
+    >
+      <v-card>
+        <v-card-title class="headline">
+          <v-icon>fab fa-safari</v-icon>
+          偵測到Safari瀏覽器！
+        </v-card-title>
+        <v-card-text class='text-left'>
+          <div>Safari瀏覽器（也就是Mac/iOS自帶的瀏覽器）對同步連線功能支援較差，建議更換到<span class='font-weight-bold'>Chrome/ Edge/ Firefox</span>在使用，否則建議您在使用過程中千萬不要按下重新整理的按鈕</div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            color="primary"
+            @click="safariW = false"
+          >
+            好的，我知道了
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog
+      v-model="fatalErrorW"
+      persistent
+      max-width="50vw"
+    >
+      <v-card>
+        <v-card-title class="headline">
+          <v-icon>fa-skull</v-icon>
+          發生嚴重錯誤
+        </v-card-title>
+        <v-card-text class='text-left'>
+          <div>系統發生嚴重錯誤，請複製以下訊息並聯絡管理團隊：</div>
+          <code>{{ JSON.stringify(fatalMsg) }}！</code>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            color="primary"
+            @click="fatalErrorW = false"
+          >
+            關閉對話框
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
     <v-dialog
       v-model="authW"
       persistent
@@ -11,7 +73,7 @@
         </v-card-title>
         <v-card-text class='d-flex flex-row justify-space-around'>
           <div v-for='item in items' :key='"item" + item.title' :class='authClass(item)'>
-            <font-awesome-icon :icon='item.icon' class='fa-2x' /><br/>
+            <v-icon x-large>{{ item.icon }}</v-icon><br/>
             <span class='text-caption'>{{ item.title }}</span>
           </div>
         </v-card-text>
@@ -83,13 +145,42 @@
       </v-card>
     </v-dialog>
     <v-dialog
+      v-model="viewUserW"
+      persistent
+      max-width="50vw"
+    >
+      <v-card>
+        <v-card-title class="headline">
+          檢視使用者
+        </v-card-title>
+        <v-card-text class='text-left'>
+          <v-avatar>
+            <img :src='"https://avatars.dicebear.com/api/" + viewUser.types + "/" + encodeURIComponent(viewUser.name + "@" + viewUser.unit) + ".svg"' />
+          </v-avatar>
+          <div>姓名： {{ viewUser.name }} </div>
+          <div>服務單位： {{ viewUser.unit }} </div>
+          <div>Email： {{ viewUser.email }} </div>
+          <div>帳號創建時間： {{ dateConvert(viewUser.createDate) }} </div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            color="primary"
+            @click="viewUserW = false"
+          >
+            關閉檢視
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog
       v-model="diedW"
       persistent
       max-width="50vw"
     >
       <v-card>
         <v-card-title class="headline">
-          <font-awesome-icon icon='skull' />
+          <v-icon>fa-skull</v-icon>
           登出警告！
         </v-card-title>
         <v-card-text>
@@ -113,7 +204,7 @@
     >
       <v-card>
         <v-card-title class="headline">
-          <font-awesome-icon icon='satellite-dish' />
+          <v-icon>fa-satellite-dish</v-icon>
           全域廣播：
           {{ broadcastMsg.title }}
         </v-card-title>
@@ -136,7 +227,7 @@
     >
       <v-card>
         <v-card-title class="headline">
-          <font-awesome-icon icon='satellite-dish' />
+          <v-icon>fa-satellite-dish</v-icon>
           服務發生錯誤：
           {{ errorm.title }}
         </v-card-title>
@@ -167,7 +258,7 @@
     >
       <v-card>
         <v-card-title class="headline">
-          <font-awesome-icon icon='plug' />
+          <v-icon>fas fa-plug</v-icon>
           同步連線建立中！
         </v-card-title>
         <v-card-text>
@@ -197,7 +288,7 @@
     >
       <v-card>
         <v-card-title class="headline">
-          <font-awesome-icon icon='skull' />
+          <v-icon>fa-skull</v-icon>
           您沒有 {{ violation.where }} 的存取權
         </v-card-title>
         <v-card-text>
@@ -214,12 +305,21 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-navigation-drawer transition="slide-x-transition" drawer permanent fixed v-if='miniVariant' enable-resize-watcher app>
+    <v-navigation-drawer
+      transition="slide-x-transition"
+      drawer
+      fixed
+      bottom
+      temporary
+      v-model='miniVariant'
+      enable-resize-watcher
+      app
+    >
       <v-list nav dense class='py-0'>
         <div v-for='item in items' :key='item.title'>
         <v-list-item v-if='item.vis' :to='item.path == "#" ? "" : item.path' link>
             <v-list-item-icon>
-              <font-awesome-icon :icon='item.icon' />
+              <v-icon>{{ item.icon }}</v-icon>
             </v-list-item-icon>
             <v-list-item-content>
               <v-list-item-title>{{ item.title }}</v-list-item-title>
@@ -228,16 +328,28 @@
         </div>
       </v-list>
     </v-navigation-drawer>
-    <v-app-bar collapse-on-scroll fixed app color='deep-purple accent-4' dark>
-      <v-app-bar-nav-icon @click='showBar'>
-        <font-awesome-icon icon='bars' />
+    <v-app-bar elevate-on-scroll fixed app :color='randomColor' dark>
+      <v-app-bar-nav-icon @click='miniVariant = !miniVariant'>
+        <v-icon>fa-bars</v-icon>
       </v-app-bar-nav-icon>
+      <v-tooltip bottom v-if='currentPage.show'>
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn
+            v-bind="attrs" v-on="on"
+            icon
+            @click="gotoPreviousPage"
+            :disabled='previousConvert'>
+            <v-icon>fa-arrow-alt-circle-left</v-icon>
+          </v-btn>
+        </template>
+        <span>回到 {{ previousPage.text }}</span>
+      </v-tooltip>
+      <v-spacer></v-spacer>
       <v-toolbar-title>
-        <font-awesome-icon :icon='currentPage.icon' />
-        [新]臺北市新課綱影片審查系統： {{ currentPage.text }}
+        臺北市新課綱影片審查系統<span v-if='currentPage.show'>： {{ currentPage.text }}</span>
       </v-toolbar-title>
       <v-spacer></v-spacer>
-      <v-menu open-on-hover offset-y v-if='currentUser !== null'>
+      <v-menu open-on-hover offset-y v-if='currentUser._id !== ""'>
         <template v-slot:activator='{ on, attrs }'>
           <v-btn icon v-bind='attrs' v-on='on'>
             <v-avatar size="30">
@@ -250,7 +362,7 @@
           <v-card-text>
             <v-list-item v-for='item in userControls' :key='item.title' style='background-color:white' :to='item.path == "#" ? "" : item.path' link>
               <v-list-item-icon>
-                <font-awesome-icon :icon='item.icon' />
+                <v-icon>{{item.icon}}</v-icon>
               </v-list-item-icon>
               <v-list-item-content>
                 <v-list-item-title>{{ item.title }}</v-list-item-title>
@@ -259,35 +371,50 @@
           </v-card-text>
         </v-card>
       </v-menu>
-      <v-menu open-on-hover offset-y style='max-height: 80vh; overflow-y:scroll' v-if='currentUser !== null'>
+      <v-menu open-on-hover offset-y style='max-height: 80vh; overflow-y:scroll' v-if='currentUser._id !== ""'>
         <template v-slot:activator='{ on, attrs }'>
           <v-badge
             color="red"
             :content="socketUsersList.messageCount"
             :value="socketUsersList.messageCount"
             overlap
+            bottom
           >
             <v-btn icon v-bind='attrs' v-on='on'>
-              <font-awesome-icon icon='people-arrows' />
+              <v-icon v-if='socketUsersList.messageCount === 0'>far fa-comments</v-icon>
+              <v-icon v-if='socketUsersList.messageCount > 0'>fas fa-comments</v-icon>
             </v-btn>
           </v-badge>
         </template>
         <v-card>
           <v-card-text>
-            <div v-if='socketUsersList.users.length === 0'>無用戶</div>
+            <div v-if='socketUsersList.users.length === 0'>除了你沒別人啦</div>
             <div v-if='socketUsersList.users.length > 0'>
-              <v-list-item v-for='user in socketUsersList.users' :key='user._id[0]._id' style='background-color:white'>
+              <v-list-item v-for='user in socketUsersList.users' :key='user._id' style='background-color:white'>
                 <v-list-item-avatar>
-                  <img :src='"https://avatars.dicebear.com/api/" + user._id[0].types + "/" + encodeURIComponent(user._id[0].name + "@" + user._id[0].unit) + ".svg"' :style='messageConverter(user)' />
+                  <img :src='"https://avatars.dicebear.com/api/" + user.types + "/" + encodeURIComponent(user.name + "@" + user.unit) + ".svg"' :style='messageConverter(user)' />
                 </v-list-item-avatar>
                 <v-list-item-content>
-                  <v-list-item-title class='text-left'>{{ user._id[0].name }}</v-list-item-title>
+                  <v-list-item-title class='text-left'>{{ user.name }}</v-list-item-title>
                   <v-list-item-subtitle class='text-left' v-if='user.where.length > 0'>{{ user.where[0] }}</v-list-item-subtitle>
                 </v-list-item-content>
-                <v-list-item-action>
-                  <v-btn icon @click='startDialog(user._id[0])'>
-                    <font-awesome-icon icon='comments' />
-                  </v-btn>
+                <v-list-item-action class='d-flex flex-row'>
+                  <v-tooltip bottom>
+                    <template v-slot:activator="{ on, attrs }">
+                      <v-btn icon @click='userInfo(user)' v-bind="attrs" v-on="on">
+                        <v-icon>fa-info-circle</v-icon>
+                      </v-btn>
+                    </template>
+                    <span>查看用戶檔案</span>
+                  </v-tooltip>
+                  <v-tooltip bottom>
+                    <template v-slot:activator="{ on, attrs }">
+                      <v-btn icon @click='startDialog(user)' v-bind="attrs" v-on="on">
+                        <v-icon>fa-comments</v-icon>
+                      </v-btn>
+                    </template>
+                    <span>發送訊息</span>
+                  </v-tooltip>
                 </v-list-item-action>
               </v-list-item>
             </div>
@@ -295,12 +422,12 @@
         </v-card>
       </v-menu>
       <v-btn icon link href='#/'>
-        <font-awesome-icon icon='home' />
+        <v-icon>fa-home</v-icon>
       </v-btn>
       <v-menu open-on-hover offset-y style='max-height: 80vh; overflow-y:scroll'>
         <template v-slot:activator='{ on, attrs }'>
           <v-btn icon v-bind='attrs' v-on='on'>
-            <font-awesome-icon icon='lightbulb' />
+            <v-progress-circular :value="(nextCheckTime / (siteSettings.userCheckTime * 60)) * 100" :indeterminate='indeterminate'></v-progress-circular>
           </v-btn>
         </template>
         <v-card>
@@ -308,23 +435,15 @@
           <v-card-text>
             <v-list-item style='background-color:white'>
               <v-list-item-icon>
-                <font-awesome-icon icon='code-branch' />
+                <v-icon>fa-code-branch</v-icon>
               </v-list-item-icon>
               <v-list-item-content class='text-left'>
-                <v-list-item-title>版本： {{ version }} <br/><a href="/#/Info"><span class='text-cpation cyan--text darken-4'>版本紀錄</span></a></v-list-item-title>
-              </v-list-item-content>
-            </v-list-item>
-            <v-list-item style='background-color:white'>
-              <v-list-item-icon>
-                <font-awesome-icon icon='hourglass-half' />
-              </v-list-item-icon>
-              <v-list-item-content class='text-left'>
-                <v-list-item-title>檢查時間倒數： {{ timeConverter(nextCheckTime) }} </v-list-item-title>
+                <v-list-item-title>版本： {{ siteSettings.version }} <br/><a href="/#/Info"><span class='text-cpation cyan--text darken-4'>版本紀錄</span></a></v-list-item-title>
               </v-list-item-content>
             </v-list-item>
             <v-list-item style='background-color:white'>
               <v-list-item-icon :class='serviceConverter(mongoStatus).color'>
-                <font-awesome-icon icon='database' />
+                <v-icon>fa-database</v-icon>
               </v-list-item-icon>
               <v-list-item-content class='text-left'>
                 <v-list-item-title>資料庫 {{ serviceConverter(mongoStatus).text }} </v-list-item-title>
@@ -332,7 +451,7 @@
             </v-list-item>
             <v-list-item style='background-color:white'>
               <v-list-item-icon :class='serviceConverter(socketioStatus).color'>
-                <font-awesome-icon icon='plug' />
+                <v-icon>fa-plug</v-icon>
               </v-list-item-icon>
               <v-list-item-content class='text-left'>
                 <v-list-item-title>同步連線 {{ serviceConverter(socketioStatus).text }} </v-list-item-title>
@@ -342,11 +461,20 @@
         </v-card>
       </v-menu>
     </v-app-bar>
-    <v-main class='pa-5'>
-      <router-view @viewIn='changePage'></router-view>
-    </v-main>
+    <div class='pa-5 ma-0' style='width: 100vw'>
+      <router-view @viewIn='changePage' @toastPop='sendToast' @timerOn='timerOn' @preventReloadDetect='preventReloadDetect'></router-view>
+    </div>
   </v-app>
 </template>
+
+<style>
+body { 
+  position: relative !important;  /* paintable 會改寫body的position，導致卷軸失效，必須有important */
+}
+html {
+  scroll-behavior: smooth;
+}
+</style>
 
 <script>
 import Vue from 'vue';
@@ -364,6 +492,7 @@ import 'tiptap-vuetify/dist/main.css';
 import TurndownService from 'turndown';
 import { v4 as uuidv4 } from 'uuid';
 import _ from 'lodash';
+import { randomColor } from 'randomcolor';
 
 library.add(faUserTag, faCog, faVideo, faUserCog, faCommentAlt, fas, faSnapchatGhost, faTachometerAlt, faSignInAlt, faUsersCog, faChartLine, faInfoCircle, faStamp, faSlidersH, faNetworkWired);
 Vue.component('font-awesome-icon', FontAwesomeIcon);
@@ -378,6 +507,22 @@ export default {
   name: 'App',
   components: { TiptapVuetify },
   methods: {
+    gotoPreviousPage: function () {
+      window.location.replace('https://' + window.location.host + '/#' + this.previousPage.location);
+      this.history = _.dropRight(this.history, 2);
+    },
+    timerOn: function (status) {
+      this.indeterminate = status;
+    },
+    sendToast: function (data, time) {
+      this.toastTime = time === undefined ? 2000 : time;
+      this.toastOn = true;
+      this.toastMsg = data;
+    },
+    userInfo: function (user) {
+      this.viewUser = user;
+      this.viewUserW = true;
+    },
     messageConverter: function (user) {
       return user.newMessage === 0 ? 'border: 1px solid white' : 'border: 1px solid red';
     },
@@ -410,11 +555,8 @@ export default {
         return 'notAuth';
       }
     },
-    showBar: function () {
-      this.miniVariant = !this.miniVariant;
-    },
     changePage: function (val) {
-      this.currentPage = val;
+      this.history.push(val);
     },
     serviceConverter: function (status) {
       return status ? {
@@ -431,19 +573,64 @@ export default {
     privilegeConvert: function (loginRequire) {
       return loginRequire ? '登入' : '特殊權限標籤';
     },
-    timeConverter: function (time) {
-      return moment.duration(time, 'second').format('mm分ss秒');
+    preventReloadDetect: function (data) {
+      window.sessionStorage.setItem('preventR', data);
     }
   },
   computed: {
+    randomColor: function () {
+      let color = randomColor({
+          luminosity: 'dark',
+          format: 'rgb'
+      });
+      return color;
+    },
+    currentPage: function () {
+      if(this.history.length > 0) {
+        let currentPage = this.history[this.history.length - 1];
+        currentPage.show = true;
+        if(currentPage.location === '/Login' || currentPage.location == '/Logout') {
+          currentPage.show = false;
+        }
+        return currentPage;
+      }
+      return {
+        location: '',
+        text: '',
+        show: false
+      };
+    },
+    previousPage: function () {
+      if(this.history.length > 1) {
+        let previousPage = this.history[this.history.length - 2];
+        if(previousPage.location === '/' || previousPage.location === '/Login' || previousPage.location === '/Logout' || previousPage.location === '/Home') { return false; }
+        return previousPage;
+      }
+      return false;
+    },
+    previousConvert: function () {
+      return this.previousPage !== false ? false : true;
+    },
+    currentUser: function () {
+      return this.$store.state.currentUser;
+    },
+    siteSettings: function () {
+      return this.$store.state.siteSettings;
+    },
+    savedTags: function () {
+      return this.$store.state.savedTags;
+    },
     messageDialog: function () {
       if(this.receiver !== null) {
-        let sorted = [...this.chatDB[this.receiver._id].data].sort((a, b) => {
-          return b.tick - a.tick;
-        });
-        let returned = sorted.slice(0, 5);
-        for(let i = 0; i < returned.length; i++) {
-          returned[i].uuid = uuidv4(); 
+        let returned = [];
+        if(this.receiver._id in this.chatDB) {
+          let sorted = [...this.chatDB[this.receiver._id].data].sort((a, b) => {
+            return b.tick - a.tick;
+          });
+          returned = sorted.slice(0, 5);
+          for(let i = 0; i < returned.length; i++) {
+            returned[i].uuid = uuidv4(); 
+          }
         }
         return {
           dialogUser: this.receiver,
@@ -467,11 +654,11 @@ export default {
       let oriobj = this;
       let count = 0;
       let filtered = _.filter(this.socketUsers, (user) => {
-        return user._id[0]._id !== oriobj.currentUser._id;
+        return user._id !== oriobj.currentUser._id;
       });
       for(let i = 0; i < filtered.length; i++) {
         let user = filtered[i];
-        user.newMessage = (user._id[0]._id in this.chatDB) ? this.chatDB[user._id[0]._id].newCount : 0;
+        user.newMessage = (user._id in this.chatDB) ? this.chatDB[user._id].newCount : 0;
         count += user.newMessage;
       }
       return {
@@ -485,14 +672,14 @@ export default {
     userControls: function () {
       return [
         {
-          icon: 'user-cog',
+          icon: 'fa-user-cog',
           ava: true,
           title: '進入個人設定',
           path: '/user'
         },
         {
-          icon: 'sign-out-alt',
-          title: '登出審查平台',
+          icon: 'fa-sign-out-alt',
+          title: '登出審查系統',
           path: '/logout'
         }
       ];
@@ -518,9 +705,55 @@ export default {
       if (!this.mongoStatus) {
         this.$socket.client.emit('dbStatus');
       }
+    },
+    currentUser: function () {
+      let oriobj = this;
+      if(this.currentPage.location === '/Login') {
+        if(this.currentUser._id !== '') {
+          this.$socket.client.emit("userInbound");
+          if ('firstRun' in this.currentUser) {
+            if (this.currentUser.firstRun) {
+              window.location.replace('https://' + window.location.host + '/#/user');
+            } else {
+              window.location.replace('https://' + window.location.host + '/#/userDashBoard');
+            }
+          } else {
+            window.location.replace('https://' + window.location.host + '/#/userDashBoard');
+          }
+          this.reloadTimer = setTimeout(() => {
+            oriobj.sendToast("登入成功！", 1000);
+            window.clearTimeout(this.reloadTimer);
+          }, 1000);
+        }
+      } else {
+        if(this.currentPage.location === '/Login' || this.currentPage.location === '/Home' || this.currentPage.location === '/') {
+          oriobj.sendToast("您目前處於未登入狀態", 1000);
+        } else {
+          if(this.currentUser._id === '') {
+            window.location.replace('https://' + window.location.host + '/#/Login');
+            this.reloadTimer = setTimeout(() => {
+              oriobj.sendToast("同步連線中斷（多半是您手動重新整理網頁），您將被導入登入頁面", 1000);
+              window.clearTimeout(this.reloadTimer);
+            }, 1000);
+          }
+        }
+      }
     }
   },
-  mounted () {
+  created () {
+    if(!this.preventR) {
+      let nav = performance.getEntriesByType("navigation");
+      if(nav === undefined || nav == null || nav.length === 0) {
+        this.safariW = true;
+      } else {
+        if (nav[0].type === 'reload' || nav[0].type === 1) {
+          this.sendToast("偵測到網頁重新整理！網頁立刻重建同步連線", 5000);
+          this.$socket.client.emit('userAlived');
+        }
+      }
+    }
+    window.sessionStorage.setItem('preventR', false);
+    this.preventR = false;
     if(localStorage.getItem('chatDB')) {
       this.chatDB = JSON.parse(localStorage.getItem('chatDB'));
     } else {
@@ -528,26 +761,54 @@ export default {
       localStorage.setItem('chatDB', JSON.stringify(this.chatDB));
     }
     let oriobj = this;
+
     this.$socket.client.on('getCurrentUser', (data) => {
-      oriobj.currentUser = data;
+      oriobj.currentUser = oriobj.$store.commit('updateUser', data);
+      oriobj.timerOn(true);
+      oriobj.$socket.client.emit('getTags');
       oriobj.$socket.client.emit('getAuthLevel');
       oriobj.$socket.client.emit('getConcurrentUsers');
-      oriobj.concurrentTimer = setInterval(() => {
-        oriobj.$socket.client.emit('getConcurrentUsers');
-      }, oriobj.connectionTimeout * 60 * 1000);
     });
+
+    this.$socket.client.on('userInbound', () => {
+      oriobj.timerOn(true);
+      oriobj.$socket.client.emit('getConcurrentUsers');
+    });
+
+    this.$socket.client.on('userLeave', () => {
+      oriobj.timerOn(true);
+      Vue.nextTick(() => {
+        oriobj.$socket.client.emit('getConcurrentUsers');
+      });
+    });
+
     this.$socket.client.on('userDied', () => {
       oriobj.diedW = true;
-      oriobj.diedMsg = '你的瀏覽器已經超過' + oriobj.connectionTimeout + '秒沒和主機連線，你被強制登出了';
+      oriobj.diedMsg = '你的瀏覽器已經超過' + oriobj.siteSettings.connectionTimeout + '秒沒和主機連線，你被強制登出了';
     });
+
     this.$socket.client.on('dbStatus', (data) => {
       oriobj.mongoStatus = data;
       if (!data) {
-        setTimeout(() => {
+        window.clearTimeout(oriobj.dbTimer);
+        oriobj.dbTimer = setTimeout(() => {
           oriobj.$socket.client.emit('dbStatus');
-        }, 5000);
+          window.clearTimeout(oriobj.dbTimer);
+        }, oriobj.siteSettings.connectionTimeout * 60 * 1000);
       }
     });
+
+    this.$socket.client.on('clearCurrentUser', () => {
+      oriobj.timerOn(false);
+      oriobj.sendToast('登出完成！確認用戶狀態中...', 5000);
+      oriobj.$socket.client.emit('getCurrentUser');
+    });
+
+    this.$socket.client.on('getTags', (data) => {
+      oriobj.timerOn(false);
+      oriobj.$store.commit('updateSavedTags', data);
+    });
+
     this.$socket.client.on('ccChat', (data) => {
       if(!(data.to._id in oriobj.chatDB)) {
         oriobj.chatDB[data.to._id] = {
@@ -562,6 +823,7 @@ export default {
       });
       localStorage.setItem('chatDB', JSON.stringify(oriobj.chatDB));
     });
+
     this.$socket.client.on('incommingChat', (data) => {
       if(!(data.from._id in oriobj.chatDB)) {
         oriobj.chatDB[data.from._id] = {
@@ -583,84 +845,91 @@ export default {
       localStorage.setItem('chatDB', JSON.stringify(oriobj.chatDB));
       let tempTitle = document.title;
       document.title = '💬 ' + data.from.name + ' 私訊你！';
-      oriobj.chatTimer = window.setTimeout(() => {
+      oriobj.sendToast('💬 ' + data.from.name + ' 私訊你！');
+      Vue.nextTick(() => {
         document.title = tempTitle;
-        window.clearTimeout(oriobj.chatTimer);
-      }, 10 * 1000);
+      });
     });
+
     this.$socket.client.on('messageBroadcast', (data) => {
       oriobj.broadcastW = true;
-      oriobj.broadcastMsg = marked(data);
+      data.body = marked(data.body);
+      oriobj.broadcastMsg = data;
     });
+
+    this.$socket.client.on('fatalError', (data) => {
+      oriobj.fatalErrorW = true;
+      oriobj.fatalMsg = data;
+    });
+
     this.$socket.client.on('errorMessage', (data) => {
       oriobj.errormW = true;
       oriobj.errorm = data;
     });
+
     this.$socket.client.on('accessViolation', (data) => {
       oriobj.violationW = true;
       oriobj.violation = data;
     });
+
     this.$socket.client.on('getConcurrentUsers', (data) => {
+      oriobj.timerOn(false);
       oriobj.socketUsers = data;
     });
+
     this.$socket.client.on('getsiteSetting', (data) => {
-      oriobj.version = data.version;
-      oriobj.userCheckTime = data.userCheckTime;
-      oriobj.lastCheckTime = moment().unix();
-      oriobj.connectionTimeout = data.connectionTimeout;
+      oriobj.timerOn(false);
+      oriobj.sendToast('更新全站設定完成');
+      oriobj.$store.commit('updateGlobalSetting', data);
       oriobj.$socket.client.emit('getCurrentUser');
-      clearTimeout(oriobj.timer);
+      window.clearTimeout(oriobj.timer);
       oriobj.timer = setTimeout(() => {
+        oriobj.timerOn(true);
+        oriobj.sendToast('全站設定更新中...');
         oriobj.$socket.client.emit('getsiteSetting');
-        clearTimeout(oriobj.timer);
-      }, oriobj.userCheckTime * 60 * 1000);
+        window.clearTimeout(oriobj.timer);
+      }, oriobj.siteSettings.userCheckTime * 60 * 1000);
+      window.clearInterval(oriobj.intervalTimer);
+      oriobj.intervalTimer = null;
+      oriobj.intervalTimer = setInterval(() => {
+        oriobj.nextCheckTime = (oriobj.siteSettings.userCheckTime * 60 - (moment().unix() - oriobj.siteSettings.lastCheckTime));
+      }, 1000);
     });
+
     this.$socket.client.on('getAuthLevel', (data) => {
+      oriobj.timerOn(false);
       for (let i = 0; i < oriobj.items.length; i++) {
         let item = oriobj.items[i];
-        let login = oriobj.currentUser === undefined || oriobj.currentUser === null ? false : 'tags' in oriobj.currentUser;
+        let login = oriobj.currentUser._id === '' ? false : 'tags' in oriobj.currentUser;
         item.vis = !login ? false
                    : !(item.path in data) ? false
                    : typeof data[item.path] === 'boolean' ? data[item.path]
-                   : data[item.path].some((titem) => {
-          return oriobj.currentUser.tags.some((ctag) => {
-            return ctag._id === titem;
-          });
-        });
+                   : _.find(data[item.path], (titem) => {
+                     return _.find(oriobj.currentUser.tags, { _id: titem }) !== undefined
+                   }) !== undefined;
       }
-      clearTimeout(oriobj.authTimer);
-      oriobj.authTimer = setTimeout(() => {
+      Vue.nextTick(() => {
         oriobj.authW = false;
-        clearTimeout(oriobj.authTimer);
-      }, 500);
+      });
     });
+
     this.$socket.client.on('userAlived', () => {
       oriobj.$socket.client.emit('userAlived');
     });
+
     this.$socket.client.emit('dbStatus');
     this.$socket.client.emit('getsiteSetting');
-    this.lastCheckTime = moment().unix();
-    setInterval(() => {
-      oriobj.nextCheckTime = (oriobj.userCheckTime * 60 - (moment().unix() - oriobj.lastCheckTime));
-      if(((oriobj.nextCheckTime / 60) / oriobj.userCheckTime) < 0.05 ) {
-        oriobj.timerIcon = 'hourglass';
-      }
-      if(((oriobj.nextCheckTime / 60) / oriobj.userCheckTime) >= 0.05 && ((oriobj.nextCheckTime / 60) / oriobj.userCheckTime) < 0.3 ) {
-        oriobj.timerIcon = 'hourglass-start';
-      }
-      if(((oriobj.nextCheckTime / 60) / oriobj.userCheckTime) >= 0.3 && ((oriobj.nextCheckTime / 60) / oriobj.userCheckTime) <= 0.6 ) {
-        oriobj.timerIcon = 'hourglass-half';
-      }
-      if(((oriobj.nextCheckTime / 60) / oriobj.userCheckTime) >= 0.6 && ((oriobj.nextCheckTime / 60) / oriobj.userCheckTime) <= 0.95 ) {
-        oriobj.timerIcon = 'hourglass-end';
-      }
-      if(((oriobj.nextCheckTime / 60) / oriobj.userCheckTime) > 0.95 ) {
-        oriobj.timerIcon = 'hourglass';
-      }
-    }, 1000);
+    this.indeterminate = true;
   },
   data () {
     return {
+      history: [],
+      indeterminate: false,
+      intervalTimer: null,
+      reloadTimer: null,
+      toastMsg: '',
+      toastOn: false,
+      dbTimer: null,
       extensions: [
         History,
         Link,
@@ -673,24 +942,28 @@ export default {
         Paragraph,
         HardBreak
       ],
+      viewUser: {
+        name: 'test',
+        unit: 'test',
+        types: 'test',
+        email: 'test',
+        createDate: 0
+      },
+      toastTime: 2000,
+      fatalMsg: '',
+      fatalErrorW: false,
+      viewUserW: false,
       receiver: null,
-      chatTimer: null,
       chatDB: null,
-      authTimer: null,
       messageBody: '',
       messageW: false,
-      userTimer: null,
-      connectionTimeout: 2,
       diedW: false,
       diedMsg: '',
       timer: null,
-      timerIcon: 'hourglass',
       nextCheckTime : 0,
-      lastCheckTime : 0,
-      userCheckTime: 10,
       authW: true,
-      currentUser: null,
       violationW: false,
+      safariW: false,
       violation: {
         where: '',
         action: '',
@@ -707,16 +980,12 @@ export default {
         body: '',
         title: ''
       },
+      preventR: window.sessionStorage.getItem('preventR') === null ? false : window.sessionStorage.getItem('preventR') === 'true',
       broadcastW: false,
       socketioStatus: false,
       mongoStatus: false,
       socket: this.$socket,
       miniVariant: false,
-      currentPage: {
-        text: '預設頁面',
-        icon: faSnapchatGhost,
-        module: '預設模組'
-      },
       user: {
         id: 0,
         name: 'testaccount',
@@ -728,7 +997,7 @@ export default {
         adminWeight: 2
       },
       loginStatus: {
-        icon: faSignInAlt,
+        icon: 'fa-sign-in-alt',
         text: '未登入',
         subtext: '點此登入',
         to: '/logout'
@@ -736,49 +1005,49 @@ export default {
       socketUsers: [],
       items: [
         {
-          icon: faTachometerAlt,
+          icon: 'fa-tachometer-alt',
           title: 'DashBoard',
           path: '/userDashBoard',
           items: [],
           vis: false
         },
         {
-          icon: faNetworkWired,
+          icon: 'fa-network-wired',
           title: '編輯知識點',
           path: '/createKB',
           items: [],
           vis: false
         },
         {
-          icon: faCog,
+          icon: 'fa-cogs',
           title: '系統設定',
           path: '/setting',
           items: [],
           vis: false
         },
         {
-          icon: faCommentAlt,
+          icon: 'fa-comment-alt',
           title: '系統訊息管理',
           path: '/messageMgnt',
           items: [],
           vis: false
         },
         {
-          icon: faChartLine,
+          icon: 'fa-chart-bar',
           title: '統計圖表',
           path: '/Chart',
           items: [],
           vis: false
         },
         {
-          icon: faUsersCog,
+          icon: 'fa-users-cog',
           title: '使用者管理',
           path: '/userMgnt',
           items: [],
           vis: false
         },
         {
-          icon: faInfoCircle,
+          icon: 'fa-info-circle',
           title: '關於本系統&許願池',
           path: '/Info',
           items: [],

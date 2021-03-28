@@ -6,14 +6,14 @@ import App from './App';
 import router from './router';
 import vuetify from '@/plugins/vuetify';
 import { TiptapVuetifyPlugin } from 'tiptap-vuetify';
-
-Vue.config.productionTip = false;
+import store from './vuex/store';
 
 /* eslint-disable no-new */
 new Vue({
   el: '#app',
   router,
   vuetify,
+  store,
   components: { App },
   template: '<App/>',
   icons: {
@@ -21,9 +21,8 @@ new Vue({
   },
   render: h => h(App)
 }).$mount('#app');
+
 Vue.use(TiptapVuetifyPlugin, { 
   vuetify,
   iconsGroup: 'fa'
 });
-Vue.config.productionTip = false;
-Vue.config.devtools = true;

@@ -11,7 +11,7 @@
           right
           @click='saveSetting'
         >
-          <font-awesome-icon :icon='icontype' />
+          <v-icon>{{ icontype }}</v-icon>
         </v-btn>
       </v-fab-transition>
       <v-row>
@@ -41,19 +41,19 @@
               thumb-label
             ></v-slider>
             <div class='text-subtitle-2 font-weight-blod'>授權系統設定功能的使用者標籤</div>
-            <tag-filter :single='false' @plusItem='plusTag' :selectedItem='selectedSysTags' @valueUpdated='updateSysTag' :candidatedItem='savedUserTags' :createable='true' label='請輸入授權系統設定功能的使用者標籤' />
+            <tag-filter :mustSelected='true' :single='false' @plusItem='plusTag' :selectedItem='selectedSysTags' @valueUpdated='updateSysTag' :candidatedItem='savedTags' :createable='true' label='請輸入授權系統設定功能的使用者標籤' />
             <div class='text-subtitle-2 font-weight-blod'>授權用戶管理功能的使用者標籤</div>
-            <tag-filter :single='false' @plusItem='plusTag' :selectedItem='selectedUsrTags' @valueUpdated='updateUsrTag' :candidatedItem='savedUserTags' :createable='true' label='請輸入授權用戶管理功能的使用者標籤' />
+            <tag-filter :mustSelected='true' :single='false' @plusItem='plusTag' :selectedItem='selectedUsrTags' @valueUpdated='updateUsrTag' :candidatedItem='savedTags' :createable='true' label='請輸入授權用戶管理功能的使用者標籤' />
             <div class='text-subtitle-2 font-weight-blod'>授權知識點編輯器的使用者標籤</div>
-            <tag-filter :single='false' @plusItem='plusTag' :selectedItem='selectedflowTags' @valueUpdated='updateFlowTag' :candidatedItem='savedUserTags' :createable='true' label='請輸入授權用戶管理功能的使用者標籤' />
+            <tag-filter :mustSelected='true' :single='false' @plusItem='plusTag' :selectedItem='selectedflowTags' @valueUpdated='updateFlowTag' :candidatedItem='savedTags' :createable='true' label='請輸入授權用戶管理功能的使用者標籤' />
             <div class='text-subtitle-2 font-weight-blod'>機器人的使用者標籤</div>
-            <tag-filter :single='true' @plusItem='plusTag' :selectedItem='selectedrobotTag' @valueUpdated='updateRobotTag' :candidatedItem='savedUserTags' :createable='true' label='請輸入授權用戶管理功能的使用者標籤' />
+            <tag-filter :mustSelected='true' :single='true' @plusItem='plusTag' :selectedItem='selectedrobotTag' @valueUpdated='updateRobotTag' :candidatedItem='savedTags' :createable='true' label='請輸入授權用戶管理功能的使用者標籤' />
             <div class='text-h5 text-center pt-5 font-weight-black'>機器人巡邏參數</div>
             <v-divider inset></v-divider>
             <div class='text-subtitle-2 font-weight-blod'>機器人代表帳號</div>
-            <tag-filter :single='true' :selectedItem='PatrolAccount' @valueUpdated='updateRobatAccount' :candidatedItem='savedUsers' :createable='false' label='請輸入巡邏機器人代表帳號' />
+            <tag-filter :mustSelected='true' :single='true' :selectedItem='PatrolAccount' @valueUpdated='updateRobatAccount' :candidatedItem='savedUsers' :createable='false' label='請輸入巡邏機器人代表帳號' />
             <div class='text-subtitle-2 font-weight-blod'>無人操作代表帳號</div>
-            <tag-filter :single='true' :selectedItem='nobodyAccount' @valueUpdated='updateNobodyAccount' :candidatedItem='savedUsers' :createable='false' label='請輸入紀錄機器人代表帳號' />
+            <tag-filter :mustSelected='true' :single='true' :selectedItem='nobodyAccount' @valueUpdated='updateNobodyAccount' :candidatedItem='savedUsers' :createable='false' label='請輸入紀錄機器人代表帳號' />
             <v-text-field label='EMail帳號' v-model='mailAccount' hint='請注意，這是在Google/Outlook.com裡建立的應用程式帳號'></v-text-field>
             <v-text-field label='EMail密碼' v-model='mailPassword' hint='請注意，這是在Google/Outlook.com裡建立的應用程式密碼'></v-text-field>
             <v-text-field label='EMail主機' v-model='mailSMTP' hint='請貼上你的主機的SMTP位置'></v-text-field>
@@ -103,7 +103,7 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import TagFilter from './modules/TagFilter';
 import TurndownService from 'turndown';
 import marked from 'marked';
-import { TiptapVuetify, Heading, Bold, Italic, Strike, Underline, Code, Paragraph, BulletList, OrderedList, ListItem, Link, Blockquote, HardBreak, HorizontalRule, History } from 'tiptap-vuetify';
+import { TiptapVuetify, Bold, Italic, Strike, Underline, Code, Paragraph, BulletList, OrderedList, ListItem, Link, HardBreak, History } from 'tiptap-vuetify';
 import 'tiptap-vuetify/dist/main.css';
 
 import '@fortawesome/fontawesome-free/css/all.css';
@@ -118,25 +118,28 @@ export default {
     TagFilter,
     TiptapVuetify
   },
+  computed: {
+    savedTags: function () {
+      return this.$store.state.savedTags;
+    }
+  },
   beforeDestroy () {
     this.$socket.client.off('setSetting', this.socketsetSetting);
-    this.$socket.client.off('getTags', this.socketgetTags);
     this.$socket.client.off('getRobotUsers', this.socketgetRobotUsers);
     this.$socket.client.off('getGlobalSettings', this.socketgetGlobalSettings);
     this.$socket.client.off('getRobotSetting', this.socketgetRobotSetting);
   },
-  mounted () {
+  created () {
     this.$emit('viewIn', {
       text: '系統設定',
-      icon: faCog,
-      module: '設定模組'
+      icon: 'fa-cogs',
+      module: '設定模組',
+      location: '/setting'
     });
-    this.$socket.client.emit('getTags');
     this.$socket.client.emit('getRobotUsers');
     this.$socket.client.emit('getGlobalSettings');
     this.$socket.client.emit('getRobotSetting');
     this.$socket.client.on('setSetting', this.socketsetSetting);
-    this.$socket.client.on('getTags', this.socketgetTags);
     this.$socket.client.on('getRobotUsers', this.socketgetRobotUsers);
     this.$socket.client.on('getGlobalSettings', this.socketgetGlobalSettings);
     this.$socket.client.on('getRobotSetting', this.socketgetRobotSetting);
@@ -171,18 +174,17 @@ export default {
     socketgetRobotUsers: function (data) {
       this.savedUsers = data;
     },
-    socketgetTags: function (data) {
-      this.savedUserTags = data;
-    },
     socketsetSetting: function () {
-      this.icontype = 'cloud-upload-alt';
+      this.$emit('toastPop', "系統設定儲存完成...");
+      this.icontype = 'fa-cloud-upload-alt';
     },
     HTMLConverter: function (msg) {
       msg = msg === null || msg == undefined ? '**test**' : msg;
       return marked(msg);
     },
     saveSetting: function () {
-      this.icontype = 'spinner';
+      this.$emit('toastPop', "儲存系統設定中...");
+      this.icontype = 'fa-spinner';
       this.$socket.client.emit('setSetting', {
         selectedSysTags: this.selectedSysTags,
         selectedUsrTags: this.selectedUsrTags,
@@ -237,7 +239,6 @@ export default {
       return {
         extensions: [
           History,
-          Blockquote,
           Link,
           Underline,
           Strike,
@@ -245,14 +246,8 @@ export default {
           ListItem,
           BulletList,
           OrderedList,
-          [Heading, {
-            options: {
-              levels: [1, 2, 3]
-            }
-          }],
           Bold,
           Code,
-          HorizontalRule,
           Paragraph,
           HardBreak
         ],
@@ -264,13 +259,7 @@ export default {
         mailSSL: true,
         mailSMTP: '',
         mailPort: '',
-        icontype: 'cloud-upload-alt',
-        savedUserTags: [
-          {
-            name: '',
-            _id: ''
-          }
-        ],
+        icontype: 'fa-cloud-upload-alt',
         savedUsers: [
           {
             name: '',

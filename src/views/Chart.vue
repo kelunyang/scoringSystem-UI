@@ -23,7 +23,7 @@ export default {
   created () {
     this.$emit('viewIn', {
       text: '統計圖表',
-      icon: faChartLine
+      icon: 'fa-chart-bar'
     });
   }
 };

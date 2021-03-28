@@ -44,7 +44,7 @@ export default {
   created () {
     this.$emit('viewIn', {
       text: '重設密碼',
-      icon: faUserCog
+      icon: 'fa-users-cog'
     });
   },
   components: {
