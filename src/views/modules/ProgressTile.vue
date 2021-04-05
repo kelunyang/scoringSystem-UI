@@ -1,74 +1,74 @@
 <template>
-  <v-main class='pa-5 ma-0 d-flex'>
-    <v-row class='pa-5'>
+  <v-main class='pa-0 mt-1 mb-1 ml-0 mr-0 d-flex'>
+    <v-row no-gutters class='pa-0 mb-1'>
       <v-col class='d-flex flex-row pa-0'>
-        <span class='text-subtitle-1 text-left font-weight-bold'>{{ progressItem.title }}</span>
+        <span class='text-subtitle-1 text-left font-weight-bold'>{{ currentItem.title }}</span>
         <v-spacer></v-spacer>
         <span v-if="events.length > 0">
           <v-icon>fa-bullhorn</v-icon>{{ announcedEvent.desc }}[{{ announcedEvent.user.name }} @ {{ dateConvert(announcedEvent.tick) }}]
         </span>
       </v-col>
     </v-row>
-    <v-row>
+    <v-row no-gutters>
       <v-col class='flex-grow-1 pa-0'>
         <v-stepper alt-labels v-model='currentStep'>
           <v-stepper-header>
-              <template v-for='(stage, index) in progressItem.stages'>
+              <template v-for='(stage, index) in currentItem.stages'>
                 <v-stepper-step
                   :key='stage._id'
                   :step='index + 1'
-                  :complete='stage.step < progressItem.currentStep'
+                  :complete='index + 1 < currentStep'
                   :rules='[() => !stage.special]'
                   complete-icon='fa-check-circle'
                   error-icon='fa-bomb'
                   alt-labels
-                  class='text-center'
                 >
-                  <div v-if='progressItem.currentStep === 0'>未啟動</div>
-                  <div v-if='progressItem.currentStep > 0' v-show='(index + 1) === progressItem.currentStep'>{{ stage.name }}</div>
-                  <div v-if='progressItem.currentStep > 0' v-show='(index + 1) < progressItem.currentStep'>已完成</div>
-                  <div v-if='progressItem.currentStep > 0' v-show='(index + 1) > progressItem.currentStep'>尚未發生</div>
-                  <small>{{ dateConvert(stage.dueTick) }}</small><br/>
-                  <small v-if='stage.passTick > 0'>{{ dateConvert(stage.passTick) }}</small>
+                  <div v-if='currentStep === 0'>[未啟動]<br/>{{ stage.name }}</div>
+                  <div v-if='currentStep > 0' v-show='(index + 1) === currentStep'>[進行中]<br/>{{ stage.name }}</div>
+                  <div v-if='currentStep > 0' v-show='(index + 1) < currentStep'>[已完成]<br/>{{ stage.name }}</div>
+                  <div v-if='currentStep > 0' v-show='(index + 1) > currentStep'>[尚未發生]<br/>{{ stage.name }}</div>
+                  <small>起：{{ dateConvert(stage.dueTick) }}</small>
+                  <small v-if='stage.passTick === 0'>至：{{ dateConvert(stage.dueTick) }}</small><br/>
+                  <small v-if='stage.passTick > 0'>至：{{ dateConvert(stage.passTick) }}</small>
                 </v-stepper-step>
                 <v-divider
                   :key='"divider" + stage._id'
-                  v-if='(index + 1) !== progressItem.stages.length'
+                  v-if='(index + 1) !== currentItem.stages.length'
                 ></v-divider>
             </template>
           </v-stepper-header>
         </v-stepper>
       </v-col>
       <v-col ref='progressControl' class='d-flex flex-row align-center flex-grow-0 pa-0 ml-5 mr-5'>
-        <v-checkbox v-if='progressItem.isPM || progressItem.isFinal' off-icon="far fa-square" on-icon="fa-check-square" v-model='selectedItem'></v-checkbox>
+        <v-checkbox v-if='currentItem.isPM || currentItem.isFinal' off-icon="far fa-square" on-icon="fa-check-square" v-model='selectedItem'></v-checkbox>
         <v-tooltip top>
           <template v-slot:activator="{ on, attrs }">
             <v-btn
-              :icon='btnCount >= 5'
+              :icon='btnCount >= 4'
               link
-              :href='"#/videoReview/" + progressItem._id'
+              :href='"#/videoReview/" + currentItem._id'
               v-bind="attrs" v-on="on"
             >
-              <v-icon v-if='btnCount >= 5'>fa-tasks</v-icon>
-              <span v-if='btnCount < 5'>審查</span>
+              <v-icon v-if='btnCount >= 4'>fa-tasks</v-icon>
+              <span v-if='btnCount < 4'>進入審查／回應審查</span>
             </v-btn>
           </template>
           <span>開始審查</span>
         </v-tooltip>
-        <v-tooltip top v-if='progressItem.isVendor'>
+        <v-tooltip top v-if='currentItem.isVendor || currentItem.isWriter || currentItem.isPM'>
           <template v-slot:activator="{ on, attrs }">
             <v-btn
-              :icon='btnCount >= 5'
-              @click.stop='requestUpload(progressItem)'
+              :icon='btnCount >= 4'
+              @click.stop='requestUpload(currentItem)'
               v-bind="attrs" v-on="on"
             >
-              <v-icon v-if='btnCount >= 5'>fa-code-branch</v-icon>
-              <span v-if='btnCount < 5'>上傳</span>
+              <v-icon v-if='btnCount >= 4'>fa-code-branch</v-icon>
+              <span v-if='btnCount < 4'>上傳</span>
             </v-btn>
           </template>
-          <span>Commit管理</span>
+          <span>版本管理</span>
         </v-tooltip>
-        <v-tooltip top v-if='progressItem.isPM'>
+        <v-tooltip top v-if='currentItem.isPM'>
           <template v-slot:activator="{ on, attrs }">
             <v-btn
               icon
@@ -81,8 +81,43 @@
         </v-tooltip>
       </v-col>
     </v-row>
+    <v-row no-gutters>
+      <v-col class='d-flex flex-row pa-1 align-center' :class='currentItem.remainTick < 86400 ? "red--text" : "black--text"'>
+        <span v-if='currentItem.remainTick < Number.MAX_SAFE_INTEGER'>
+          <v-icon class='ma-1' small :color='currentItem.remainTick < 86400 ? "red" : "black"'>fa-stopwatch</v-icon>
+          <span>本階段</span>
+          <span v-if='rangeConvert(currentItem.remainTick,0, 864000)'>距離死線約有：{{ timeConvert(currentItem.remainTick) }}</span>
+          <span v-if='currentItem.remainTick < 0'>超過死線約有：{{ timeConvert(currentItem.remainTick) }}</span>
+          <span>／</span>
+        </span>
+        <span>你的角色為</span>
+        <span class='text-weight-bold'>
+          <span class='cyan--text darken-4' v-if='currentItem.isPM'>[PM]</span>
+          <span class='blue-grey--text darken-4' v-if='currentItem.isWriter'>[寫手]</span>
+          <span class='teal--text darken-4' v-if='currentItem.isReviewer'>[審查者]</span>
+          <span class='indigo--text darken-4' v-if='currentItem.isVendor'>[廠商]</span>
+          <span class='deep-purple--text darken-4' v-if='currentItem.isFinal'>[行政]</span>
+        </span>
+        <v-tooltip top>
+          <template v-slot:activator="{ on, attrs }">     
+            <v-btn
+              icon
+              outlined
+              @click='openauthDetail(currentItem)'
+              color="grey darken-3"
+              class='black--text ml-1'
+              v-bind="attrs" v-on="on"
+              x-small
+            >
+              <v-icon x-small>fas fa-info</v-icon>
+            </v-btn>
+          </template>
+          <span>查看我的角色所具有的權限</span>
+        </v-tooltip>
+      </v-col>
+    </v-row>
     <v-expand-transition>
-      <v-row v-show="expand">
+      <v-row v-show="expand" no-gutters>
         <v-col>
           <v-timeline dense reverse>
             <v-timeline-item
@@ -112,6 +147,10 @@
 import moment from 'moment';
 import _ from 'lodash';
 import '@fortawesome/fontawesome-free/css/all.css';
+import Vue from 'vue';
+import momentDurationFormatSetup from 'moment-duration-format';
+
+momentDurationFormatSetup(moment);
 
 export default {
     name: 'ProgressTile',
@@ -119,11 +158,20 @@ export default {
       progressItem: Object
     },
     methods: {
+      rangeConvert: function (value, start, end) {
+        return _.inRange(value, start - 0.001, end + 0.001);
+      },
       dateConvert: function (time) {
         return moment.unix(time).format('YYYY/MM/DD HH:mm:ss');
       },
       requestUpload: function (item) {
         this.$emit('requestUpload', item);
+      },
+      timeConvert: function (time) {
+        return moment.duration(Math.abs(time), 'second').format('DD日HH小時')
+      },
+      openauthDetail: function (item) {
+        this.$emit('viewDetail', item);
       }
     },
     computed: {
@@ -131,7 +179,7 @@ export default {
         return this.$store.state.currentUser;
       },
       events: function () {
-        let events = this.progressItem.eventLog;
+        let events = this.currentItem.eventLog;
         events.sort((a, b) => {
           return b.tick - a.tick;
         });
@@ -143,20 +191,48 @@ export default {
     },
     watch: {
       selectedItem: function () {
-        this.$emit('KBselected', this.progressItem);
+        this.$emit('KBselected', this.currentItem);
       }
     },
-    created() {
-      this.selectedItem = this.progressItem.selected;
-    },
     mounted() {
-      this.btnCount = this.$refs.progressControl.children.length;
+      let oriobj = this;
+      this.currentItem = this.progressItem;
+      this.selectedItem = this.currentItem.selected;
+      Vue.nextTick(() => {
+        oriobj.btnCount = oriobj.$refs.progressControl.children.length;
+        oriobj.currentStep = oriobj.currentItem.currentStep;
+      });
     },
     data () {
       return {
+        currentItem: {
+          _id: '',
+          currentStep: 0,
+          isPM: false,
+          isVendor: false,
+          isReviewer: false,
+          isWriter: false,
+          isFinal: false,
+          remainTick: 0,
+          createDate: 0,
+          modDate: 0,
+          title: '',
+          desc: '',
+          descAtt: [],
+          tag: [],
+          user: '',
+          chapter: '',
+          sort: 0,
+          textbook: '',
+          versions: [],
+          issues: [],
+          eventLog: [],
+          stages: []
+        },
         selectedItem: false,
         expand: false,
-        btnCount: 0
+        btnCount: 0,
+        currentStep: 0
       };
     }
 };

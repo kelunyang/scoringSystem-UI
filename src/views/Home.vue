@@ -1,8 +1,13 @@
 <template>
   <v-sheet class='d-flex flex-column'>
-    <v-alert type="info" icon="fa-info-circle">歡迎進入影片審查系統，在此提醒您，請務必使用Google Chrome／Firefox／Microsoft Edge等瀏覽器審查，千萬不要用Internet Explorer，可以的話，也請盡量不要以手機操作（雖然可以相容，但本站並非為手機設計）</v-alert>
-    <v-btn v-if='currentUser._id === ""' class='indigo darken-4 white--text ma-3 text-subtitle-2 font-weight-bold' link href="#/Login" >按此登入系統</v-btn>
-    <div v-if='currentUser._id !== ""'>{{ currentUser.name }} 已登入 </div>
+    <v-alert type="info">歡迎進入影片審查系統，在此提醒您，請務必使用Google Chrome／Firefox／Microsoft Edge等瀏覽器審查，千萬不要用Internet Explorer，可以的話，也請盡量不要以手機操作（雖然可以相容，但本站並非為手機設計）</v-alert>
+    <div class='d-flex flex-column flex-grow-1' v-if='currentUser._id === ""'>
+      <v-btn class='flex-grow-1 indigo darken-4 white--text ma-3 text-subtitle-2 font-weight-bold' link href="#/Login" >按此登入系統</v-btn>
+    </div>
+    <div v-if='currentUser._id !== ""' class='flex-grow-1 d-flex flex-column'>
+      <div>{{ currentUser.name }} 已登入 </div>
+      <v-btn class='flex-grow-1 indigo darken-4 white--text ma-3 text-subtitle-2 font-weight-bold' link href="#/userDashBoard" >進入DashBoard</v-btn>
+    </div>
     <v-expansion-panels focusable accordion v-model='messageExpanded'>
       <v-expansion-panel v-for='item in announcements' :key='item.id' :class='criticalConvert(item.type)'>
         <v-expansion-panel-header expand-icon="fa-chevron-down">

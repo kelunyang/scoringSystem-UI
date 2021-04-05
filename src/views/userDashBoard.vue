@@ -8,13 +8,13 @@
       <v-card>
         <v-card-title class="headline">
           <v-icon>fa-satellite-dish</v-icon>
-          下載 {{ selectedpmKBs.length }} 個知識點的最新commit
+          下載 {{ selectedpmKBs.length }} 個知識點的最新版本
         </v-card-title>
         <v-card-text class='d-flex flex-column'>
           <v-alert type='info'>請注意，為節省系統資源，系統不會幫你把這些檔案壓縮，而會同時發送這些檔案給你，你應該會在瀏覽器正下方（或是正上方）看到「是否允許下載多個檔案」的提示，請務必按「同意」</v-alert>
-          <div class='red--text text-caption'>你要下載最新的幾個commit呢？（{{ latestCount }}）</div>
+          <div class='red--text text-caption'>你要下載最新的幾個版本呢？（{{ latestCount }}）</div>
           <v-slider
-            label='最新commit數量'
+            label='最新版本數量'
             min='1'
             max='10'
             v-model="latestCount"
@@ -48,33 +48,41 @@
           >
             <v-icon>fa-times</v-icon>
           </v-btn>
-          <v-toolbar-title>管理知識點commit</v-toolbar-title>
+          <v-toolbar-title>管理知識點版本</v-toolbar-title>
         </v-toolbar>
-        <v-card-text class='d-flex flex-column'>
-          <div class='text-subtitle-2 font-weight-blod'>Commit Release Note（必填但不得超過30個字）</div>
-          <v-text-field solo hint='請輸入這個新Commit的註解，不得超過30個字' v-model='versionComment' />
-          <div class='text-subtitle-2 font-weight-blod'>Commit檔案</div>
-          <v-file-input
-            v-if="versionComment !== ''"
-            prepend-icon="fa-paperclip" 
-            v-model="versionFile" 
-            label='上傳知識點commit' 
-            accept="application/zip, video/mp4, video/webm"
-            :loading="uploadprogress !== 0">
-            <template v-slot:progress>
-              <v-progress-circular :value="uploadprogress"></v-progress-circular>速度：{{ uploadstatus }}
-            </template>
-          </v-file-input>
+        <v-card-text class='d-flex flex-column pa-0'>
+          <v-alert type='info' v-if='currentKB.isVendor'>
+            廠商請注意：基本上你只能上傳影片（H.264/VP9）、PDF檔案（分鏡圖使用），除非是最終階段需要上傳可編輯原始檔，否則請勿上傳zip檔
+          </v-alert>
+          <v-alert type='info' v-if='currentKB.isWriter'>
+            寫手請注意：你只能上傳PDF檔案，請把你的腳本都轉換成PDF再上傳
+          </v-alert>
+          <div v-if='currentKB.isWriter || currentKB.isVendor' class='d-felx flex-column'>
+            <div class='text-subtitle-2 font-weight-blod'>版本發行說明（必填但不得超過30個字）</div>
+            <v-text-field solo hint='請輸入這個新版本的註解，不得超過30個字' v-model='versionComment' />
+            <div class='text-subtitle-2 font-weight-blod'>版本檔案</div>
+            <v-file-input
+              v-if="versionComment !== ''"
+              prepend-icon="fa-paperclip" 
+              v-model="versionFile" 
+              label='上傳知識點版本' 
+              :accept="currentKB.isWriter ? 'application/pdf' : 'application/zip, application/pdf, video/mp4, video/webm'"
+              :loading="uploadprogress !== 0">
+              <template v-slot:progress>
+                <v-progress-circular :value="uploadprogress"></v-progress-circular>速度：{{ uploadstatus }}
+              </template>
+            </v-file-input>
+          </div>
           <div v-if='versionPopulated'>
             <span v-if='currentVersions.length === 0' class='text-body-1 text-center'>
-              目前沒有commit
+              目前沒有任何版本
             </span>
             <v-simple-table v-show="currentVersions.length > 0">
               <template v-slot:default>
                 <thead>
                   <tr>
                     <th class="text-left" style="width:200px">
-                      commit release date
+                      版本發行日期（版號）
                     </th>
                     <th class="text-left" style="width:200px">
                       原始檔名
@@ -83,7 +91,7 @@
                       狀態
                     </th>
                     <th class="text-left">
-                      release note
+                      版本發行紀錄
                     </th>
                     <th class="text-left" style="width:25px">
                       &nbsp;
@@ -262,6 +270,32 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <v-dialog v-model="authDetailW" persistent>
+      <v-card>
+        <v-card-title class="headline">你在 {{ currentKB.title }} 目前階段中的的角色</v-card-title>
+        <v-card-text class='d-flex flex-column text-h6 font-weight-medium black--text text-left'>
+          <div v-if='currentKB.isPM'>
+            專案管理者：你可以關閉／開啟任何的Issue，並且在知識點編輯器中強制改變專案進度
+          </div>
+          <div v-if='currentKB.isVendor'>
+            廠商：你可以在DashBoard中上傳知識點的版本，並且回復Issue
+          </div>
+          <div v-if='currentKB.isWriter'>
+            寫手：你可以開啟Issue，上傳腳本，並回復Issue
+          </div>
+          <div v-if='currentKB.isReviewer'>
+            審查者：你可以開啟／關閉Issue，並且決定本階段是否結束
+          </div>
+          <div v-if='currentKB.isFinal'>
+            行政組：你只能看Issue，並在DashBoard中匯出專案統計
+          </div>
+        </v-card-text>
+        <v-card-actions>
+        <v-spacer></v-spacer>
+            <v-btn color="green darken-1" text @click="authDetailW = false">關閉角色說明</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
     <v-fab-transition>
       <v-tooltip bottom>
         <template v-slot:activator="{ on, attrs }">
@@ -336,7 +370,7 @@
               <v-icon>fa-file-download</v-icon>
             </v-btn>
           </template>
-          <span>下載最新commit</span>
+          <span>下載最新版本</span>
         </v-tooltip>
       </v-badge>
       <v-badge
@@ -452,8 +486,14 @@
         </template>
       </v-simple-table>
     </div>
-    <v-sheet class='pa-0 ma-0 d-flex flex-column'>
-      <progress-tile @requestUpload='openUploadW' @KBselected='KBupdated' v-for="item in convertedList" :key="item._id" :progressItem='item' />
+    <v-skeleton-loader
+      class="mx-auto"
+      type="card"
+      v-if='!dashboardPopulated'
+      width="100%"
+    ></v-skeleton-loader>
+    <v-sheet v-if='dashboardPopulated' class='pa-0 ma-0 d-flex flex-column'>
+      <progress-tile @requestUpload='openUploadW' @viewDetail='openauthDetail' @KBselected='KBupdated' v-for="item in convertedList" :key="item._id" :progressItem='item' />
     </v-sheet>
   </v-sheet>
 </template>
@@ -466,7 +506,6 @@ import { faPhotoVideo, faClipboard, faTachometerAlt, faVideo, faSearch, faSkullC
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import moment from 'moment';
 import { randomColor } from 'randomcolor';
-//import BarChart from './modules/BarChart';
 import ProgressTile from './modules/ProgressTile';
 import TagFilter from './modules/TagFilter';
 import _ from 'lodash';
@@ -490,6 +529,10 @@ export default {
     TagFilter
   },
   methods: {
+    openauthDetail: function (item) {
+      this.currentKB = item;
+      this.authDetailW = true;
+    },
     participantStatstics: function () {
       this.$socket.client.emit('participantStatstics', this.selectedpmKBs);
     },
@@ -516,6 +559,7 @@ export default {
       this.$emit('toastPop', 'DashBoard更新完成');
       this.lastCheckTime = moment().unix();
       this.progressList = data;
+      this.dashboardPopulated = true;
       clearTimeout(this.queryTimer);
       this.queryTimer = setTimeout(() => {
         oriobj.$emit('timerOn', true);
@@ -713,6 +757,7 @@ export default {
       return this.$store.state.siteSettings;
     },
     convertedList: function () {
+      let now = moment().unix();
       let list = [];
       let oriobj = this;
       if(oriobj.selectedFilterTags.length > 0) {
@@ -751,13 +796,14 @@ export default {
             KB.attention = moment().unix() - stage.dueTick;
           }
         }
+        KB.isPM = false;
+        KB.isVendor = false;
+        KB.isFinal = false;
+        KB.isWriter = false;
+        KB.isReviewer = false;
+        KB.dueTick = 0;
         for (let k = 0; k < this.currentUser.tags.length; k++) {
           let userTag = this.currentUser.tags[k]._id;
-          KB.isPM = false;
-          KB.isWriter = false;
-          KB.isVendor = false;
-          KB.isFinal = false;
-          KB.isReviewer = false;
           if (KB.currentStep > 0) {
             if (!KB.isPM) {
               KB.isPM = _.includes(KB.stages[KB.currentStep - 1].pmTags, userTag);
@@ -782,6 +828,7 @@ export default {
         if (found !== undefined) {
           KB.selected = true;
         }
+        KB.remainTick = KB.currentStep > 0 ? KB.stages[KB.currentStep - 1].dueTick - now: Number.MAX_SAFE_INTEGER ;
       }
       if(list.length > 0) {
         if(!this.queryHistory) {
@@ -810,7 +857,7 @@ export default {
           return aTime - bTime;
         });
       }
-      return list;
+      return _.orderBy(list, ['remainTick'], ['asc']);
     },
     randomColors: function () {
       let color = randomColor({
@@ -900,6 +947,8 @@ export default {
   },
   data () {
     return {
+      authDetailW: false,
+      dashboardPopulated: false,
       showStatstics: false,
       latestCount: 1,
       currentKB: {

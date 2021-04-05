@@ -71,7 +71,7 @@
         <v-card-title class="headline">
           載入權限..
         </v-card-title>
-        <v-card-text class='d-flex flex-row justify-space-around'>
+        <v-card-text class='d-flex flex-row justify-space-around flex-wrap'>
           <div v-for='item in items' :key='"item" + item.title' :class='authClass(item)'>
             <v-icon x-large>{{ item.icon }}</v-icon><br/>
             <span class='text-caption'>{{ item.title }}</span>
@@ -1013,7 +1013,7 @@ export default {
         },
         {
           icon: 'fa-network-wired',
-          title: '編輯知識點',
+          title: '知識點管理',
           path: '/createKB',
           items: [],
           vis: false

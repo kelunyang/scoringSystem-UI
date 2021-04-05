@@ -687,10 +687,6 @@ export default {
       module: '用戶回饋模組',
       location: '/Info'
     });
-    this.$socket.client.emit('getsiteAdminUsers', [
-      'settingTags'
-    ]);
-    this.$socket.client.emit('getfeedbackList');
     this.$socket.client.on('getsiteAdminUsers', this.socketgetsiteAdminUsers);
     this.$socket.client.on('sendLINEnotify', this.socketsendLINEnotify);
     this.$socket.client.on('editFeedback', this.socketeditFeedback);
@@ -704,6 +700,13 @@ export default {
     this.$socket.client.on('feedbackFileUploadError', this.socketfeedbackFileUploadError);
     this.$socket.client.on('feedbackFileDeleteError', this.socketfeedbackfileDeleteError);
     this.$socket.client.on('requestfeedbackSlice', this.socketrequestfeedbackSlice);
+    let oriobj = this;
+    Vue.nextTick(() => {
+      oriobj.$socket.client.emit('getsiteAdminUsers', [
+        'settingTags'
+      ]);
+      oriobj.$socket.client.emit('getfeedbackList');
+    });
   }
 };
 </script>

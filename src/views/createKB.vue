@@ -56,13 +56,13 @@
             label="對應課綱學習表現或是課本內容"
             v-model='currentKB.textbook'
           ></v-text-field>
-          <div class='red--text text-caption text-left'>以下兩項為寫作指引相關內容，寫作指引指的是出現在審查畫面抬頭提供參考用的資料</div>
+          <div class='red--text text-caption text-left'>以下兩項為細部說明相關內容，細部說明指的是出現在審查畫面抬頭提供參考用的資料</div>
           <tiptap-vuetify
             v-model="currentKB.desc"
             :extensions="extensions"
             max-height="20vh"
             min-height="10vh"
-            placeholder='寫作指引，請不要留白'
+            placeholder='細部說明，請不要留白'
             class='text-left'
           />
           <v-file-input prepend-icon="fa-paperclip" v-model="KBFile" label='輔助說明文件／圖片上傳' :loading="uploadprogress !== 0">
@@ -92,7 +92,7 @@
           </div>
         </v-card-text>
         <v-card-actions>
-          <v-btn :disabled='KBwatch' @click='setKB()'>送出寫作指引</v-btn>
+          <v-btn :disabled='KBwatch' @click='setKB()'>送出細部說明</v-btn>
           <v-btn @click='KBeditorW = false'>關閉對話框</v-btn>
         </v-card-actions>
       </v-card>
@@ -165,13 +165,17 @@
               v-model="currentStage.current"
               label="設定為目前工作階段"
             ></v-switch>
+            <v-switch
+              v-model="currentStage.coolDown"
+              label="進入冷靜期（用戶不准發新的Issue，只可以回復既有的）"
+            ></v-switch>
             <div class='text-subtitle-2 font-weight-blod'>本階段名稱</div>
             <v-text-field hint='請輸入本階段名稱' v-model='currentStage.name'/>
             <div class='text-subtitle-2 font-weight-blod'>編輯階段死線</div>
             <VueCtkDateTimePicker v-model="currentStageDate" label='請選擇日期死線' locale='zh-tw' format='YYYY-MM-DD HH:mm:ss' class='ma-2' />
             <div class='text-subtitle-2 font-weight-blod'>編輯階段目標</div>
             <div class='d-flex flex-row'>
-              <v-text-field solo label="請輸入你想要加入的目標名稱" hint='輸入完之後請按右側加號增加目標' v-model='objectiveAwaited'/>
+              <v-text-field solo label="請輸入你想要加入的目標名稱" hint='輸入完之後請按右側加號增加目標，請務必最後再編輯目標，否則你輸入的用戶標籤都不會存檔（目標和標籤是分開存檔的）' v-model='objectiveAwaited'/>
               <v-btn
                 icon
                 outlined
@@ -345,7 +349,7 @@
               <v-icon>fa-copy</v-icon>
             </v-btn>
           </template>
-          <span>複製知識點的流程設定</span>
+          <span>複製知識點的流程設定（也會複製0秒的Issue，不包含Issue附件和目標）</span>
         </v-tooltip>
       </v-badge>
     </v-speed-dial>
@@ -654,7 +658,6 @@ export default {
     },
     closeAssign: function () {
       this.assignW = false;
-      this.stagePopulated = false;
     },
     resetKB: function () {
       this.currentKB = {
@@ -1067,7 +1070,8 @@ export default {
         writerTags: [],
         finalTags: [],
         _id: '',
-        objectives: []
+        objectives: [],
+        coolDown: false
       },
       removePointer: false,
       timePicker: false,
@@ -1156,7 +1160,7 @@ export default {
   },
   created () {
     this.$emit('viewIn', {
-      text: '編輯知識點',
+      text: '知識點管理',
       icon: 'fa-network-wired',
       module: '知識節點模組',
       location: '/createKB'

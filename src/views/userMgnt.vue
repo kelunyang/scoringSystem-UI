@@ -95,7 +95,6 @@
                   <div class="text-body-2 font-weight-bold">帳號創建於： {{ dateConvert(editingUser.createDate) }} </div>
                   <div class="text-body-2 font-weight-bold">帳號修改於： {{ dateConvert(editingUser.modDate) }} </div>
                   <v-text-field prepend-icon='fa-user-alt' label='用戶名稱' v-model='editingUser.name'></v-text-field>
-                  <v-text-field prepend-icon='fa-at' label='用戶Email' v-model='editingUser.email'></v-text-field>
                   <v-text-field prepend-icon='fa-building' label='用戶單位' v-model='editingUser.unit'></v-text-field>
                   <v-select
                     prepend-icon='fa-transgender-alt'

@@ -10,7 +10,7 @@
               v-bind="attrs" v-on="on"
             >fa-history</v-icon>
           </template>
-          <span>本Issue晚於您指定的Commit發布</span>
+          <span>本Issue晚於您指定的版本發布</span>
         </v-tooltip>
       </div>
       <div v-if='compareUser.tick > 0'>
@@ -26,22 +26,15 @@
         </v-tooltip>
       </div>
       <v-spacer></v-spacer>
-      <v-tooltip top v-if='taguserConvert(["reviewer", "vendor", "writer", "PM"], issue)'>
-        <template v-slot:activator="{ on, attrs }">
-          <v-btn icon v-bind="attrs" v-on="on" @click='editIssue(issue)'>
-            <v-icon dense>fa-pencil-alt</v-icon>
-          </v-btn>
-        </template>
-        <span>編輯Issue</span>
-      </v-tooltip>
-      <v-tooltip top v-if='taguserConvert(["PM"], issue)'>
-        <template v-slot:activator="{ on, attrs }">
-          <v-btn icon @click='removeIssue(issue)' v-bind="attrs" v-on="on">
-            <v-icon dense>fa-trash</v-icon>
-          </v-btn>
-        </template>
-        <span>刪除Issue</span>
-      </v-tooltip>
+      <v-btn
+        icon
+        v-if='currentStage.isPM || issue.user === currentUser._id'
+        @click='removeIssue(issue)'
+        color='grey lighten-1'
+        class='black--text'
+      >
+        刪除
+      </v-btn>
     </v-row>
     <v-row class='pa-0 ma-0'>
       <v-col cols='2' class='pa-0 ma-0'>
