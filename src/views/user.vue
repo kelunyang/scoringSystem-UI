@@ -34,21 +34,21 @@
     <v-row no-gutters>
       <v-col class="text-left d-flex flex-column">
         <v-btn color="blue darken-4" v-if='modify === true' class='white--text' link href="#/userDashBoard">修改完成了嗎？請按此進入你的知識點審查頁面（以後你也可以從右上角三條線點開進入）</v-btn>
-        <v-main>
+        <v-container>
           <v-row no-gutters>
-            <v-col>
+            <v-col class='flex-shrink-1'>
               <v-avatar size="62">
                 <img :src='"https://avatars.dicebear.com/api/" + currentUser.types + "/" + encodeURIComponent(currentUser.name + "@" + currentUser.unit) + ".svg"' />
               </v-avatar>
             </v-col>
-            <v-col>
+            <v-col class='flex-grow-1'>
               <div class="text-h6 font-weight-bold">Email： {{ currentUser.email }}</div>
               <div class="text-caption">如要更改Email請洽管理員</div>
               <div class="text-body-2 font-weight-bold">帳號創建於： {{ dateConvert(currentUser.createDate) }} </div>
               <div class="text-body-2 font-weight-bold">帳號修改於： {{ dateConvert(currentUser.modDate) }} </div>
             </v-col>
           </v-row>
-        </v-main>
+        </v-container>
         <v-text-field prepend-icon='fa-key' type='password' label='你的新密碼' hint="如果你要設定密碼的話，請輸入您的新密碼" v-model='password' :class='firstRun'></v-text-field>
         <password v-model="password" :strength-meter-only="true"/>
         <v-text-field prepend-icon='fa-user-alt' label='用戶名稱' v-model='currentUser.name'></v-text-field>

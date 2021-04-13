@@ -1,5 +1,36 @@
 <template>
   <v-app>
+    <v-dialog
+      v-model='imgPreviewW'
+      fullscreen
+      hide-overlay
+      transition="dialog-bottom-transition"
+    >
+      <v-card>
+        <v-toolbar dark color='primary'>
+          <v-btn
+            icon
+            dark
+            @click="imgPreviewW = false"
+          >
+            <v-icon>fa-times</v-icon>
+          </v-btn>
+          <v-toolbar-title>預覽附件圖檔： {{ imgCache.name }}</v-toolbar-title>
+          <v-spacer></v-spacer>
+          <v-btn
+            dark
+            link
+            icon
+            @click='forceDownload(imgCache)'
+          >
+            <v-icon>fa-download</v-icon>
+          </v-btn>
+        </v-toolbar>
+        <v-card-text class='pa-3'>
+          <img width="100%" :src="'/storages/' + imgCache._id" />
+        </v-card-text>
+      </v-card>
+    </v-dialog>
     <v-snackbar v-model="toastOn" :timeout="toastTime">
       {{ toastMsg }}
       <template v-slot:action="{ attrs }">
@@ -261,16 +292,17 @@
           <v-icon>fas fa-plug</v-icon>
           同步連線建立中！
         </v-card-title>
-        <v-card-text>
+        <v-card-text class='text-left'>
           可能是網頁剛剛開啟，連與伺服器間的同步連線尚未啟動，但如果您是使用到一半看到本訊息，請嘗試重新整理網頁（可能需要重新登入），如重複發生請聯絡管理員
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
             color="primary"
-            @click="syncW = false"
+            link
+            href='/'
           >
-            聯絡管理員
+            回到首頁
           </v-btn>
           <v-btn
             color="primary"
@@ -438,7 +470,7 @@
                 <v-icon>fa-code-branch</v-icon>
               </v-list-item-icon>
               <v-list-item-content class='text-left'>
-                <v-list-item-title>版本： {{ siteSettings.version }} <br/><a href="/#/Info"><span class='text-cpation cyan--text darken-4'>版本紀錄</span></a></v-list-item-title>
+                <v-list-item-title>版本： {{ siteSettings.versionFrontend.substring(0, 7) }} / {{ siteSettings.versionBackend.substring(0, 7) }} <br/><a href="/#/Info"><span class='text-cpation cyan--text darken-4'>版本紀錄</span></a></v-list-item-title>
               </v-list-item-content>
             </v-list-item>
             <v-list-item style='background-color:white'>
@@ -462,7 +494,7 @@
       </v-menu>
     </v-app-bar>
     <div class='pa-5 ma-0' style='width: 100vw'>
-      <router-view @viewIn='changePage' @toastPop='sendToast' @timerOn='timerOn' @preventReloadDetect='preventReloadDetect'></router-view>
+      <router-view @viewIn='changePage' @toastPop='sendToast' @timerOn='timerOn' @preventReloadDetect='preventReloadDetect' @downloadFile='downloadFile'></router-view>
     </div>
   </v-app>
 </template>
@@ -507,6 +539,21 @@ export default {
   name: 'App',
   components: { TiptapVuetify },
   methods: {
+    downloadFile: function (file) {
+      if (file.type.indexOf('image') === -1) {
+        this.forceDownload(file);
+      } else {
+        this.imgCache = file;
+        this.imgPreviewW = true;
+      }
+    },
+    forceDownload: function (file) {
+      let element = document.createElement('a');
+      element.setAttribute('href', '/storages/' + file._id);
+      element.setAttribute('download', file.name);
+      element.style.display = 'none';
+      element.click();      
+    },
     gotoPreviousPage: function () {
       window.location.replace('https://' + window.location.host + '/#' + this.previousPage.location);
       this.history = _.dropRight(this.history, 2);
@@ -901,12 +948,18 @@ export default {
       for (let i = 0; i < oriobj.items.length; i++) {
         let item = oriobj.items[i];
         let login = oriobj.currentUser._id === '' ? false : 'tags' in oriobj.currentUser;
-        item.vis = !login ? false
-                   : !(item.path in data) ? false
-                   : typeof data[item.path] === 'boolean' ? data[item.path]
-                   : _.find(data[item.path], (titem) => {
-                     return _.find(oriobj.currentUser.tags, { _id: titem }) !== undefined
-                   }) !== undefined;
+        if(!login) {
+          item.vis = false;
+        } else {
+          let authRange = data[item.path];
+          if(authRange.length === 0) {
+            item.vis = true;
+          } else {
+            item.vis = (_.intersectionWith(authRange, oriobj.currentUser.tags, (aTag, cTag) => {
+                            return aTag === cTag._id;
+                        })).length > 0
+          }
+        }
       }
       Vue.nextTick(() => {
         oriobj.authW = false;
@@ -923,6 +976,11 @@ export default {
   },
   data () {
     return {
+      imgCache: {
+        name: '',
+        _id: ''
+      },
+      imgPreviewW: false,
       history: [],
       indeterminate: false,
       intervalTimer: null,
@@ -1034,7 +1092,7 @@ export default {
         },
         {
           icon: 'fa-chart-bar',
-          title: '統計圖表',
+          title: '知識點影片數據',
           path: '/Chart',
           items: [],
           vis: false

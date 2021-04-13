@@ -71,7 +71,7 @@
               <div v-bind="attrs" v-on="on" class="versionSign">{{ versionConvert(currentIssue.version) }}</div>
             </template>
             <span v-if='currentIssue.version === undefined || !("tick" in currentIssue.version)'>無對應版本</span>
-            <span v-else>{{ dateConvert(currentIssue.version.tick) }}版</span>
+            <span v-else>{{ versionnameConvert(currentIssue.version.name) }}版</span>
           </v-tooltip>
           <div>{{ timeConvert(currentIssue) }}</div>
         </div>
@@ -149,12 +149,15 @@ export default {
     }
   },
   methods: {
+    versionnameConvert: function (filename) {
+      return filename.replace(/\.[^/.]+$/, "");
+    },
     versionConvert: function (version) {
       if(this.currentVersion._id !== '') {
         if(version === undefined || !('_id' in version)) {
           return '無對應版本';
         } else {
-          return version._id === this.currentVersion._id ? '當前版本' : this.dateConvert(this.currentVersion.tick) + '版';
+          return version._id === this.currentVersion._id ? '當前版本' : this.versionnameConvert(this.currentVersion.name) + '版';
         }
       } else {
         return '當前無任何已上傳版本'

@@ -1,8 +1,8 @@
 <template>
-  <v-main class='pa-1 ma-1' style='border: 1px solid black'>
+  <v-main class='pa-1 ma-1 black--text' style='border: 1px solid black'>
     <v-row class='d-flex flex-row pa-0 ma-0'>
-      <div v-if='compareCommit.tick > 0'>
-        <v-tooltip top v-if='compareCommit.tick < issue.tick'>
+      <div v-if='cCommit.tick > 0'>
+        <v-tooltip top v-if='cCommit.tick < issue.tick'>
           <template v-slot:activator="{ on, attrs }">
             <v-icon
               dense
@@ -13,8 +13,8 @@
           <span>本Issue晚於您指定的版本發布</span>
         </v-tooltip>
       </div>
-      <div v-if='compareUser.tick > 0'>
-        <v-tooltip top v-if='compareUser.tick < issue.tick'>
+      <div v-if='cUser.tick > 0'>
+        <v-tooltip top v-if='cUser.tick < issue.tick'>
           <template v-slot:activator="{ on, attrs }">
             <v-icon
               dense
@@ -27,13 +27,20 @@
       </div>
       <v-spacer></v-spacer>
       <v-btn
-        icon
-        v-if='currentStage.isPM || issue.user === currentUser._id'
+        v-if='cStage.isPM || issue.user === currentUser._id'
         @click='removeIssue(issue)'
         color='grey lighten-1'
         class='black--text'
       >
         刪除
+      </v-btn>
+      <v-btn
+        v-if='eDiff'
+        @click='sendDiff'
+        color='grey lighten-1'
+        class='black--text'
+      >
+        啟動對比
       </v-btn>
     </v-row>
     <v-row class='pa-0 ma-0'>
@@ -69,7 +76,41 @@ export default {
     issue: Object,
     compareCommit: Object,
     compareUser: Object,
-    currentStage: Object
+    currentStage: Object,
+    enableDiff: Boolean
+  },
+  data() {
+    return {
+      eDiff: false,
+      cCommit: { tick: 0 },
+      cUser: { tick: 0 },
+      cStage: {
+        isPM: false,
+        isReviewer: false,
+        isVendor: false,
+        isFinal: false,
+        isWriter: false
+      }
+    }
+  },
+  watch: {
+    enableDiff: function () {
+      if(this.enableDiff !== undefined) {
+        this.eDiff = this.enableDiff;
+      }
+    }
+  },
+  created() {
+    this.eDiff = this.enableDiff === undefined ? false : this.enableDiff;
+    this.cCommit = this.compareCommit === undefined ? { tick: 0 } : this.compareCommit;
+    this.cUser = this.compareUser === undefined ? { tick: 0 } : this.compareUser;
+    this.cStage = this.currentStage === undefined ? {
+      isPM: false,
+      isReviewer: false,
+      isVendor: false,
+      isFinal: false,
+      isWriter: false
+    } : this.currentStage;
   },
   computed: {
     currentUser: function () {
@@ -77,6 +118,9 @@ export default {
     }
   },
   methods: {
+    sendDiff: function () {
+      this.$emit('sendDiff', this.issue);
+    },
     downloadFile: function (file) {
       this.$emit('download', file);
     },
@@ -101,19 +145,19 @@ export default {
       for(let i=0; i<tags.length; i++) {
         let tag = tags[i];
         if(tag === 'PM') {
-          found = this.currentStage.isPM;
+          found = this.cStage.isPM;
         }
         if(tag === 'reviewer') {
-          found = this.currentStage.isReviewer;
+          found = this.cStage.isReviewer;
         }
         if(tag === 'vendor') {
-          found = this.currentStage.isVendor;
+          found = this.cStage.isVendor;
         }
         if(tag === 'writer') {
-          found = this.currentStage.isWriter;
+          found = this.cStage.isWriter;
         }
         if(tag === 'final') {
-          found = this.currentStage.isFinal;
+          found = this.cStage.isFinal;
         }
         if(found) {
           break;

@@ -83,6 +83,7 @@
                   close
                   close-icon="fa-times"
                   @click:close="deleteKBFile(file)"
+                  @click="downloadFile(file)"
                 >
                   {{ filenameConvert(file.name) }} ({{ byteConvert(file.size) }})
                 </v-chip>
@@ -99,7 +100,6 @@
     </v-dialog>
     <v-dialog
       v-model='assignW'
-      width='60vw'
       fullscreen
       hide-overlay
       transition="dialog-bottom-transition"
@@ -153,76 +153,79 @@
             找不到編輯階段
           </div>
           <div v-if='stagePopulated' v-show='currentStage._id !== ""'>
-            <div class='text-caption red--text text-left'>
-              請注意以下事項：
-              <ol>
-                <li>如果這個階段不需要有人參與，你就不需要給標籤</li>
-                <li>要把人拉入標籤，請去使用者管理中操作</li>
-                <li>所謂最終行政，指的是驗收、會計之類的，他們會看到「給予通過」這顆按鈕</li>
-              </ol>
+            <div class='d-flex flex-column'>
+              <div class='text-caption red--text text-left'>
+                請注意以下事項：
+                <ol>
+                  <li>如果這個階段不需要有人參與，你就不需要給標籤</li>
+                  <li>要把人拉入標籤，請去使用者管理中操作</li>
+                  <li>所謂最終行政，指的是驗收、會計之類的，他們會看到「給予通過」這顆按鈕</li>
+                </ol>
+              </div>
+              <v-switch
+                v-model="currentStage.current"
+                label="設定為目前工作階段"
+              ></v-switch>
+              <v-switch
+                v-model="currentStage.coolDown"
+                label="進入冷靜期（用戶不准發新的Issue，只可以回復既有的）"
+              ></v-switch>
+              <div class='text-subtitle-2 font-weight-blod'>本階段名稱</div>
+              <v-text-field hint='請輸入本階段名稱' v-model='currentStage.name'/>
+              <div class='text-subtitle-2 font-weight-blod'>編輯階段死線</div>
+              <VueCtkDateTimePicker v-model="currentStageDate" label='請選擇日期死線' locale='zh-tw' format='YYYY-MM-DD HH:mm:ss' class='ma-2' />
+              <div class='text-subtitle-2 font-weight-blod'>編輯階段目標</div>
+              <div class='d-flex flex-row'>
+                <v-text-field solo label="請輸入你想要加入的目標名稱" hint='輸入完之後請按右側加號增加目標，請務必最後再編輯目標，否則你輸入的用戶標籤都不會存檔（目標和標籤是分開存檔的）' v-model='objectiveAwaited'/>
+                <v-btn
+                  icon
+                  outlined
+                  @click='plusObjective'
+                >
+                  <v-icon>fa-plus</v-icon>
+                </v-btn>
+              </div>
+              <v-simple-table v-show="currentStage.objectives.length > 0">
+                <template v-slot:default>
+                  <thead>
+                    <tr>
+                      <th class="text-left" style="width:25px">
+                        階段目標名稱
+                      </th>
+                      <th class="text-left" style="width:25px">
+                        &nbsp;
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="objective in currentStage.objectives"
+                      :key="objective._id"
+                    >
+                      <td class="text-left">
+                        {{ objective.name }}<span v-if='"signUser" in objective'>[已通過]</span>
+                      </td>
+                      <td class='d-flex flex-row justify-end'>
+                        <v-btn outlined icon @click='removeObjective(objective._id)'>
+                          <v-icon>fa-trash</v-icon>
+                        </v-btn>
+                      </td>
+                    </tr>
+                  </tbody>
+                </template>
+              </v-simple-table>
+              <v-btn class='flex-grow-1' @click='revokeObjectives'>全數撤回本階段審查目標許可</v-btn>
+              <div class='text-subtitle-2 font-weight-blod'>本階段的PM標籤</div>
+              <tag-filter :mustSelected='false' @plusItem='plusTag' :single='false' :selectedItem='currentStage.pmTags' @valueUpdated='filterPMTagUpdated' :candidatedItem='savedTags' :createable='true' label='請輸入本階段的PM標籤' />
+              <div class='text-subtitle-2 font-weight-blod'>本階段的審查者標籤</div>
+              <tag-filter :mustSelected='false' @plusItem='plusTag' :single='false' :selectedItem='currentStage.reviewerTags' @valueUpdated='filterreviewerTagUpdated' :candidatedItem='savedTags' :createable='true' label='請輸入本階段的審查者標籤' />
+              <div class='text-subtitle-2 font-weight-blod'>本階段的廠商標籤</div>
+              <tag-filter :mustSelected='false' @plusItem='plusTag' :single='false' :selectedItem='currentStage.vendorTags' @valueUpdated='filtervendorTagUpdated' :candidatedItem='savedTags' :createable='true' label='請輸入本階段的廠商標籤' />
+              <div class='text-subtitle-2 font-weight-blod'>本階段的寫手標籤</div>
+              <tag-filter :mustSelected='false' @plusItem='plusTag' :single='false' :selectedItem='currentStage.writerTags' @valueUpdated='filterwriterTagUpdated' :candidatedItem='savedTags' :createable='true' label='請輸入本階段的寫手標籤' />
+              <div class='text-subtitle-2 font-weight-blod'>本階段的行政組標籤</div>
+              <tag-filter :mustSelected='false' @plusItem='plusTag' :single='false' :selectedItem='currentStage.finalTags' @valueUpdated='filterfinalTagUpdated' :candidatedItem='savedTags' :createable='true' label='請輸入本階段的行政組標籤' />
             </div>
-            <v-switch
-              v-model="currentStage.current"
-              label="設定為目前工作階段"
-            ></v-switch>
-            <v-switch
-              v-model="currentStage.coolDown"
-              label="進入冷靜期（用戶不准發新的Issue，只可以回復既有的）"
-            ></v-switch>
-            <div class='text-subtitle-2 font-weight-blod'>本階段名稱</div>
-            <v-text-field hint='請輸入本階段名稱' v-model='currentStage.name'/>
-            <div class='text-subtitle-2 font-weight-blod'>編輯階段死線</div>
-            <VueCtkDateTimePicker v-model="currentStageDate" label='請選擇日期死線' locale='zh-tw' format='YYYY-MM-DD HH:mm:ss' class='ma-2' />
-            <div class='text-subtitle-2 font-weight-blod'>編輯階段目標</div>
-            <div class='d-flex flex-row'>
-              <v-text-field solo label="請輸入你想要加入的目標名稱" hint='輸入完之後請按右側加號增加目標，請務必最後再編輯目標，否則你輸入的用戶標籤都不會存檔（目標和標籤是分開存檔的）' v-model='objectiveAwaited'/>
-              <v-btn
-                icon
-                outlined
-                @click='plusObjective'
-              >
-                <v-icon>fa-plus</v-icon>
-              </v-btn>
-            </div>
-            <v-simple-table v-show="currentStage.objectives.length > 0">
-              <template v-slot:default>
-                <thead>
-                  <tr>
-                    <th class="text-left" style="width:25px">
-                      階段目標名稱
-                    </th>
-                    <th class="text-left" style="width:25px">
-                      &nbsp;
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr
-                    v-for="objective in currentStage.objectives"
-                    :key="objective._id"
-                  >
-                    <td class="text-left">
-                      {{ objective.name }}
-                    </td>
-                    <td class='d-flex flex-row justify-end'>
-                      <v-btn outlined icon @click='removeObjective(objective._id)'>
-                        <v-icon>fa-trash</v-icon>
-                      </v-btn>
-                    </td>
-                  </tr>
-                </tbody>
-              </template>
-            </v-simple-table>
-            <div class='text-subtitle-2 font-weight-blod'>本階段的PM標籤</div>
-            <tag-filter :mustSelected='false' @plusItem='plusTag' :single='false' :selectedItem='currentStage.pmTags' @valueUpdated='filterPMTagUpdated' :candidatedItem='savedTags' :createable='true' label='請輸入本階段的PM標籤' />
-            <div class='text-subtitle-2 font-weight-blod'>本階段的審查者標籤</div>
-            <tag-filter :mustSelected='false' @plusItem='plusTag' :single='false' :selectedItem='currentStage.reviewerTags' @valueUpdated='filterreviewerTagUpdated' :candidatedItem='savedTags' :createable='true' label='請輸入本階段的審查者標籤' />
-            <div class='text-subtitle-2 font-weight-blod'>本階段的廠商標籤</div>
-            <tag-filter :mustSelected='false' @plusItem='plusTag' :single='false' :selectedItem='currentStage.vendorTags' @valueUpdated='filtervendorTagUpdated' :candidatedItem='savedTags' :createable='true' label='請輸入本階段的廠商標籤' />
-            <div class='text-subtitle-2 font-weight-blod'>本階段的寫手標籤</div>
-            <tag-filter :mustSelected='false' @plusItem='plusTag' :single='false' :selectedItem='currentStage.writerTags' @valueUpdated='filterwriterTagUpdated' :candidatedItem='savedTags' :createable='true' label='請輸入本階段的寫手標籤' />
-            <div class='text-subtitle-2 font-weight-blod'>本階段的行政組標籤</div>
-            <tag-filter :mustSelected='false' @plusItem='plusTag' :single='false' :selectedItem='currentStage.finalTags' @valueUpdated='filterfinalTagUpdated' :candidatedItem='savedTags' :createable='true' label='請輸入本階段的行政組標籤' />
           </div>
         </v-card-text>
       </v-card>
@@ -645,6 +648,15 @@ export default {
     }
   },
   methods: {
+    revokeObjectives: function () {
+      this.$socket.client.emit('revokeObjectives', {
+        KB: this.currentStage.KB,
+        stage: this.currentStage._id
+      });
+    },
+    downloadFile: function (file) {
+      this.$emit('downloadFile', file);
+    },
     removeObjective: function (OID) {
       this.$emit('toastPop', '取得新的目標清單中...');
       this.$socket.client.emit('removeObjective', {
@@ -816,9 +828,14 @@ export default {
       this.DB = data;
       if(this.currentKB._id !== '') {
         let flattenKBs = _.flatten(KBs);
-        this.currentKB = _.find(flattenKBs, (KB) => {
+        let currentKB = _.find(flattenKBs, (KB) => {
           return KB._id === this.currentKB._id;
         });
+        if(currentKB === undefined) {
+          this.resetKB();
+        } else {
+          this.currentKB = currentKB;
+        }
       }
     },
     socketgetKB: function (data) {

@@ -1,12 +1,13 @@
 <template>
-  <v-main class='pa-0 mt-1 mb-1 ml-0 mr-0 d-flex'>
+  <v-main class='pa-0 mt-1 mb-1 ml-0 mr-0 d-flex black--text'>
     <v-row no-gutters class='pa-0 mb-1'>
       <v-col class='d-flex flex-row pa-0'>
-        <span class='text-subtitle-1 text-left font-weight-bold'>{{ currentItem.title }}</span>
-        <v-spacer></v-spacer>
-        <span v-if="events.length > 0">
-          <v-icon>fa-bullhorn</v-icon>{{ announcedEvent.desc }}[{{ announcedEvent.user.name }} @ {{ dateConvert(announcedEvent.tick) }}]
-        </span>
+        <span class='text-h6 text-decoration-underline text-left font-weight-bold'>{{ currentItem.title }}</span>
+      </v-col>
+    </v-row>
+    <v-row v-if="events.length > 0" no-gutters>
+      <v-col class='text-right d-flex justify-end text-caption pa-1'>
+        <v-icon small>fa-bullhorn</v-icon>{{ announcedEvent.desc }}[{{ announcedEvent.user.name }} @ {{ dateConvert(announcedEvent.tick) }}]
       </v-col>
     </v-row>
     <v-row no-gutters>
@@ -67,6 +68,18 @@
             </v-btn>
           </template>
           <span>版本管理</span>
+        </v-tooltip>
+        <v-tooltip top v-if='currentItem.isPM'>
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn
+              icon
+              @click.stop='tagMgnt(currentItem)'
+              v-bind="attrs" v-on="on"
+            >
+              <v-icon>fab fa-slack-hash</v-icon>
+            </v-btn>
+          </template>
+          <span>標籤管理</span>
         </v-tooltip>
         <v-tooltip top v-if='currentItem.isPM'>
           <template v-slot:activator="{ on, attrs }">
@@ -172,6 +185,9 @@ export default {
       },
       openauthDetail: function (item) {
         this.$emit('viewDetail', item);
+      },
+      tagMgnt: function (item) {
+        this.$emit('tags', item);
       }
     },
     computed: {

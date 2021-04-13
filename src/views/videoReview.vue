@@ -9,30 +9,82 @@
     <v-alert type="info" v-if="currentStage.coolDown">
       本階段進入冷靜期，你只能回復既有Issue，不能開新的Issue！
     </v-alert>
+    <v-dialog v-model='diffW' fullscreen hide-overlay transition='dialog-bottom-transition'>
+      <v-card>
+        <v-toolbar dark color='primary'>
+          <v-btn icon dark @click='closeDiff'>
+            <v-icon>fa-times</v-icon>
+          </v-btn>
+          <v-toolbar-title>Issue對比</v-toolbar-title>
+        </v-toolbar>
+        <v-card-text class='black--text'>
+          <v-container>
+            <v-row no-gutters>
+              <v-col v-for='(diff, index) in diffIssues' :key='diff._id' class='d-flex flex-column pa-1 ma-1' style='border:1px solid #333'>
+                <div class='text-h6 text-decoration-underline'>第{{ (index+1) }}個Issue</div>
+                <div class='pa-1 text-body-1' v-html="HTMLConverter(diff.body)"></div>
+              </v-col>
+            </v-row>
+            <v-row no-gutters>
+              <v-col style='border: 1px solid black' class='pa-1 ma-1'>
+                <div class='text-h6 text-decoration-underline'>對比結果，紅色代表刪除，綠色代表新增</div>
+                <div class='text-body-1' v-html="HTMLConverter(diffResult)"></div>
+              </v-col>
+            </v-row>
+          </v-container>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
     <v-dialog
-      v-model="colRatioW"
+      v-model="configW"
       persistent
       max-width="50vw"
     >
       <v-card>
-        <v-card-title class="headline">
-          調整顯示區比例
-        </v-card-title>
-        <v-card-text class='d-flex flex-column'>
-          <div>在這裡調整的顯示區比例會保存在這台機器上，你拖曳時，背景就是你設定好的比例</div>
-          <v-slider
-            label='調整顯示區比例'
-            min='4'
-            max='8'
-            v-model="videoWidth"
-            thumb-label
-          ></v-slider>
+        <v-toolbar
+          dark
+          color="primary"
+        >
+          <v-toolbar-title>修改審查功能的畫面預設值</v-toolbar-title>
+        </v-toolbar>
+        <v-card-text class='d-flex flex-column pa-0'>
+          <v-alert type='info'>在這裡的設定只會保存在這台機器上，意思是你換一台電腦就看不到了</v-alert>
+          <div class='d-flex flex-column pa-3 black--text'>
+            <div class='text-h6'>隱藏右下角的Issue過濾器</div>
+            <v-switch
+              v-model="hideFilterBtns"
+              label="啟動這個選項，隱藏右下角過濾器"
+            ></v-switch>
+            <div class='text-h6'>關閉版本對比模式</div>
+            <v-switch
+              v-model="disableCompareMode"
+              label="啟動這個選項，關閉版本對比模式"
+            ></v-switch>
+            <v-switch
+              v-model="disableIssueDiff"
+              label="啟動這個選項，關閉Issue對照功能"
+            ></v-switch>
+            <div class='text-h6'>顯示區比例</div>
+            <v-slider
+              label='調整顯示區比例'
+              min='4'
+              max='8'
+              v-model="videoWidth"
+              thumb-label
+            ></v-slider>
+            <div class='d-flex flex-row'>
+              <v-btn class='flex-grow-1' @click='videoWidth = 4'>一鍵放大Issue區</v-btn>
+              <v-btn class='flex-grow-1' @click='videoWidth = 8'>一鍵縮小Issue區</v-btn>
+            </div>
+          </div>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn @click='videoWidth = 4'>一鍵放大Issue區</v-btn>
-          <v-btn @click='videoWidth = 8'>一鍵縮小Issue區</v-btn>
-          <v-btn @click='colRatioW = false'>關閉對話框</v-btn>
+          <v-btn
+            @click='closeConfigW'
+          >
+            關閉對話框
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -42,9 +94,12 @@
       max-width="50vw"
     >
       <v-card>
-        <v-card-title class="headline">
-          依照版本來過濾Issue
-        </v-card-title>
+        <v-toolbar
+          dark
+          color="primary"
+        >
+          <v-toolbar-title>依照版本來過濾Issue</v-toolbar-title>
+        </v-toolbar>
         <v-card-text class='d-flex flex-column'>
           <v-select
             v-model="compareCommit"
@@ -101,9 +156,10 @@
         >
           <v-toolbar-title>{{ currentKB.title }} 目前進度概況</v-toolbar-title>
         </v-toolbar>
-        <v-card-text class='pa-5 black--text'>
+        <v-card-text class='pa-0 black--text'>
+          <v-alert type='info'>這個對話框關閉之後，你可以在審查畫面右上角點一下i按鈕開啟</v-alert>
           <div v-if='currentKB.currentStep === 0'>專案目前沒啟動，你是怎麼到這裡的？</div>
-          <div v-if='currentKB.currentStep > 0'>
+          <div v-if='currentKB.currentStep > 0' class='pa-3'>
             <div class='text-body-1'>目前進度（階段 {{ currentKB.currentStep }} / {{ currentKB.stages.length }}）</div>
             <div class='text-h6 font-weight-medium black--text text-left'>{{ currentKB.stages[currentKB.currentStep - 1].name }}</div>
             <div class='text-body-1'>進度日期</div>
@@ -143,6 +199,15 @@
           <v-spacer>
           </v-spacer>
           <v-btn
+            color='indigo darken-4'
+            class='white--text ma-1'
+            @click="configW = true"
+          >
+            修改審查功能的畫面預設值
+          </v-btn>
+          <v-btn
+            color='red accent-4'
+            class='white--text ma-1'
             @click="progressW = false"
           >
             好的，我要開始工作了！
@@ -289,27 +354,7 @@
         </v-card-text>
       </v-card>
     </v-dialog>
-    <v-fab-transition>
-      <v-tooltip bottom>
-        <template v-slot:activator="{ on, attrs }">
-          <v-btn
-            v-bind="attrs" v-on="on"
-            color="pink"
-            fixed
-            fab
-            dark
-            bottom
-            right
-            style='margin-bottom: 80px'
-            @click.stop='colRatioW = true'
-          >
-            <v-icon>fas fa-arrows-alt-h</v-icon>
-          </v-btn>
-        </template>
-        <span>調整顯示區比例</span>
-      </v-tooltip>
-    </v-fab-transition>
-    <v-speed-dial v-model="filterBtn" fixed bottom right direction="left" :open-on-hover="true" transition="slide-y-reverse-transition">
+    <v-speed-dial v-if='!hideFilterBtns' v-model="filterBtn" fixed bottom right direction="left" :open-on-hover="true" transition="slide-y-reverse-transition">
       <template v-slot:activator>
         <v-btn
           v-model="filterBtn"
@@ -407,12 +452,14 @@
       <div style='width: 100%' class='flex-grow-1 d-flex flex-row align-self-center'>
         <v-progress-linear
           v-model="objectiveRate"
-          color="grey darken-4"
+          :color="statistics.unfinishObj - statistics.finishObj <= 1 ? 'red darken-4' : 'grey darken-4'"
           class='white--text flex-grow-1'
           height="25"
         >
           <template v-slot:default="{ value }">
-            <strong>本階段審查目標完成度：{{ Math.ceil(value) }}%（階段死線： {{ dateConvert(currentStage.dueTick) }}</strong>
+            <span>本階段審查目標完成度：{{ Math.ceil(value) }}%</span>
+            <span v-if='statistics.unfinishObj - statistics.finishObj <= 1'>（再通過一個你就不能回頭啦！）</span>
+            <span v-else>（階段死線： {{ dateConvert(currentStage.dueTick) }}）</span>
           </template>
         </v-progress-linear>
         <div class='d-flex flex-row flex-shrink-1 flex-grow-0 floatPanel justify-end'>
@@ -462,7 +509,7 @@
         </div>
       </div>
       <v-expand-transition>
-        <v-alert type="error" v-if='statistics.unfinishObj - statistics.finishObj <= 1'>請注意！如果同意了最後一個審查目標，這個階段就結束啦，而且是不會回頭的喔！</v-alert>
+        <!-- <v-alert type="error" v-if='statistics.unfinishObj - statistics.finishObj <= 1'>請注意！如果同意了最後一個審查目標，這個階段就結束啦，而且是不會回頭的喔！</v-alert> -->
         <v-simple-table class='text-left' v-show='objectiveW'>
           <template v-slot:default>
             <thead>
@@ -544,14 +591,14 @@
               </div>
             </div>
           </div>
-          <div ref='viewArea' class='viewArea' v-show='!tipW' style='position: relative'>
+          <div ref='viewArea' class='viewArea' :class='pinOn ? "floatView" : ""' v-show='!tipW' style='position: relative'>
             <div class='d-flex flex-column' v-if='currentVersion._id === ""'>
               <v-icon x-large class='ma-1' style='transform: scale(1.5);'>fa-exclamation-circle</v-icon>
               <div class='text-h5 font-weight-black ma-3'>目前沒有任何檔案</div>
             </div>
             <div ref='videoArea' v-if='currentVersion._id !== ""'>
               <div ref='currentPlayerArea' class="compareComp">
-                <div ref='currentControl' class='d-flex flex-row justify-start white'>
+                <div ref='currentControl' class='d-flex flex-row justify-start white' :class='pinOn ? "floatControl" : "viewControl"'>
                   <div class='versionSign'>當前版本</div>
                   <v-tooltip top v-if='cType === "video"'>
                     <template v-slot:activator="{ on, attrs }">
@@ -595,7 +642,7 @@
                       </v-btn>
                     </template>
                     <span v-if='cType === "video"'>減速播放</span>
-                    <span v-if='cType === "pdf"'>前一頁</span>
+                    <span v-if='cType === "pdf"'>上一頁</span>
                   </v-tooltip>
                   <v-tooltip top v-if='cType === "video" || cType === "pdf"'>
                     <template v-slot:activator="{ on, attrs }">
@@ -608,7 +655,7 @@
                         <v-icon>fa-forward</v-icon>
                       </v-btn>
                     </template>
-                    <span v-if="cType === 'video'">加速撥放</span>
+                    <span v-if="cType === 'video'">加速播放</span>
                     <span v-if="cType === 'pdf'">下一頁</span>
                   </v-tooltip>
                   <v-tooltip top v-if='cType === "video" || cType === "pdf"'>
@@ -622,7 +669,7 @@
                         <v-icon>fa-camera</v-icon>
                       </v-btn>
                     </template>
-                    <span>擷取當前撥放畫面</span>
+                    <span>擷取當前播放畫面</span>
                   </v-tooltip>
                   <v-tooltip top>
                     <template v-slot:activator="{ on, attrs }">
@@ -638,7 +685,7 @@
                     <span>下載原始檔</span>
                   </v-tooltip>
                 </div>
-                <div class='dragBanner' style='left: 2px'>[當前]{{ dateConvert(currentVersion.tick) }}</div>
+                <div class='dragBanner' style='left: 2px'>[當前]{{ versionnameConvert(currentVersion.name) }}</div>
                 <div v-show='cType === "video"'><video ref='currentPlayer' class='video-js'></video></div>
                 <canvas ref='currentPDF' v-show='cType === "pdf"' />
                 <v-list ref='currentZip' class='currentZip overflow-y-auto pa-0 ma-0 text-left' v-show='cType === "zip"'>
@@ -673,7 +720,7 @@
                 </v-list>
               </div>
               <div ref='previousPlayerArea' class="compareComp"  style='clip-path: inset( 0 0 0 100% )' v-if='previousVersion._id !== ""'>
-                <div ref='previousControl' class='d-flex flex-row justify-end white'>
+                <div ref='previousControl' class='d-flex flex-row justify-end white' :class='pinOn ? "floatControl" : "viewControl"'>
                   <v-tooltip top v-if='pType === "video"'>
                     <template v-slot:activator="{ on, attrs }">
                       <v-btn
@@ -716,7 +763,7 @@
                         </v-btn>
                     </template>
                     <span v-if='pType === "video"'>減速播放</span>
-                    <span v-if='pType === "pdf"'>後一頁</span>
+                    <span v-if='pType === "pdf"'>上一頁</span>
                   </v-tooltip>
                   <v-tooltip top v-if='pType === "video" || pType === "pdf"'>
                     <template v-slot:activator="{ on, attrs }">
@@ -729,7 +776,7 @@
                         <v-icon>fa-forward</v-icon>
                       </v-btn>
                     </template>
-                    <span v-if='pType === "video"'>加速撥放</span>
+                    <span v-if='pType === "video"'>加速播放</span>
                     <span v-if='pType === "pdf"'>下一頁</span>
                   </v-tooltip>
                   <v-tooltip top v-if='pType === "video" || pType === "pdf"'>
@@ -743,7 +790,7 @@
                         <v-icon>fa-camera</v-icon>
                       </v-btn>
                     </template>
-                    <span>擷取當前撥放畫面</span>
+                    <span>擷取當前播放畫面</span>
                   </v-tooltip>
                   <v-tooltip top>
                     <template v-slot:activator="{ on, attrs }">
@@ -760,7 +807,7 @@
                   </v-tooltip>
                   <div class='versionSign'>對照版本</div>
                 </div>
-                <div class='dragBanner' style='right: 2px'>[對照]{{ dateConvert(previousVersion.tick) }}</div>
+                <div class='dragBanner' style='right: 2px'>[對照]{{ versionnameConvert(previousVersion.name) }}</div>
                 <div v-show='pType === "video"'><video ref='previousPlayer' class='video-js'></video></div>
                 <canvas ref='previousPDF' v-show='pType === "pdf"' />
                 <v-list ref='previousZip' class='overflow-y-auto pa-0 ma-0 text-left' v-show='pType === "zip"'>
@@ -800,20 +847,6 @@
                     <v-icon>fa-arrows-alt-h</v-icon>
                   </v-btn>
                 </div>
-              </div>
-              <div ref='pinAlert' v-if='pinMode' class='pinAlert'>
-                <v-btn
-                  @click="endPinMode"
-                  class='red accent-4 white--text ma-1'
-                >
-                  置頂模式已開啟，按此關閉
-                </v-btn>
-                <v-btn
-                  @click='addIssue'
-                  class='ma-1 indigo darken-4 white--text'
-                >
-                  我要留言
-                </v-btn>
               </div>
             </div>
           </div>
@@ -869,6 +902,7 @@
                 close
                 close-icon="fa-times"
                 @click:close="deleteIssueFile(file)"
+                @click="downloadFile(file)"
               >
                 {{ file.name }} ({{ byteConvert(file.size) }})
               </v-chip>
@@ -882,14 +916,14 @@
               class='black--text ma-1 flex-grow-1'
               @click="snapshotPaint(0)"
             >
-              手繪標註目前影片
+              手繪標註目前版本預覽畫面
             </v-btn>
             <v-btn
               color="grey lighten-1"
               class='black--text ma-1 flex-grow-1'
               @click="snapshotPaint(1)"
             >
-              手繪標註對比影片
+              手繪標註對比版本的預覽畫面
             </v-btn>
             <v-btn
               color="red darken-4"
@@ -912,7 +946,7 @@
             <div class='text-right text-caption d-flex flex-row'>
               <div class="versionSign">{{ versionConvert(issuesInView.main.version) }}</div>
               <div v-if='issuesInView.main.version === undefined || !("tick" in issuesInView.main.version)'>{{ timeConvert(issuesInView.main.position) }}</div>
-              <div v-else>{{ timeConvert(issuesInView.main.position) }} @  {{ dateConvert(issuesInView.main.version.tick) }}版</div>
+              <div v-else>{{ timeConvert(issuesInView.main.position) }} @  {{ versionnameConvert(issuesInView.main.version.name) }}版</div>
             </div>
             <div class='d-flex flex-row justify-end align-self-end ma-0 pa-0'>
               <v-btn
@@ -953,7 +987,9 @@
               :compareCommit='compareCommit'
               :compareUser='compareUser'
               :currentStage="currentStage"
+              :enableDiff='diffDetect'
               @edit='editIssue'
+              @sendDiff='addDiff'
               @download='downloadFile'
               @remove='removeIssue'
             />
@@ -961,9 +997,11 @@
               v-for="issue in issuesInView.collections"
               :key="issue._id"
               :issue='issue'
+              :enableDiff='diffDetect'
               :compareCommit='compareCommit'
               :compareUser='compareUser'
               :currentStage="currentStage"
+              @sendDiff='addDiff'
               @edit='editIssue'
               @download='downloadFile'
               @remove='removeIssue'
@@ -979,12 +1017,21 @@
 </template>
 
 <style scoped>
-  .pinAlert {
-    position: fixed;
-    top: 100px;
-    display: flex;
-    flex-direction: column;
-    margin-left: -112px;
+  .floatControl {
+    position: fixed !important;
+    top: 70px !important;
+  }
+  .viewControl {
+    position: static;
+  }
+  .floatView {
+    top: 70px !important;
+    height: 93vh !important;
+    overflow-y: scroll !important;
+    position: fixed !important;
+  }
+  .viewArea {
+    position: static;
   }
   .viewArea, .issueW, .issueListW {
     background-color: white;
@@ -1110,6 +1157,7 @@ import Paintable from 'vue-paintable';
 import * as htmlToImage from 'html-to-image';
 import IssueView from './modules/IssueView.vue';
 import IssueList from './modules/IssueList.vue';
+import * as Diff from 'diff'
 import * as pdfjsLib from 'pdfjs-dist/build/pdf';
 import PdfjsWorker from 'workerize-loader!pdfjs-dist/build/pdf.worker.js';
 pdfjsLib.GlobalWorkerOptions.workerPort = new PdfjsWorker();
@@ -1126,6 +1174,27 @@ export default {
   name: 'videoReview',
   components: { TiptapVuetify, IssueView, IssueList },
   methods: {
+    addDiff: function (issue) {
+      let tempDiff = this.diffIssues;
+      tempDiff.push(issue);
+      this.diffIssues = _.uniqWith(tempDiff, (aIssue, bIssue) => {
+        return aIssue._id === bIssue._id;
+      });
+      this.$emit('toastPop', "對比Issue清單已有" + this.diffIssues.length + '/2 條Issue，選到2條Issue時，會自動開啟Issue對比');
+    },
+    closeDiff: function () {
+      this.diffW = false;
+      this.diffIssues = [];
+      this.diffResult = '';
+      this.$emit('toastPop', "對比Issue清單已清空");
+    },
+    closeConfigW: function () {
+      this.firstReview = true;  //意思是結束第一次執行審查畫面才會出現的畫面設定提示框，因為懶得改變數名稱了，就用firstReview吧
+      this.configW = false;
+    },
+    versionnameConvert: function (filename) {
+      return filename.replace(/\.[^/.]+$/, "");
+    },
     filterColor: function (type) {
       if(type === 'time') {
         if(this.issueFilter.time) {
@@ -1172,17 +1241,13 @@ export default {
     },
     endPinMode: function () {
       this.pinMode = false;
-      Vue.nextTick(() => {
-        window.scrollTo({
-          top: 0,
-          behavior: 'smooth'
-        });
-      });
     },
     scrollEvent: function () {
       let top = (this.$refs.previewArea.getBoundingClientRect().top - 80);
       if(top < 10) {
         this.pinMode = true;
+      } else {
+        this.pinMode = false;
       }
     },
     citetoIssue: async function () {
@@ -1289,7 +1354,7 @@ export default {
           DOM = this.$refs.previousPlayer;
         }
       }
-      let version = type === 0 ? this.dateConvert(this.currentVersion.tick) : this.dateConvert(this.previousVersion.tick);
+      let version = type === 0 ? this.versionnameConvert(this.currentVersion.name) : this.versionnameConvert(this.previousVersion.name);
       let pos = type === 0 ? this.currentData.position : this.previousData.position;
       Vue.nextTick(() => {
         let canvas = document.createElement('canvas');
@@ -1358,6 +1423,7 @@ export default {
       }
     },
     socketgetissueList: function (data) {
+      let oriobj = this;
       this.$emit('timerOn', false);
       this.$emit('toastPop', 'Issue列表更新完成');
       let item = _.find(this.loadingItems, { icon: 'fa-comments' });
@@ -1369,6 +1435,11 @@ export default {
         this.loadW = false;
         if(this.firstRun) {
           this.progressW = true;
+          Vue.nextTick(() => {
+            if(!oriobj.firstReview) {
+              oriobj.configW = true;
+            }
+          });
         }
         this.firstRun = false;
       }
@@ -1419,9 +1490,6 @@ export default {
       this.issueListW = false;
       this.filteredListW = false;
     },
-    socketgetsiteAdminUsers: function (data) {
-      this.userList = data;
-    },
     editIssue: function (issue) {
       this.$socket.client.emit('editIssue', issue._id);
     },
@@ -1430,7 +1498,7 @@ export default {
     },
     addIssue: function (parent) {
       if(this.currentPlayer) {
-        this.$emit('toastPop', '發送Issue中，撥放器已暫停');
+        this.$emit('toastPop', '發送Issue中，播放器已暫停');
         this.currentPlayer.pause();
       }
       let parentIssue = !('_id' in parent) ? undefined : parent._id;
@@ -1521,12 +1589,7 @@ export default {
       this.$socket.client.emit('setissueStatus', this.issuesInView.main._id);
     },
     downloadFile: function (file) {
-      if (file.status === 1) {
-        let element = document.createElement('a');
-        element.setAttribute('href', this.siteSettings.siteLocation + '/storages/' + file._id);
-        element.setAttribute('download', file.name);
-        element.click();
-      }
+      this.$emit('downloadFile', file);
     },
     loadVersion: function (item) {
       this.previousVersion = item;
@@ -1694,7 +1757,7 @@ export default {
           })
         });
         this.on('playing', function () {
-          oriobj.tipword = '提示：影片開始撥放時，右側issue區塊會同步展開當前時間對應的issue';
+          oriobj.tipword = '提示：影片開始播放時，右側issue區塊會同步展開當前時間對應的issue';
         });
       });
     },
@@ -1751,10 +1814,10 @@ export default {
               DOM = oriobj.$refs.currentZip.$el;
             }
           } else {
-            if(oriobj.cType === 'video') {
+            if(oriobj.pType === 'video') {
               DOM = oriobj.$refs.previousPlayer;
               isMedia = true;
-            } else if(oriobj.cType === 'pdf') {
+            } else if(oriobj.pType === 'pdf') {
               DOM = oriobj.$refs.previousPDF;
               isMedia = true;
             } else {
@@ -1793,6 +1856,7 @@ export default {
       }
     },
     barCalc: function() {
+      let oriobj = this;
       let compareComps = document.getElementsByClassName('compareComp');
       let barHeight = 0;
       if(compareComps.length > 1) {
@@ -1802,6 +1866,13 @@ export default {
       this.$refs.compareBar.style.left = '50%';
       this.$refs.previousPlayerArea.style.clipPath = 'inset( 0 0 0 50% )';
       this.$refs.currentPlayerArea.style.clipPath = 'inset( 0 50% 0 0 )';
+      if(this.disableCompareMode) {
+        Vue.nextTick(() => {
+          oriobj.$refs.previousPlayerArea.style.clipPath = 'inset( 0 0 0 100% )';
+          oriobj.$refs.currentPlayerArea.style.clipPath = 'inset( 0 0% 0 0 )';
+          oriobj.$refs.compareBar.style.left = '100%';
+        });
+      }
     }
   },
   beforeDestroy () {
@@ -1809,7 +1880,6 @@ export default {
         this.currentPlayer.dispose();
         this.previousPlayer.dispose();
     }
-    this.$socket.client.off('getsiteAdminUsers', this.socketgetsiteAdminUsers);
     this.$socket.client.off('editIssue', this.socketeditIssue);
     this.$socket.client.off('addIssue', this.socketaddIssue);
     this.$socket.client.off('setIssue', this.socketsetIssue);
@@ -1828,7 +1898,6 @@ export default {
     window.removeEventListener('scroll', this.scrollEvent);
   },
   created () {
-    this.$socket.client.on('getsiteAdminUsers', this.socketgetsiteAdminUsers);
     this.$socket.client.on('editIssue', this.socketeditIssue);
     this.$socket.client.on('addIssue', this.socketaddIssue);
     this.$socket.client.on('setIssue', this.socketsetIssue);
@@ -1848,13 +1917,17 @@ export default {
     Vue.nextTick(() => {
       oriobj.$socket.client.emit('getKB', this.KBid);
       oriobj.$socket.client.emit('joinKBEditing', this.KBid);
-      let videoWidth = window.localStorage.getItem('videoWidth');
-      if(videoWidth) {
-        oriobj.videoWidth = videoWidth;
-      }
     });
   },
   computed: {
+    diffDetect: function () {
+      if(!this.disableIssueDiff) {
+        if(this.diffIssues.length < 2) {
+          return true;
+        }
+      }
+      return false;
+    },
     unReadedCount: function () {
       let unreadeds = _.filter(this.filteredIssues, (issue) => {
         return !issue.readed;
@@ -2063,29 +2136,21 @@ export default {
     },
     currentStage: function () {
       if(this.currentUser._id !== '') {
-        let isPM = false;
-        let isWriter = false;
-        let isVendor = false;
-        let isFinal = false;
-        let isReviewer = false;
-        for(let i=0; i<this.currentUser.tags.length; i++) {
-          let userTag = this.currentUser.tags[i]._id;
-          if(!isPM) {
-            isPM = _.includes(this.currentStageData.pmTags, userTag);
-          }
-          if(!isFinal) {
-            isFinal = _.includes(this.currentStageData.finalTags, userTag);
-          }
-          if(!isReviewer) {
-            isReviewer = _.includes(this.currentStageData.reviewerTags, userTag);
-          }
-          if(!isWriter) {
-            isWriter = _.includes(this.currentStageData.writerTags, userTag);
-          }
-          if(!isVendor) {
-            isVendor = _.includes(this.currentStageData.vendorTags, userTag);
-          }
-        }
+        let isPM = (_.intersectionWith(this.currentStageData.pmTags, this.currentUser.tags, (cTag, uTag) => {
+          return cTag === uTag._id;
+        })).length > 0;
+        let isWriter = (_.intersectionWith(this.currentStageData.writerTags, this.currentUser.tags, (cTag, uTag) => {
+          return cTag === uTag._id;
+        })).length > 0;
+        let isVendor = (_.intersectionWith(this.currentStageData.vendorTags, this.currentUser.tags, (cTag, uTag) => {
+          return cTag === uTag._id;
+        })).length > 0;
+        let isFinal = (_.intersectionWith(this.currentStageData.finalTags, this.currentUser.tags, (cTag, uTag) => {
+          return cTag === uTag._id;
+        })).length > 0;
+        let isReviewer = (_.intersectionWith(this.currentStageData.reviewerTags, this.currentUser.tags, (cTag, uTag) => {
+          return cTag === uTag._id;
+        })).length > 0;
         return {
           _id: this.currentStageData._id,
           current: this.currentStageData.current,
@@ -2126,73 +2191,105 @@ export default {
       }
     }
   },
+  mounted () {
+    let oriobj = this;
+    let firstReview = window.localStorage.getItem('firstReview');
+    if(firstReview) {
+      oriobj.firstReview = JSON.parse(firstReview);
+    }
+    let videoWidth = window.localStorage.getItem('videoWidth');
+    if(videoWidth) {
+      oriobj.videoWidth = JSON.parse(videoWidth);
+    }
+    let hideFilterBtns = window.localStorage.getItem('hideFilterBtns');
+    if(hideFilterBtns) {
+      oriobj.hideFilterBtns = JSON.parse(hideFilterBtns);
+    }
+    let disableCompareMode = window.localStorage.getItem('disableCompareMode');
+    if(disableCompareMode) {
+      oriobj.disableCompareMode = JSON.parse(disableCompareMode);
+    }
+    let disableIssueDiff = window.localStorage.getItem('disableIssueDiff');
+    if(disableIssueDiff) {
+      oriobj.disableIssueDiff = JSON.parse(disableIssueDiff);
+    }
+    this.localLoaded = true;
+  },
   watch: {
+    diffIssues: {
+      immediate: true,
+      handler() {
+        if(this.diffIssues.length == 2) {
+          try {
+            let diff = Diff.diffChars(this.diffIssues[0].body, this.diffIssues[1].body);
+            let fragment = document.createElement('div');
+            diff.forEach((part) => {
+              const color = part.added ? 'teal--text darken-4' :
+                            part.removed ? 'red--text darken-4' : 'black--text';
+              let span = document.createElement('span');
+              span.className = color;
+              span.appendChild(document.createTextNode(part.value));
+              fragment.appendChild(span);
+            });
+            this.diffResult = fragment.innerHTML;
+            this.diffW = true;
+          } catch(e) {
+            this.diffIssues = [];
+            this.diffResult = '';
+            this.$emit('toastPop', '發生錯誤，你選的Issue無法進行對比！對比Issue清單已清空');
+          }
+        }
+      }
+    },
+    firstReview: function () {
+      if(this.localLoaded) {
+        window.localStorage.setItem('firstReview', JSON.stringify(this.firstReview));
+      }
+    },
     videoWidth: function () {
-      window.localStorage.setItem('videoWidth', this.videoWidth);
+      if(this.localLoaded) {
+        window.localStorage.setItem('videoWidth', JSON.stringify(this.videoWidth));
+      }
+    },
+    hideFilterBtns: function () {
+      if(this.localLoaded) {
+        window.localStorage.setItem('hideFilterBtns', JSON.stringify(this.hideFilterBtns));
+      }
+    },
+    disableIssueDiff: function () {
+      if(this.localLoaded) {
+        window.localStorage.setItem('disableIssueDiff', JSON.stringify(this.disableIssueDiff));
+      }
+    },
+    disableCompareMode: function () {
+      if(this.localLoaded) {
+        window.localStorage.setItem('disableCompareMode', JSON.stringify(this.disableCompareMode));
+        if(this.$refs.compareBar !== undefined) {
+          this.barCalc();
+        }
+      }
     },
     pinMode: function () {
       let oriobj = this;
       if(this.pinMode) {
-        Vue.nextTick(() => {
-          oriobj.$refs.pinAlert.style.left = oriobj.$refs.compareBar.getBoundingClientRect().left + 'px';
-          oriobj.$refs.viewArea.style.left = oriobj.$refs.viewArea.getBoundingClientRect().left + 'px';
-          oriobj.$refs.viewArea.style.width = oriobj.$refs.viewArea.clientWidth + 'px';
-          oriobj.$refs.viewArea.style.top = '70px';
-          oriobj.$refs.viewArea.style.height = '90vh';
-          oriobj.$refs.viewArea.style.overflowY = 'scroll';
-          oriobj.$refs.viewArea.style.position = 'fixed';
-          oriobj.$refs.issueW.$el.style.left = oriobj.$refs.issueArea.getBoundingClientRect().left + 'px';
-          oriobj.$refs.issueW.$el.style.width = oriobj.$refs.issueArea.clientWidth + 'px';
-          oriobj.$refs.issueW.$el.style.top = '70px';
-          oriobj.$refs.issueW.$el.style.height = '90vh';
-          oriobj.$refs.issueW.$el.style.overflowY = 'scroll';
-          oriobj.$refs.issueW.$el.style.position = 'fixed';
-          oriobj.$refs.issueListW.$el.style.left = oriobj.$refs.issueArea.getBoundingClientRect().left + 'px';
-          oriobj.$refs.issueListW.$el.style.width = oriobj.$refs.issueArea.clientWidth + 'px';
-          oriobj.$refs.issueListW.$el.style.top = '70px';
-          oriobj.$refs.issueListW.$el.style.height = '90vh';
-          oriobj.$refs.issueListW.$el.style.overflowY = 'scroll';
-          oriobj.$refs.issueListW.$el.style.position = 'fixed';
-          Vue.nextTick(() => {
-            oriobj.$refs.currentControl.style.left = oriobj.$refs.viewArea.getBoundingClientRect().left + 'px';
-            oriobj.$refs.currentControl.style.width = oriobj.$refs.viewArea.clientWidth + 'px';
-            oriobj.$refs.currentControl.style.top = '70px';
-            oriobj.$refs.currentControl.style.position = 'fixed';
-            oriobj.$refs.previousControl.style.left = oriobj.$refs.viewArea.getBoundingClientRect().left + 'px';
-            oriobj.$refs.previousControl.style.width = oriobj.$refs.viewArea.clientWidth + 'px';
-            oriobj.$refs.previousControl.style.top = '70px';
-            oriobj.$refs.previousControl.style.position = 'fixed';
-          });
-        });
+        this.$emit('toastPop', '預覽框置頂模式開啟！請勿調整視窗大小！');
+        this.$refs.viewArea.style.left = this.$refs.viewArea.getBoundingClientRect().left + 'px';
+        this.$refs.viewArea.style.width = this.$refs.viewArea.clientWidth + 'px';
+        setTimeout(() => {  //vue nexttick 不會更新data，只能用settimeout，以下同
+          oriobj.$refs.currentControl.style.left = oriobj.$refs.viewArea.getBoundingClientRect().left + 'px';
+          oriobj.$refs.currentControl.style.width = oriobj.$refs.viewArea.clientWidth + 'px';
+          oriobj.$refs.previousControl.style.left = oriobj.$refs.viewArea.getBoundingClientRect().left + 'px';
+          oriobj.$refs.previousControl.style.width = oriobj.$refs.viewArea.clientWidth + 'px';
+          oriobj.pinOn = true;
+        }, 500);
       } else {
-        Vue.nextTick(() => {
-          oriobj.$refs.currentControl.style.left = '';
-          oriobj.$refs.currentControl.style.top = '';
-          oriobj.$refs.currentControl.style.position = 'relative';
-          oriobj.$refs.currentControl.style.width = '';
-          oriobj.$refs.previousControl.style.left = '';
-          oriobj.$refs.previousControl.style.top = '';
-          oriobj.$refs.previousControl.style.width = '';
-          oriobj.$refs.previousControl.style.position = 'relative';
-          oriobj.$refs.viewArea.style.position = 'relative';
+        this.$emit('toastPop', '預覽框置頂模式關閉！');
+        setTimeout(() => {
           oriobj.$refs.viewArea.style.left = '';
-          oriobj.$refs.viewArea.style.top = '';
-          oriobj.$refs.viewArea.style.height = '';
-          oriobj.$refs.viewArea.style.width = '';
-          oriobj.$refs.viewArea.style.overflowY = '';
-          oriobj.$refs.issueW.$el.style.left = '';
-          oriobj.$refs.issueW.$el.style.width = '';
-          oriobj.$refs.issueW.$el.style.top = '';
-          oriobj.$refs.issueW.$el.style.height = '';
-          oriobj.$refs.issueW.$el.style.overflowY = '';
-          oriobj.$refs.issueW.$el.style.position = 'relative';
-          oriobj.$refs.issueListW.$el.style.left = '';
-          oriobj.$refs.issueListW.$el.style.width = '';
-          oriobj.$refs.issueListW.$el.style.top = '';
-          oriobj.$refs.issueListW.$el.style.height = '';
-          oriobj.$refs.issueListW.$el.style.overflowY = '';
-          oriobj.$refs.issueListW.$el.style.position = 'relative';
-        });
+          oriobj.$refs.currentControl.style.left = '';
+          oriobj.$refs.previousControl.style.left = '';
+          oriobj.pinOn = false;
+        }, 500);
       }
     },
     currentVersion: {
@@ -2331,7 +2428,7 @@ export default {
           let slice = this.issueCite.slice(0, 100000);
           let uuid = uuidv4();
           this.issueCite.lastModifiedDate = new Date();
-          this.issueCite.name = this.dateConvert(this.currentVersion.tick)+'版/時間'+this.currentPosD+'.png';
+          this.issueCite.name = this.currentVersion.type.indexOf('pdf') > -1 ? this.versionnameConvert(this.currentVersion.name)+'版/'+this.currentData.position+'頁.png' : this.versionnameConvert(this.currentVersion.name)+'版/時間'+this.currentPosD+'.png';
           files[uuid] = {
             _id: this.issue._id,
             file: this.issueCite,
@@ -2430,11 +2527,20 @@ export default {
   },
   data () {
     return {
+      pinOn: false,
+      disableIssueDiff: false,
+      diffW: false,
+      diffResult: '',
+      diffIssues: [],
+      localLoaded: false,
+      hideFilterBtns: false,
+      disableCompareMode: false,
       previousPDF: null,
       currentPDF: null,
       currentZipFIle: null,
       previousZipFile: null,
-      colRatioW: false,
+      configW: false,
+      firstReview: false,
       commitFilterW: false,
       previousGoto: 0,
       issueFilter: {

@@ -12,12 +12,6 @@ const router = new Router({
       component: Home
     },
     {
-      path: '/error',
-      name: '錯誤',
-      component: () =>
-        import(/* webpackChunkName: 'about' */ './views/Error.vue')
-    },
-    {
       path: '/messageMgnt',
       name: '訊息管理',
       component: () =>
@@ -74,7 +68,7 @@ const router = new Router({
     },
     {
       path: '/createKB',
-      name: '知識點編輯器',
+      name: '知識點管理',
       // route level code-splitting
       // this generates a separate chunk (about.[hash].js) for this route
       // which is lazy-loaded when the route is visited.
@@ -89,6 +83,15 @@ const router = new Router({
       // which is lazy-loaded when the route is visited.
       component: () =>
           import(/* webpackChunkName: 'about' */ './views/Logout.vue')
+    },
+    {
+      path: '/Chart',
+      name: '統計功能',
+      // route level code-splitting
+      // this generates a separate chunk (about.[hash].js) for this route
+      // which is lazy-loaded when the route is visited.
+      component: () =>
+          import(/* webpackChunkName: 'about' */ './views/Chart.vue')
     }
   ]
 });

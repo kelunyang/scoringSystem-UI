@@ -2,7 +2,7 @@ import moment from 'moment';
 import Vue from 'vue';
 import Vuex, {Store} from "vuex";
 Vue.config.productionTip = false;
-Vue.config.devtools = true;
+Vue.config.devtools = false;
 
 Vue.use(Vuex)
 
@@ -20,7 +20,8 @@ const store = new Store({
       lineDate: 0
     },
     siteSettings: {
-      version: '',
+      versionFrontend: '',
+      versionBackend: '',
       userCheckTime: 0,
       lastCheckTime: 0,
       connectionTimeout: 1,

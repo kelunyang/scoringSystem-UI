@@ -1,6 +1,38 @@
 <template>
   <v-sheet class='d-flex flex-column'>
     <v-dialog
+      v-model="tagW"
+      persistent
+      max-width="50vw"
+    >
+      <v-card>
+        <v-card-title class="headline">
+          指定 {{ currentKB.title }} 的標籤
+        </v-card-title>
+        <v-card-text class='d-flex flex-column'>
+          <v-alert type='info'>請注意，不要亂刪除你看不懂的標籤，否則你可能會在知識點管理中找不到這個知識點</v-alert>
+          <div class='red--text text-caption'>這是提供給PM，針對不同知識點下標籤的功能，可能具有行銷或管理上的幫助（例如，你可以針對某一支是點下「粉紅色」、「買賣問題」、「時事性」之類的標籤）</div>
+          <tag-filter @plusItem='plusTag' :mustSelected='true' :single='false' :selectedItem='currentKB.tag' @valueUpdated='updateKBTag' :candidatedItem='savedTags' :createable='true' label='請輸入標籤' />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            color='red'
+            class='white--text'
+            @click='saveKBTag'
+          >
+            儲存標籤
+          </v-btn>
+          <v-btn
+            color="primary"
+            @click="tagW = false"
+          >
+            關閉對話框
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog
       v-model="downloadW"
       persistent
       max-width="50vw"
@@ -20,10 +52,10 @@
             v-model="latestCount"
             thumb-label
           ></v-slider>
-          <v-btn @click='getlatestVersions'>點此開始下載</v-btn>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
+          <v-btn @click='getlatestVersions'>點此開始下載</v-btn>
           <v-btn
             color="primary"
             @click="downloadW = false"
@@ -52,10 +84,10 @@
         </v-toolbar>
         <v-card-text class='d-flex flex-column pa-0'>
           <v-alert type='info' v-if='currentKB.isVendor'>
-            廠商請注意：基本上你只能上傳影片（H.264/VP9）、PDF檔案（分鏡圖使用），除非是最終階段需要上傳可編輯原始檔，否則請勿上傳zip檔
+            廠商請注意：基本上你只能上傳影片（H.264/VP9）、PDF檔案（分鏡圖使用），除非是最終階段需要上傳可編輯原始檔，否則請勿上傳zip檔，另外，你的檔名就會是版本代號，請警慎命名（如「腳本第一版」）
           </v-alert>
           <v-alert type='info' v-if='currentKB.isWriter'>
-            寫手請注意：你只能上傳PDF檔案，請把你的腳本都轉換成PDF再上傳
+            寫手請注意：你只能上傳PDF檔案，請把你的腳本都轉換成PDF再上傳，另外，你的檔名就會是版本代號，請警慎命名（如「腳本第一版」）
           </v-alert>
           <div v-if='currentKB.isWriter || currentKB.isVendor' class='d-felx flex-column'>
             <div class='text-subtitle-2 font-weight-blod'>版本發行說明（必填但不得超過30個字）</div>
@@ -168,9 +200,9 @@
           </v-btn>
         </v-toolbar>
         <v-card-text class='pa-0 ma-0 d-flex flex-column'>
-          <v-alert type="info">你如果發現你勾選的知識點少於系統回傳的知識點，那很明顯是因為你不具有該知識點的行政管理權，請洽管理員</v-alert>
+          <v-alert type="info">你如果發現你勾選的知識點少於系統回傳的知識點，那很明顯是因為你不具有該知識點的行政管理權，請洽你的知識點PM，把你放進行政組中</v-alert>
           <div v-if='participantsDB.statistics.length === 0'>
-            你不具備你勾選的知識點的行政管理權，回傳結果為0
+            你不具備你勾選的知識點的行政管理權，回傳的知識點數量為0
           </div>
           <div v-if='participantsDB.statistics.length > 0'>
             <div class='text-left' v-for='participant in participantsDB.statistics' :key='participant._id'>
@@ -421,7 +453,7 @@
             <v-icon>fab fa-slack-hash</v-icon>
           </v-btn>
         </template>
-        <span>過濾關鍵字</span>
+        <span>過濾標籤</span>
       </v-tooltip>
       <v-tooltip top>
         <template v-slot:activator="{ on, attrs }">
@@ -462,7 +494,7 @@
           <thead>
             <tr>
               <th class="text-center">
-                完成度大約一半
+                完成度不到一半
               </th>
               <th class="text-center">
                 完成度大約一半
@@ -493,7 +525,8 @@
       width="100%"
     ></v-skeleton-loader>
     <v-sheet v-if='dashboardPopulated' class='pa-0 ma-0 d-flex flex-column'>
-      <progress-tile @requestUpload='openUploadW' @viewDetail='openauthDetail' @KBselected='KBupdated' v-for="item in convertedList" :key="item._id" :progressItem='item' />
+      <div v-if='convertedList.length === 0'>您目前沒有待處理的項目</div>
+      <progress-tile @tags='openTagW' @requestUpload='openUploadW' @viewDetail='openauthDetail' @KBselected='KBupdated' v-for="item in convertedList" :key="item._id" :progressItem='item' />
     </v-sheet>
   </v-sheet>
 </template>
@@ -524,11 +557,24 @@ let files = [];
 export default {
   name: 'userDashBoard',
   components: {
-    /* BarChart, */
     ProgressTile,
     TagFilter
   },
   methods: {
+    saveKBTag: function () {
+      this.$emit('toastPop', '新增標籤中...');
+      this.$socket.client.emit('setKBTag', this.currentKB);
+    },
+    updateKBTag: function (val) {
+      this.currentKB.tag = val;
+    },
+    plusTag: function (val) {
+        this.$socket.client.emit('addTag', val);
+    },
+    openTagW: function (item) {
+      this.currentKB = item;
+      this.tagW = true;
+    },
     openauthDetail: function (item) {
       this.currentKB = item;
       this.authDetailW = true;
@@ -702,6 +748,11 @@ export default {
         });
       }
     },
+    soketsetKBTag: function (data) {
+      if(data) {
+        this.$emit('toastPop', '新增標籤完成！');
+      }
+    },
     soketgetlatestVersions: function (data) {
       for (let i = 0; i < data.length; i++) {
         let file = data[i];
@@ -713,6 +764,9 @@ export default {
         element.click();
         document.body.removeChild(element);
       }
+    },
+    socketcreateUsersReport: function (data) {
+      this.$emit('toastPop', data);
     }
   },
   watch: {
@@ -796,32 +850,22 @@ export default {
             KB.attention = moment().unix() - stage.dueTick;
           }
         }
-        KB.isPM = false;
-        KB.isVendor = false;
-        KB.isFinal = false;
-        KB.isWriter = false;
-        KB.isReviewer = false;
+        KB.isPM = (_.intersectionWith(KB.stages[KB.currentStep - 1].pmTags, this.currentUser.tags, (cTag, uTag) => {
+          return cTag === uTag._id;
+        })).length > 0;
+        KB.isVendor = (_.intersectionWith(KB.stages[KB.currentStep - 1].vendorTags, this.currentUser.tags, (cTag, uTag) => {
+          return cTag === uTag._id;
+        })).length > 0;
+        KB.isFinal = (_.intersectionWith(KB.stages[KB.currentStep - 1].finalTags, this.currentUser.tags, (cTag, uTag) => {
+          return cTag === uTag._id;
+        })).length > 0;
+        KB.isWriter = (_.intersectionWith(KB.stages[KB.currentStep - 1].writerTags, this.currentUser.tags, (cTag, uTag) => {
+          return cTag === uTag._id;
+        })).length > 0;
+        KB.isReviewer = (_.intersectionWith(KB.stages[KB.currentStep - 1].reviewerTags, this.currentUser.tags, (cTag, uTag) => {
+          return cTag === uTag._id;
+        })).length > 0;
         KB.dueTick = 0;
-        for (let k = 0; k < this.currentUser.tags.length; k++) {
-          let userTag = this.currentUser.tags[k]._id;
-          if (KB.currentStep > 0) {
-            if (!KB.isPM) {
-              KB.isPM = _.includes(KB.stages[KB.currentStep - 1].pmTags, userTag);
-            }
-            if (!KB.isWriter) {
-              KB.isWriter = _.includes(KB.stages[KB.currentStep - 1].writerTags, userTag);
-            }
-            if (!KB.isVendor) {
-              KB.isVendor = _.includes(KB.stages[KB.currentStep - 1].vendorTags, userTag);
-            }
-            if (!KB.isFinal) {
-              KB.isFinal = _.includes(KB.stages[KB.currentStep - 1].finalTags, userTag);
-            }
-            if (!KB.isReviewer) {
-              KB.isReviewer = _.includes(KB.stages[KB.currentStep - 1].reviewerTags, userTag);
-            }
-          }
-        }
         let found = _.find(this.selectedpmKBs, (item) => {
           return KB._id === item;
         });
@@ -947,13 +991,15 @@ export default {
   },
   data () {
     return {
+      tagW: false,
       authDetailW: false,
       dashboardPopulated: false,
       showStatstics: false,
       latestCount: 1,
       currentKB: {
         _id: '',
-        title: ''
+        title: '',
+        tag: []
       },
       versionComment: '',
       uploadprogress: 0,
@@ -983,6 +1029,7 @@ export default {
     };
   },
   beforeDestroy () {
+    this.$socket.client.off('createUsersReport', this.socketcreateUsersReport);
     this.$socket.client.off('listDashBoard', this.socketlistDashBoard);
     this.$socket.client.off('participantStatstics', this.sockparticipantStatstics);
     this.$socket.client.off('getKBVersions', this.sockgetKBVersions);
@@ -991,6 +1038,7 @@ export default {
     this.$socket.client.off('requestKBVersionSlice', this.socketrequestKBVersionSlice);
     this.$socket.client.off('KBVersionUploadDone', this.soketKBVersionUploadDone);
     this.$socket.client.off('getlatestVersions', this.soketgetlatestVersions);
+    this.$socket.client.off('setKBTag', this.soketsetKBTag);
     window.clearTimeout(this.queryTimer);
     this.queryTimer = null;
   },
@@ -1004,6 +1052,7 @@ export default {
     this.$emit('timerOn', true);
     this.$emit('toastPop', 'DashBoard更新中');
     this.$socket.client.emit('listDashBoard');
+    this.$socket.client.on('createUsersReport', this.socketcreateUsersReport);
     this.$socket.client.on('listDashBoard', this.socketlistDashBoard);
     this.$socket.client.on('participantStatstics', this.sockparticipantStatstics);
     this.$socket.client.on('getKBVersions', this.sockgetKBVersions);
@@ -1012,6 +1061,7 @@ export default {
     this.$socket.client.on('requestKBVersionSlice', this.socketrequestKBVersionSlice);
     this.$socket.client.on('KBVersionUploadDone', this.soketKBVersionUploadDone);
     this.$socket.client.on('getlatestVersions', this.soketgetlatestVersions);
+    this.$socket.client.on('setKBTag', this.soketsetKBTag);
   }
 };
 </script>

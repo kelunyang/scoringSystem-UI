@@ -86,7 +86,7 @@
             <v-alert type="info" icon="fa-exclamation-circle" class='ma-0'>
               如果你打算變更用戶的密碼，請用補發密碼功能，這裡是用來修改用戶資訊用的
             </v-alert>
-            <v-main class='pa-5'>
+            <v-container class='pa-5'>
               <v-row>
                 <v-col class='pa-0 d-flex flex-column align-items-center'>
                   <v-avatar v-bind="attrs" v-on="on" size='48'>
@@ -110,7 +110,7 @@
               </v-row>
               <v-row>
               </v-row>
-            </v-main>
+            </v-container>
           </v-card-text>
         </v-card>
       </v-dialog>
@@ -130,7 +130,7 @@
             <v-alert type="info" icon="fa-exclamation-circle">
                 請注意，刪除使用者可能導致某些標籤下沒有成員，影響資料編輯，若發生如此情形，請記得日後手動添加成員到指定標籤
             </v-alert>
-            <v-main class='pa-5'>
+            <v-container class='pa-5'>
               <v-row>
                 <v-col class='pa-0'>
                   <div class='text-subtitle-1 font-weight-bold'>要刪除的使用者分屬於以下幾個標籤</div>
@@ -156,7 +156,7 @@
                   </v-simple-table>
                 </v-col>
               </v-row>
-            </v-main>
+            </v-container>
           </v-card-text>
         </v-card>
       </v-dialog>
@@ -176,7 +176,7 @@
                 <v-alert type="info" icon="fa-exclamation-circle">
                   由於本系統的用戶都是廠商、各校老師，因此新增用戶功能採用邀請制，這裡只能設定你要建立幾個User，系統會在下面出現邀請碼，你可以自己把邀請碼寄給使用者，讓他們填完自己的相關資料，你唯一能修改的只有用戶的標籤
                 </v-alert>
-                <v-main class='pa-5'>
+                <v-container class='pa-5'>
                   <v-row>
                     <v-col class='d-flex flex-column'>
                       <tag-filter :mustSelected='false' @plusItem='plusTag' :single='false' :selectedItem='selectedAddTags' @valueUpdated='addTagUpdated' :candidatedItem='savedTags' :createable='true' label='請輸入使用者歸屬的標籤' />
@@ -269,8 +269,7 @@
                 <v-icon>fa-sort-numeric-down</v-icon>
                 確認各標籤用戶數量
               </v-btn>
-              <v-btn color="deep-orange darken-4" text @click='modUserTags(0)'>複寫 {{ selectedUsers.length }} 個用戶的使用者標籤</v-btn>
-              <v-btn color="brown darken-4" text @click='modUserTags(1)'>新增標籤到 {{ selectedUsers.length }} 個用戶</v-btn>
+              <v-btn color="brown darken-4" text @click='modUserTags'>設定 {{ selectedUsers.length }} 個用戶的使用者標籤</v-btn>
               <v-btn color="green darken-1" text @click="closeTagW">回到檢視畫面</v-btn>
               </v-card-actions>
           </v-card>
@@ -405,7 +404,7 @@
               <span>設定關鍵字過濾</span>
           </v-tooltip>
       </v-speed-dial>
-      <v-main class='pa-0 pl-5'>
+      <v-container class='pa-0 pl-5'>
         <v-row>
           <v-col class='pa-0'>
             <v-list-item v-for='item in userfilteredList' :key='item._id'>
@@ -421,7 +420,7 @@
                 <v-list-item-subtitle>
                   <v-icon>fa-envelope-open</v-icon>
                   {{item.email }}
-                  <v-icon>fab fa-line</v-icon>
+                  <v-icon :color="item.lineDate > 0 ? 'green accent-4' : 'grey darken-1'">fab fa-line</v-icon>
                   <span v-if='item.lineDate > 0'>已於 {{ dateConvert(item.lineDate) }} 綁定LINE</span>
                   <span v-else>未綁定LINE</span>
                 </v-list-item-subtitle>
@@ -456,7 +455,7 @@
             </v-list-item>
           </v-col>
         </v-row>
-      </v-main>
+      </v-container>
     </v-sheet>
 </template>
 
@@ -605,7 +604,7 @@ export default {
     },
     methods: {
       socketmodUsers: function (data) {
-        this.$emit('toastPop', data.name + '的用戶資訊修改完成');
+        this.$emit('toastPop', data.name + '的用戶資訊修改完成，寫入失敗的使用者標籤有' + data.zeroTag + '個');
       },
       socketsetEmail: function (data) {
         this.$emit('toastPop', data ? '修改完成' : '修改失敗，可能為該Email已重複');
@@ -712,9 +711,8 @@ export default {
         this.tagUserW = false;
         this.selectednewTags = [];
       },
-      modUserTags: function (type) {
+      modUserTags: function () {
         this.$socket.client.emit('modUserTags', {
-            type: type,
             users: this.selectedUsers,
             tags: this.selectednewTags
         });

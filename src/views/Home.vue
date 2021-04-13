@@ -66,13 +66,7 @@ export default {
       return str;
     },
     downloadFile: function (file) {
-      if (file.status === 1) {
-        let element = document.createElement('a');
-        element.setAttribute('href', this.siteSettings.siteLocation + '/storages/' + file._id);
-        element.setAttribute('download', file.name);
-        element.style.display = 'none';
-        element.click();
-      }
+      this.$emit('downloadFile', file);
     },
     criticalConvert: function (type) {
       return type === 2 ? 'white--text red darken-4' : '';

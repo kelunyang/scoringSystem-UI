@@ -23,7 +23,7 @@
               <v-alert type="info" icon="fa-exclamation-circle">
                 請注意，首頁只會顯示各類型公告各一則
               </v-alert>
-              <v-main>
+              <v-container>
                 <v-row>
                   <v-col class='d-flex flex-column'>
                     <v-switch
@@ -60,13 +60,14 @@
                         close
                         close-icon="fa-times"
                         @click:close="deleteMsgFile(file)"
+                        @click="downloadFile(file)"
                       >
                         {{ file.name }} ({{ byteConvert(file.size) }})
                       </v-chip>
                     </div>
                   </v-col>
                 </v-row>
-              </v-main>
+              </v-container>
             </v-card-text>
         </v-card>
       </v-dialog>
@@ -349,6 +350,9 @@ export default {
     this.$socket.client.on('saveMessage', this.socketsaveMessage);
   },
   methods: {
+    downloadFile: function (file) {
+      this.$emit('downloadFile', file);
+    },
     socketsaveMessage: function (data) {
       if (data) {
         this.message.title = '';

@@ -6,117 +6,70 @@
         max-width="50vw"
       >
         <v-card>
-          <v-card-title class="headline d-flex flex-row justify-space-between" style='border-bottom: 2px solid #333'>
-            <v-row class='ma-0 pa-0'>
-              <v-col class='ma-0 pa-0 text-left'>
-                {{ feedbacksInView.main.title }}
-              </v-col>
-              <v-col class='d-flex flex-row justify-end ma-0 pa-0'>
-                <v-btn icon @click='setRating(true)' :disabled='ratingConvert(true)'>
-                  <v-icon>fa-thumbs-up</v-icon>
-                </v-btn>
-                <v-btn icon @click='setRating(false)' :disabled='ratingConvert(false)'>
-                  <v-icon>fa-thumbs-down</v-icon>
-                </v-btn>
-                <v-btn icon @click='setAgree()' v-if='adminConvert()'>
-                  <v-icon>{{ agreeConvert() }}</v-icon>
-                </v-btn>
-                <v-tooltip bottom v-if='ownerConvert(feedbacksInView.main)'>
-                  <template v-slot:activator="{ on, attrs }">
-                    <v-btn icon v-bind="attrs" v-on="on" @click='setStatus()'>
-                      <v-icon>fa-stamp</v-icon>
-                    </v-btn>
-                  </template>
-                  <span>{{ statusConvert() }}</span>
-                </v-tooltip>
-                <v-btn icon @click='editFeedback(feedbacksInView.main)' v-if='editConvert(feedbacksInView.main)'>
-                  <v-icon>fa-pencil-alt</v-icon>
-                </v-btn>
-                <v-btn icon @click='removeFeedback(feedbacksInView.main)' v-if='adminConvert()'>
-                  <v-icon>fa-trash</v-icon>
-                </v-btn>
-              </v-col>
-            </v-row>
-            <v-row class='d-flex flex-row ma-0 pa-0 flex-wrap'>
-              <v-chip
-                v-for='type in feedbacksInView.main.type'
-                :key="type + feedbacksInView.main._id"
-                class="ma-1 pa-1"
-              >{{ type }}</v-chip>
-            </v-row>
+          <v-card-title class="headline d-flex flex-row justify-start" style='border-bottom: 2px solid #333'>
+            {{ feedbacksInView.main.title }}
           </v-card-title>
           <v-card-text>
-            <v-timeline
-              :dense="true"
-            >
-              <v-timeline-item>
-                <template v-slot:icon>
-                  <v-avatar>
-                    <v-icon color='white'>fa-plus</v-icon>
-                  </v-avatar>
-                </template>
-                <v-row>
-                  <v-btn @click='addFeedback(feedbacksInView.main._id)'>我也要留言！</v-btn>
-                </v-row>
-              </v-timeline-item>
-              <v-timeline-item>
-                <template v-slot:icon>
-                  <v-avatar>
-                    <img :src='"https://avatars.dicebear.com/api/" + feedbacksInView.main.users[0].types + "/" + encodeURIComponent(feedbacksInView.main.users[0].name + "@" + feedbacksInView.main.users[0].unit) + ".svg"' />
-                  </v-avatar>
-                </template>
-                <v-row class='d-flex flex-column ma-0 pa-0'>
-                  <v-row class='d-flex flex-row ma-0 pa-0'>
-                    <v-col class='text-left ma-0 pa-0'>
-                      {{ dateConvert(feedbacksInView.main.tick) }}
-                    </v-col>
-                  </v-row>
-                  <v-row class='ma-0 pa-0'>
-                    <div v-html="HTMLConverter(feedbacksInView.main.body)"></div>
-                    <div class='d-flex flex-row flex-wrap'>
-                      <v-chip
-                        v-for='file in feedbacksInView.main.attachments'
-                        :key="file._id"
-                        class="ma-2"
-                        @click="downloadFile(file)"
-                      >{{ filenameConvert(file) }}</v-chip>
-                    </div>
-                  </v-row>
-                </v-row>
-              </v-timeline-item>
-              <div v-if='feedbacksInView.collections.length > 0'>
-                <v-timeline-item v-for='singleFeedback in feedbacksInView.collections' :key='singleFeedback._id'>
-                  <template v-slot:icon>
-                    <v-avatar>
-                      <img :src='"https://avatars.dicebear.com/api/" + singleFeedback.users[0].types + "/" + encodeURIComponent(singleFeedback.users[0].name + "@" + singleFeedback.users[0].unit) + ".svg"' />
-                    </v-avatar>
-                  </template>
-                  <v-row class='d-flex flex-column ma-0 pa-0'>
-                    <v-row class='d-flex flex-row ma-0 pa-0'>
-                      <v-col class='text-left'>
-                        {{ dateConvert(singleFeedback.tick) }}
-                      </v-col>
-                      <v-col>
-                        <v-btn icon @click='editFeedback(singleFeedback)' v-if='editConvert(singleFeedback)'>
-                          <v-icon>fa-pencil-alt</v-icon>
-                        </v-btn>
-                      </v-col>
-                    </v-row>
-                    <v-row class='ma-0 pa-0'>
-                      <div v-html="HTMLConverter(singleFeedback.body)"></div>
-                    </v-row>
-                    <v-row class='d-flex flex-row ma-0 pa-0'>
-                      <v-chip
-                        v-for='file in singleFeedback.attachments'
-                        :key="file._id"
-                        class="ma-2"
-                        @click="downloadFile(file)"
-                      >{{ filenameConvert(file) }}</v-chip>
-                    </v-row>
-                  </v-row>
-                </v-timeline-item>
-              </div>
-            </v-timeline>
+            <v-container>
+              <v-row dense>
+                <v-col class='d-flex flex-row justify-end'>
+                  <v-btn
+                    class='white--text ma-1'
+                    color='red darken-4'
+                    v-show='!feedbacksInView.main.status'
+                    @click='addFeedback(feedbacksInView.main._id)'
+                  >
+                    回復feedback
+                  </v-btn>
+                  <v-btn icon @click='setRating(true)' :disabled='ratingConvert(true)'>
+                    <v-icon>fa-thumbs-up</v-icon>
+                  </v-btn>
+                  <v-btn icon @click='setRating(false)' :disabled='ratingConvert(false)'>
+                    <v-icon>fa-thumbs-down</v-icon>
+                  </v-btn>
+                  <v-btn icon @click='setAgree()' v-if='adminConvert()'>
+                    <v-icon>{{ agreeConvert() }}</v-icon>
+                  </v-btn>
+                  <v-tooltip bottom v-if='ownerConvert(feedbacksInView.main)'>
+                    <template v-slot:activator="{ on, attrs }">
+                      <v-btn icon v-bind="attrs" v-on="on" @click='setStatus()'>
+                        <v-icon>fa-stamp</v-icon>
+                      </v-btn>
+                    </template>
+                    <span>{{ statusConvert() }}</span>
+                  </v-tooltip>
+                  <v-btn icon @click='removeFeedback(feedbacksInView.main)' v-if='adminConvert()'>
+                    <v-icon>fa-trash</v-icon>
+                  </v-btn>
+                </v-col>
+              </v-row>
+              <v-row dense>
+                <v-col class='d-flex flex-row justify-end'>
+                  <v-chip
+                    v-for='type in feedbacksInView.main.type'
+                    :key="type + feedbacksInView.main._id"
+                    class="ma-1 pa-1"
+                  >
+                    {{ type }}
+                  </v-chip>
+                </v-col>
+              </v-row>
+              <v-row dense>
+                <v-col class='d-flex flex-column'>
+                  <issue-view
+                    :issue='feedbacksInView.main'
+                    @edit='editIssue'
+                    @download='downloadFile'
+                  />
+                  <issue-view
+                    v-for="feedback in feedbacksInView.collections"
+                    :key="feedback._id"
+                    :issue='feedback'
+                    @download='downloadFile'
+                  />
+                </v-col>
+              </v-row>
+            </v-container>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
@@ -162,6 +115,7 @@
                 close
                 close-icon="fa-times"
                 @click:close="deleteFeedbackFile(file)"
+                @click="downloadFile(file)"
               >
                 {{ file.name }} ({{ byteConvert(file.size) }})
               </v-chip>
@@ -190,13 +144,11 @@
             發送LINE訊息給管理群
           </v-card-title>
           <v-card-text class='text-left'>
-            <tiptap-vuetify
+            <v-textarea
+              label="LINE訊息"
               v-model="LINEbody"
-              :extensions="extensions"
-              max-height="20vh"
-              min-height="10vh"
-              placeholder='請不要留白'
-            />
+              hint="請不要留白"
+            ></v-textarea>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
@@ -217,19 +169,39 @@
         </v-card>
       </v-dialog>
       <v-row ref='aboutArea'>
-        <v-col class='pa-2'>
-          <div class='text-h5 font-weight-bold text-left'>關於本系統</div>
-          <div class='text-body-2 text-left'>{{ siteSettings.version }}</div>
-          <div class='text-caption text-left' v-html="HTMLConverter(siteSettings.changeLog)"></div>
+        <v-col class='pa-2 black--text'>
+          <div class='text-h5 font-weight-bold text-left'>系統版本</div>
+          <div class='d-flex flex-row flex-wrap'>
+            <div class='d-flex flex-column ma-1'>
+              <div class='text-h6 text-left'>前端版本：{{ siteSettings.versionFrontend.substring(0,7) }}</div>
+              <div class='text-caption text-left'>
+                <span v-if='frontendCommitInfo.latest'>[最新版]</span><br v-if='frontendCommitInfo.latest'/>
+                <span v-if='!frontendCommitInfo.latest' class='red--text darken-4'>不是最新版，請提醒管理員更新！</span><br v-if='!frontendCommitInfo.latest'/>
+                <span>發布日期： {{ frontendCommitInfo.date }} </span><br/>
+                <span>發布者： {{ frontendCommitInfo.committer }} ({{ frontendCommitInfo.email }}) </span><br/>
+                <span>發布訊息：</span><span v-html='HTMLConverter(frontendCommitInfo.message)'></span>
+              </div>
+            </div>
+            <div class='d-flex flex-column ma-1'>
+              <div class='text-h6 text-left'>後端版本：{{ siteSettings.versionBackend.substring(0,7) }}</div>
+              <div class='text-caption text-left'>
+                <span v-if='backendCommitInfo.latest'>[最新版]</span><br v-if='backendCommitInfo.latest'/>
+                <span v-if='!backendCommitInfo.latest' class='red--text darken-4'>不是最新版，請提醒管理員更新！</span><br v-if='!backendCommitInfo.latest'/>
+                <span>發布日期： {{ backendCommitInfo.date }} </span><br/>
+                <span>發布者： {{ backendCommitInfo.committer }} ({{ backendCommitInfo.email }}) </span><br/>
+                <span>發布訊息： </span><span v-html='HTMLConverter(backendCommitInfo.message)'></span>
+              </div>
+            </div>
+          </div>
         </v-col>
       </v-row>
       <v-row ref='teamArea'>
         <v-col class='pa-2'>
-          <div class='text-h5 font-weight-bold text-left'>管理團隊</div>
+          <div class='text-h5 font-weight-bold text-left'>系統管理員們</div>
           <v-sheet class='d-flex flex-column'>
             <v-btn @click='lineW = true'>
               <v-icon>fab fa-line</v-icon>
-              給管理群發LINE訊息
+              給管理員發LINE訊息
             </v-btn>
             <v-list-item v-for='item in userList' :key='item._id'>
               <v-list-item-avatar>
@@ -271,7 +243,7 @@
             <span v-if='feedbackList.length === 0' class='text-body-1 text-center'>
               目前沒有使用者回饋
             </span>
-            <v-simple-table v-show="feedbackList.length > 0">
+            <v-simple-table v-show="feedbackList.length > 0" class='black--text'>
               <template v-slot:default>
                 <thead>
                   <tr>
@@ -298,8 +270,8 @@
                     :key="feedback._id"
                   >
                     <td class="text-left">
-                      <v-icon v-if='feedback.status === 1'>fa-angle-double-right'</v-icon>
-                      <v-icon v-if='feedback.status !== 1'>fa-check-square</v-icon>
+                      <v-icon v-if='!feedback.status'>fa-angle-double-right'</v-icon>
+                      <v-icon v-if='feedback.status'>fa-check-square</v-icon>
                     </td>
                     <td class="text-left">
                       <v-icon v-if='feedback.rating.length >= 0'>fa-thumbs-up</v-icon>
@@ -310,7 +282,7 @@
                       <v-icon v-if='feedback.users.length > 1'>fa-star</v-icon>
                       <v-icon v-if='feedback.users.length <= 1'>far fa-star</v-icon>
                     </td>
-                    <td style='text-overflow: ellipsis'>
+                    <td style='text-overflow: ellipsis text-left'>
                       {{ feedback.title }}
                     </td>
                     <td>
@@ -342,6 +314,7 @@ import { TiptapVuetify, Bold, Italic, Strike, Underline, Code, Paragraph, Bullet
 import 'tiptap-vuetify/dist/main.css';
 import prettyBytes from 'pretty-bytes';
 import _ from 'lodash';
+import IssueView from './modules/IssueView.vue';
 
 library.add(faInfoCircle);
 Vue.component('font-awesome-icon', FontAwesomeIcon);
@@ -354,7 +327,7 @@ let files = [];
 
 export default {
   name: 'Info',
-  components: { TiptapVuetify },
+  components: { TiptapVuetify, IssueView },
   methods: {
     socketrequestfeedbackSlice: function (data) {
       let oriobj = this;
@@ -545,16 +518,47 @@ export default {
       this.$socket.client.emit('setStatus', this.feedbacksInView.main._id);
     },
     downloadFile: function (file) {
-      if (file.status === 1) {
-        let element = document.createElement('a');
-        element.setAttribute('href', this.siteSettings.siteLocation + '/storages/' + file._id);
-        element.setAttribute('download', file.name);
-        element.style.display = 'none';
-        element.click();
+      this.$emit('downloadFile', file);
+    },
+    socketgetGithubBackendCommit: function (data) {
+      this.backendCommits = data;
+    },
+    socketgetGithubFrontendCommit: function (data) {
+      this.frontendCommits = data;
+    },
+    getCommit: function (commits, id) {
+      let commit = _.find(commits, (commit) => {
+        return commit.id === id;
+      });
+      if(commit !== undefined) {
+        return {
+          date: moment(commit.commitDate).format('YYYY/MM/DD HH:mm:ss'),
+          message: commit.message,
+          committer: commit.committerName,
+          email: commit.committerEmail,
+          latest: commits[0].id === id
+        }
+      } else {
+        return {
+          date: '無資訊',
+          message: '無資訊',
+          committer: '無資訊',
+          email: '無資訊'
+        }
       }
     }
   },
   computed: {
+    frontendCommitInfo: function () {
+      let frontendID = this.siteSettings.versionFrontend;
+      let commits = this.frontendCommits;
+      return this.getCommit(commits, frontendID);
+    },
+    backendCommitInfo: function () {
+      let backendID = this.siteSettings.versionBackend;
+      let commits = this.backendCommits;
+      return this.getCommit(commits, backendID);
+    },
     currentUser: function () {
       return this.$store.state.currentUser;
     },
@@ -594,6 +598,8 @@ export default {
   },
   data () {
       return {
+        backendCommits: [],
+        frontendCommits: [],
         extensions: [
           History,
           Link,
@@ -679,6 +685,8 @@ export default {
     this.$socket.client.off('feedbackFileUploadError', this.socketfeedbackFileUploadError);
     this.$socket.client.off('feedbackFileDeleteError', this.socketfeedbackfileDeleteError);
     this.$socket.client.off('requestfeedbackSlice', this.socketrequestfeedbackSlice);
+    this.$socket.client.off('getGithubBackendCommit', this.socketgetGithubBackendCommit);
+    this.$socket.client.off('getGithubFrontendCommit', this.socketgetGithubFrontendCommit);
   },
   created () {
     this.$emit('viewIn', {
@@ -688,6 +696,8 @@ export default {
       location: '/Info'
     });
     this.$socket.client.on('getsiteAdminUsers', this.socketgetsiteAdminUsers);
+    this.$socket.client.on('getGithubBackendCommit', this.socketgetGithubBackendCommit);
+    this.$socket.client.on('getGithubFrontendCommit', this.socketgetGithubFrontendCommit);
     this.$socket.client.on('sendLINEnotify', this.socketsendLINEnotify);
     this.$socket.client.on('editFeedback', this.socketeditFeedback);
     this.$socket.client.on('addFeedback', this.socketaddFeedback);
@@ -706,6 +716,8 @@ export default {
         'settingTags'
       ]);
       oriobj.$socket.client.emit('getfeedbackList');
+      oriobj.$socket.client.emit('getGithubBackendCommit');
+      oriobj.$socket.client.emit('getGithubFrontendCommit');
     });
   }
 };
