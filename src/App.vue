@@ -561,10 +561,10 @@ export default {
     timerOn: function (status) {
       this.indeterminate = status;
     },
-    sendToast: function (data, time) {
-      this.toastTime = time === undefined ? 2000 : time;
+    sendToast: function (data) {
+      this.toastTime = (typeof(data) === 'object') ? data.time : 2000;
       this.toastOn = true;
-      this.toastMsg = data;
+      this.toastMsg = (typeof(data) === 'object') ? data.message : data;
     },
     userInfo: function (user) {
       this.viewUser = user;
@@ -768,18 +768,27 @@ export default {
             window.location.replace('https://' + window.location.host + '/#/userDashBoard');
           }
           this.reloadTimer = setTimeout(() => {
-            oriobj.sendToast("登入成功！", 1000);
+            oriobj.sendToast({
+              message:"登入成功！",
+              time:1000
+            });
             window.clearTimeout(this.reloadTimer);
           }, 1000);
         }
       } else {
         if(this.currentPage.location === '/Login' || this.currentPage.location === '/Home' || this.currentPage.location === '/') {
-          oriobj.sendToast("您目前處於未登入狀態", 1000);
+          oriobj.sendToast({
+            message:"您目前處於未登入狀態",
+            time:1000
+          });
         } else {
           if(this.currentUser._id === '') {
             window.location.replace('https://' + window.location.host + '/#/Login');
             this.reloadTimer = setTimeout(() => {
-              oriobj.sendToast("同步連線中斷（多半是您手動重新整理網頁），您將被導入登入頁面", 1000);
+              oriobj.sendToast({
+                message: "同步連線中斷（多半是您手動重新整理網頁），您將被導入登入頁面",
+                time:1000
+              });
               window.clearTimeout(this.reloadTimer);
             }, 1000);
           }
@@ -794,7 +803,10 @@ export default {
         this.safariW = true;
       } else {
         if (nav[0].type === 'reload' || nav[0].type === 1) {
-          this.sendToast("偵測到網頁重新整理！網頁立刻重建同步連線", 5000);
+          this.sendToast({
+            message: "偵測到網頁重新整理！網頁立刻重建同步連線",
+            time:5000
+          });
           this.$socket.client.emit('userAlived');
         }
       }
@@ -847,7 +859,10 @@ export default {
 
     this.$socket.client.on('clearCurrentUser', () => {
       oriobj.timerOn(false);
-      oriobj.sendToast('登出完成！確認用戶狀態中...', 5000);
+      oriobj.sendToast({
+        message: '登出完成！確認用戶狀態中...',
+        time: 5000
+      });
       oriobj.$socket.client.emit('getCurrentUser');
     });
 

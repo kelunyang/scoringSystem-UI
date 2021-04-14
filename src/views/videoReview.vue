@@ -1745,7 +1745,7 @@ export default {
       this.currentPlayer = videojs(this.$refs.currentPlayer, this.videoOptions, function onPlayerReady () {
         this.src({
           type: oriobj.currentVersion.type,
-          src: oriobj.siteSettings.siteLocation + '/storages/' + oriobj.currentVersion._id
+          src: '/storages/' + oriobj.currentVersion._id
         });
         this.on('timeupdate', function () {
           oriobj.currentData.position = this.currentTime();
@@ -1766,7 +1766,7 @@ export default {
       this.previousPlayer = videojs(this.$refs.previousPlayer, this.videoOptions, function onPlayerReady () {
         this.src({
           type: oriobj.previousVersion.type,
-          src: oriobj.siteSettings.siteLocation + '/storages/' + oriobj.previousVersion._id
+          src: '/storages/' + oriobj.previousVersion._id
         });
         this.on('loadedmetadata', function () {
           oriobj.previousData.total = oriobj.timeConvert(this.duration());
@@ -2272,7 +2272,10 @@ export default {
     pinMode: function () {
       let oriobj = this;
       if(this.pinMode) {
-        this.$emit('toastPop', '預覽框置頂模式開啟！請勿調整視窗大小！');
+        this.$emit('toastPop', {
+          time: 10000,
+          message: '預覽框置頂模式開啟！請勿調整視窗大小！'
+        });
         this.$refs.viewArea.style.left = this.$refs.viewArea.getBoundingClientRect().left + 'px';
         this.$refs.viewArea.style.width = this.$refs.viewArea.clientWidth + 'px';
         setTimeout(() => {  //vue nexttick 不會更新data，只能用settimeout，以下同
@@ -2310,7 +2313,7 @@ export default {
               } else {
                 this.currentPlayer.src({
                   type: this.currentVersion.type,
-                  src: this.siteSettings.siteLocation + '/storages/' + oriobj.currentVersion._id
+                  src: '/storages/' + oriobj.currentVersion._id
                 });
               }
             } else if(this.currentVersion.type.indexOf('pdf') > -1) {
@@ -2318,7 +2321,7 @@ export default {
               this.cType = 'pdf';
               this.$emit("toastPop", "最新版本為PDF，開始下載PDF檔案");
               Vue.nextTick(async () => {
-                let result = await axios.get(oriobj.siteSettings.siteLocation + '/storages/' + oriobj.currentVersion._id, {
+                let result = await axios.get('/storages/' + oriobj.currentVersion._id, {
                                           responseType: 'blob'    
                                     });
                 oriobj.$emit("toastPop", "PDF下載完成，開始繪製PDF");
@@ -2359,7 +2362,7 @@ export default {
               } else {
                 this.previousPlayer.src({
                   type: this.previousVersion.type,
-                  src: this.siteSettings.siteLocation + '/storages/' + this.previousVersion._id
+                  src: '/storages/' + this.previousVersion._id
                 });
               }
             } else if(this.previousVersion.type.indexOf('pdf') > -1) {
@@ -2367,7 +2370,7 @@ export default {
               this.pType = 'pdf';
               this.$emit("toastPop", "對照版本為PDF，開始下載PDF檔案");
               Vue.nextTick(async () => {
-                let result = await axios.get(oriobj.siteSettings.siteLocation + '/storages/' + oriobj.previousVersion._id, {
+                let result = await axios.get('/storages/' + oriobj.previousVersion._id, {
                                           responseType: 'blob'    
                                     });
                 oriobj.$emit("toastPop", "PDF下載完成，開始繪製PDF");

@@ -159,8 +159,7 @@
                         <v-icon>fa-trash</v-icon>
                       </v-btn>
                       <v-btn
-                        :href='siteSettings.siteLocation + "/storages/" + version._id'
-                        :download="currentKB.title + '|' + version.name"
+                        @click='downloadFile(version)'
                         outlined
                         icon>
                         <v-icon>fa-file-download</v-icon>
@@ -756,17 +755,14 @@ export default {
     soketgetlatestVersions: function (data) {
       for (let i = 0; i < data.length; i++) {
         let file = data[i];
-        let element = document.createElement('a');
-        element.setAttribute('href', this.siteSettings.siteLocation + '/storages/' + file._id);
-        element.setAttribute('download', '['+ file.title + '(' + file._id + ')]' + file.name);
-        element.style.display = 'none';
-        document.body.appendChild(element);
-        element.click();
-        document.body.removeChild(element);
+        this.downloadFile(file);
       }
     },
     socketcreateUsersReport: function (data) {
       this.$emit('toastPop', data);
+    },
+    downloadFile: function (file) {
+      this.$emit('downloadFile', file);
     }
   },
   watch: {

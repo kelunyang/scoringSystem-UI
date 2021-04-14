@@ -45,6 +45,7 @@
         <span>{{ githubConvert(data.item) }}</span>
       </template>
     </v-select>
+    <v-text-field label='檔案儲存位置' v-model='storageLocation' hint='請注意，這裡是檔案儲存位置指的是NFS主機上的位置，不知道別亂調，最後不用加上/'></v-text-field>
     <v-text-field label='Github Personal Token' v-model='githubKey' hint='請注意，這是GitHub產生的Personal Token'></v-text-field>
     <v-text-field label='前端Github Repo Address' v-model='frontendRepo' hint='請注意，這是前端專案在GitHub的位置'></v-text-field>
     <v-text-field label='後端Github Repo Address' v-model='backendRepo' hint='請注意，這是後端專案在GitHub的位置'></v-text-field>
@@ -91,26 +92,53 @@
     <v-text-field label='LINE Notify client id' v-model='LINENotifyKey' hint='請注意，這是在LINE notify裡建立取得的client key'></v-text-field>
     <v-text-field label='LINE Notify secret key' v-model='LINESecretKey' hint='請注意，這是在LINE notify裡取得的secret'></v-text-field>
     <v-slider
-        label='定期通報時間（小時）'
-        min='0'
-        max='23'
-        v-model="patrolHour"
-        thumb-label
+      label='定期通報時間（小時）'
+      min='0'
+      max='23'
+      v-model="patrolHour"
+      thumb-label
     ></v-slider>
     <v-slider
-        label='死線設定（小時）'
-        min='24'
-        max='168'
-        v-model="robotDeadLine"
-        thumb-label
+      label='死線設定（小時）'
+      min='24'
+      max='168'
+      v-model="robotDeadLine"
+      thumb-label
     ></v-slider>
     <v-slider
-        label='定期匯報（天）'
-        min='1'
-        max='21'
-        v-model="reportDuration"
-        thumb-label
+      label='定期匯報（天）'
+      min='1'
+      max='21'
+      v-model="reportDuration"
+      thumb-label
     ></v-slider>
+    <div>機器人最後一次掃描時間： {{ dateConvert(LastPatrol) }}</div>
+    <v-text-field label='備份檔案位置' v-model='backupLocation' hint='請注意，這裡的位置是NFS主機上的位置，不知道別亂調，最後不用加上/，另外，檔案備份是直接複寫舊備份檔，沒有版本問題'></v-text-field>
+    <v-slider
+      label='檔案備份頻率（天）'
+      min='1'
+      max='10'
+      v-model="backupDuration"
+      thumb-label
+    ></v-slider>
+    <div>機器人最後一次備份時間： {{ dateConvert(LastBackup) }}</div>
+    <v-text-field label='資料庫備份檔案位置' v-model='dbbackupLocation' hint='請注意，這裡的位置是NFS主機上的位置，不知道別亂調，最後不用加上/'></v-text-field>
+    <v-slider
+      label='資料庫檔案備份頻率（天）'
+      min='1'
+      max='10'
+      v-model="dbbackupDuration"
+      thumb-label
+    ></v-slider>
+    <v-slider
+      label='資料庫檔案保留份數'
+      min='1'
+      max='5'
+      v-model="dbbackupCopies"
+      thumb-label
+    ></v-slider>
+    <v-btn>按此手動備份（還沒開發別按）</v-btn>
+    <div>資料庫最後一次備份時間： {{ dateConvert(LastDBbackup) }}</div>
     <div class='text-h5 text-center pt-5 font-weight-black'>啟動／關閉v2ray</div>
     <v-switch
       :disabled='!v2RayChecked'
@@ -188,6 +216,9 @@ export default {
     this.$socket.client.on('v2rayReport', this.socketv2rayReport);
   },
   methods: {
+    dateConvert: function (time) {
+      return time === 0 ? '尚未發生' : moment.unix(time).format('YYYY/MM/DD HH:mm:ss');
+    },
     socketgetserverADDR: function (data) {
       this.serverAddress = data;
     },
@@ -224,6 +255,11 @@ export default {
       this.mailSSL = data.mailSSL;
       this.mailSMTP = data.mailSMTP;
       this.mailPort = data.mailPort;
+      this.backupLocation = data.backupLocation;
+      this.dbbackupLocation = data.dbbackupLocation;
+      this.backupDuration = data.backupDuration;
+      this.dbbackupDuration = data.dbbackupDuration;
+      this.dbbackupCopies = data.dbbackupCopies;
     },
     socketgetGlobalSettings: function (data) {
       this.selectedSysTags = data.settingTags;
@@ -240,6 +276,7 @@ export default {
       this.frontendRepo = data.frontendRepo;
       this.backendRepo = data.backendRepo;
       this.connectionTimeout = data.connectionTimeout;
+      this.storageLocation = data.storageLocation;
     },
     socketgetRobotUsers: function (data) {
       this.savedUsers = data;
@@ -256,6 +293,12 @@ export default {
       this.$emit('toastPop', "儲存系統設定中...");
       this.icontype = 'fa-spinner';
       this.$socket.client.emit('setSetting', {
+        storageLocation: this.storageLocation,
+        backupDuration: this.backupDuration,
+        backupLocation: this.backupLocation,
+        dbbackupLocation: this.dbbackupLocation,
+        dbbackupDuration: this.dbbackupDuration,
+        dbbackupCopies: this.dbbackupCopies,
         selectedSysTags: this.selectedSysTags,
         selectedUsrTags: this.selectedUsrTags,
         selectedflowTags: this.selectedflowTags,
@@ -322,6 +365,15 @@ export default {
   },
   data () {
     return {
+      LastPatrol: 0,
+      LastDBbackup: 0,
+      LastBackup: 0,
+      storageLocation: '',
+      backupLocation: '',
+      dbbackupLocation: '',
+      backupDuration: 1,
+      dbbackupDuration: 1,
+      dbbackupCopies: 1,
       serverAddress: '',
       v2RayChecked: false,
       v2Ray: false,
