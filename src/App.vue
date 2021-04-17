@@ -524,7 +524,6 @@ import 'tiptap-vuetify/dist/main.css';
 import TurndownService from 'turndown';
 import { v4 as uuidv4 } from 'uuid';
 import _ from 'lodash';
-import { randomColor } from 'randomcolor';
 
 library.add(faUserTag, faCog, faVideo, faUserCog, faCommentAlt, fas, faSnapchatGhost, faTachometerAlt, faSignInAlt, faUsersCog, faChartLine, faInfoCircle, faStamp, faSlidersH, faNetworkWired);
 Vue.component('font-awesome-icon', FontAwesomeIcon);
@@ -625,13 +624,6 @@ export default {
     }
   },
   computed: {
-    randomColor: function () {
-      let color = randomColor({
-          luminosity: 'dark',
-          format: 'rgb'
-      });
-      return color;
-    },
     currentPage: function () {
       if(this.history.length > 0) {
         let currentPage = this.history[this.history.length - 1];
@@ -660,6 +652,9 @@ export default {
     },
     currentUser: function () {
       return this.$store.state.currentUser;
+    },
+    randomColor: function () {
+      return this.$store.state.randomColor;
     },
     siteSettings: function () {
       return this.$store.state.siteSettings;
@@ -797,6 +792,7 @@ export default {
     }
   },
   created () {
+    this.$store.commit('updateSiteColor');
     if(!this.preventR) {
       let nav = performance.getEntriesByType("navigation");
       if(nav === undefined || nav == null || nav.length === 0) {

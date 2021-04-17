@@ -383,7 +383,7 @@
         <span v-if='issueFilter.time'>我要看所有的Issue</span>
         <span v-if='!issueFilter.time'>我要目前秒數的Issue</span>
       </v-tooltip>
-      <v-tooltip top>
+      <v-tooltip top v-if='currentVersions.length > 0'>
         <template v-slot:activator="{ on, attrs }">
           <v-btn
             fab

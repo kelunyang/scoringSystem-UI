@@ -1,6 +1,8 @@
 import moment from 'moment';
 import Vue from 'vue';
 import Vuex, {Store} from "vuex";
+import { randomColor } from 'randomcolor';
+
 Vue.config.productionTip = false;
 Vue.config.devtools = false;
 
@@ -28,9 +30,17 @@ const store = new Store({
       siteLocation: '',
       changeLog: '**test**'
     },
-    savedTags: []
+    savedTags: [],
+    randomColor: '#199494'
   },
   mutations: {
+    updateSiteColor(state) {
+      let color = randomColor({
+          luminosity: 'dark',
+          format: 'hex'
+      });
+      state.randomColor = color;
+    },
     updateSavedTags(state, tags) {
       state.savedTags = tags;
     },

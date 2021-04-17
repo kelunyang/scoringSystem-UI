@@ -493,6 +493,9 @@
           <thead>
             <tr>
               <th class="text-center">
+                第一步或沒開始
+              </th>
+              <th class="text-center">
                 完成度不到一半
               </th>
               <th class="text-center">
@@ -502,16 +505,21 @@
                 接近完成的專案
               </th>
               <th class="text-center">
+                已經完成的專案
+              </th>
+              <th class="text-center">
                 總計
               </th>
             </tr>
           </thead>
           <tbody>
             <tr>
+              <td>{{ chartData.atBegining }}</td>
               <td>{{ chartData.aboveHalfway }}</td>
               <td>{{ chartData.aboutHalfyway }}</td>
               <td>{{ chartData.almostDone }}</td>
-              <td>{{ chartData.almostDone + chartData.aboutHalfyway + chartData.aboveHalfway}}</td>
+              <td>{{ chartData.alreadyDone }}</td>
+              <td>{{ chartData.atBegining + chartData.almostDone + chartData.aboutHalfyway + chartData.aboveHalfway + chartData.alreadyDone }}</td>
             </tr>
           </tbody>
         </template>
@@ -674,9 +682,7 @@ export default {
       element.setAttribute('href', 'data:text/csv;base64,' + window.btoa(exportCSV));
       element.setAttribute('download', '參與者統計匯出.csv');
       element.style.display = 'none';
-      document.body.appendChild(element);
       element.click();
-      document.body.removeChild(element);
     },
     sockgetKBVersions: function (data) {
       this.versionPopulated = true;
@@ -749,7 +755,11 @@ export default {
     },
     soketsetKBTag: function (data) {
       if(data) {
+        this.$socket.client.emit('listDashBoard');
         this.$emit('toastPop', '新增標籤完成！');
+        this.tagW = false;
+      } else {
+        this.$emit('toastPop', '你不可以把全部的標籤都清除啦！');
       }
     },
     soketgetlatestVersions: function (data) {
@@ -908,35 +918,51 @@ export default {
       return color;
     },
     chartData: function () {
+      let atBegining = new Set();
       let aboveHalfway = new Set();
       let aboutHalfyway = new Set();
       let almostDone = new Set();
+      let alreadyDone = new Set();
       for (let i = 0; i < this.convertedList.length; i++) {
         let KB = this.convertedList[i];
-        if(_.inRange(KB.currentStep, 0, Math.floor(KB.stages.length / 2)+0.1)) { aboveHalfway.add(KB._id); continue; }
-        if(_.inRange(KB.currentStep, Math.floor(KB.stages.length / 2), Math.ceil(KB.stages.length / 2)+0.1)) { aboutHalfyway.add(KB._id); continue; }
-        if(_.inRange(KB.currentStep, Math.ceil(KB.stages.length / 2), KB.stages.length+0.1)) { almostDone.add(KB._id); continue; }
+        if(KB.currentStep <= 1) { atBegining.add(KB._id); continue; }
+        if(_.inRange(KB.currentStep, 1.001, Math.floor(KB.stages.length / 2) + 0.001)) { aboveHalfway.add(KB._id); continue; }
+        if(_.inRange(KB.currentStep, Math.floor(KB.stages.length / 2), Math.ceil(KB.stages.length / 2) + 0.001)) { aboutHalfyway.add(KB._id); continue; }
+        if(_.inRange(KB.currentStep, Math.ceil(KB.stages.length / 2), KB.stages.length)) { almostDone.add(KB._id); continue; }
+        if(KB.currentStep === KB.stages.length) { alreadyDone.add(KB._id); continue; }
       }
       return {
+        atBegining: atBegining.size,
         aboveHalfway: aboveHalfway.size,
         aboutHalfyway: aboutHalfyway.size,
         almostDone: almostDone.size,
+        alreadyDone: alreadyDone.size,
         series: [
+          {
+            name: '第一步或沒開始',
+            data: [atBegining.size]
+          },
           {
             name: '完成度不到一半',
             data: [aboveHalfway.size]
-          }, {
+          },
+          {
             name: '完成度大約一半',
             data: [aboutHalfyway.size]
-          }, {
+          },
+          {
             name: '接近完成的專案',
             data: [almostDone.size]
+          },
+          {
+            name: '已經完成的專案',
+            data: [alreadyDone.size]
           }
         ],
         chartOptions: {
           chart: {
             type: 'bar',
-            height: 200,
+            height: 150,
             stacked: true,
             stackType: '100%'
           },
@@ -951,7 +977,8 @@ export default {
           },
           colors: randomColor({
             luminosity: 'dark',
-            count: 3,
+            hue: this.$store.state.randomColor,
+            count: 5,
             format: 'rgb'
           }),
           title: {
