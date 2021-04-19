@@ -76,6 +76,8 @@
     <tag-filter :mustSelected='true' :single='false' @plusItem='plusTag' :selectedItem='selectedflowTags' @valueUpdated='updateFlowTag' :candidatedItem='savedTags' :createable='true' label='請輸入授權知識點管理功能的使用者標籤' />
     <div class='text-subtitle-2 font-weight-blod'>授權統計功能的使用者標籤</div>
     <tag-filter :mustSelected='true' :single='false' @plusItem='plusTag' :selectedItem='selectedstatisticsTags' @valueUpdated='updateStatisticsTag' :candidatedItem='savedTags' :createable='true' label='請輸入授權使用統計功能的使用者標籤' />
+    <div class='text-subtitle-2 font-weight-blod'>顯示在系統資訊頁的使用者標籤</div>
+    <tag-filter :mustSelected='true' :single='false' @plusItem='plusTag' :selectedItem='selectedserviceTags' @valueUpdated='updateServiceTag' :candidatedItem='savedTags' :createable='true' label='請輸入顯示在系統資訊頁的使用者標籤' />
     <div class='text-subtitle-2 font-weight-blod'>機器人的使用者標籤</div>
     <tag-filter :mustSelected='true' :single='true' @plusItem='plusTag' :selectedItem='selectedrobotTag' @valueUpdated='updateRobotTag' :candidatedItem='savedTags' :createable='true' label='請輸入授權用戶管理功能的使用者標籤' />
     <div class='text-h5 text-center pt-5 font-weight-black'>機器人巡邏參數</div>
@@ -277,6 +279,7 @@ export default {
       this.backendRepo = data.backendRepo;
       this.connectionTimeout = data.connectionTimeout;
       this.storageLocation = data.storageLocation;
+      this.selectedserviceTags = data.serviceTags;
     },
     socketgetRobotUsers: function (data) {
       this.savedUsers = data;
@@ -313,6 +316,7 @@ export default {
         LINENotifyKey: this.LINENotifyKey,
         LINESecretKey: this.LINESecretKey,
         PatrolAccount: this.PatrolAccount,
+        serviceTags: this.selectedserviceTags,
         mailSMTP: this.mailSMTP,
         mailPort: this.mailPort,
         mailSSL: this.mailSSL,
@@ -338,6 +342,9 @@ export default {
     },
     updateUsrTag: function (value) {
       this.selectedUsrTags = value;
+    },
+    updateServiceTag: function (value) {
+      this.selectedserviceTags = value;
     },
     updateFlowTag: function (value) {
       this.selectedflowTags = value;
@@ -365,6 +372,7 @@ export default {
   },
   data () {
     return {
+      selectedserviceTags: [],
       LastPatrol: 0,
       LastDBbackup: 0,
       LastBackup: 0,
