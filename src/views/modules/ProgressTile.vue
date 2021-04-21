@@ -94,7 +94,7 @@
         </v-tooltip>
       </v-col>
     </v-row>
-    <v-row no-gutters>
+    <v-row no-gutters v-if='currentItem.currentStep > 0'>
       <v-col class='d-flex flex-row pa-1 align-center' :class='currentItem.remainTick < 86400 ? "red--text" : "black--text"'>
         <span v-if='currentItem.remainTick < Number.MAX_SAFE_INTEGER'>
           <v-icon class='ma-1' small :color='currentItem.remainTick < 86400 ? "red" : "black"'>fa-stopwatch</v-icon>

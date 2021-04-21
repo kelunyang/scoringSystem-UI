@@ -458,8 +458,10 @@
         >
           <template v-slot:default="{ value }">
             <span>本階段審查目標完成度：{{ Math.ceil(value) }}%</span>
-            <span v-if='statistics.unfinishObj - statistics.finishObj <= 1'>（再通過一個你就不能回頭啦！）</span>
-            <span v-else>（階段死線： {{ dateConvert(currentStage.dueTick) }}）</span>
+            <span v-if='statistics.unfinishObj > 0'>
+              <span v-if='statistics.unfinishObj - statistics.finishObj <= 1'>（再通過一個你就不能回頭啦！）</span>
+              <span v-else>（階段死線： {{ dateConvert(currentStage.dueTick) }}）</span>
+            </span>
           </template>
         </v-progress-linear>
         <div class='d-flex flex-row flex-shrink-1 flex-grow-0 floatPanel justify-end'>

@@ -856,21 +856,23 @@ export default {
             KB.attention = moment().unix() - stage.dueTick;
           }
         }
-        KB.isPM = (_.intersectionWith(KB.stages[KB.currentStep - 1].pmTags, this.currentUser.tags, (cTag, uTag) => {
-          return cTag === uTag._id;
-        })).length > 0;
-        KB.isVendor = (_.intersectionWith(KB.stages[KB.currentStep - 1].vendorTags, this.currentUser.tags, (cTag, uTag) => {
-          return cTag === uTag._id;
-        })).length > 0;
-        KB.isFinal = (_.intersectionWith(KB.stages[KB.currentStep - 1].finalTags, this.currentUser.tags, (cTag, uTag) => {
-          return cTag === uTag._id;
-        })).length > 0;
-        KB.isWriter = (_.intersectionWith(KB.stages[KB.currentStep - 1].writerTags, this.currentUser.tags, (cTag, uTag) => {
-          return cTag === uTag._id;
-        })).length > 0;
-        KB.isReviewer = (_.intersectionWith(KB.stages[KB.currentStep - 1].reviewerTags, this.currentUser.tags, (cTag, uTag) => {
-          return cTag === uTag._id;
-        })).length > 0;
+        if(KB.currentStep > 0) {
+          KB.isPM = (_.intersectionWith(KB.stages[KB.currentStep - 1].pmTags, this.currentUser.tags, (cTag, uTag) => {
+            return cTag === uTag._id;
+          })).length > 0;
+          KB.isVendor = (_.intersectionWith(KB.stages[KB.currentStep - 1].vendorTags, this.currentUser.tags, (cTag, uTag) => {
+            return cTag === uTag._id;
+          })).length > 0;
+          KB.isFinal = (_.intersectionWith(KB.stages[KB.currentStep - 1].finalTags, this.currentUser.tags, (cTag, uTag) => {
+            return cTag === uTag._id;
+          })).length > 0;
+          KB.isWriter = (_.intersectionWith(KB.stages[KB.currentStep - 1].writerTags, this.currentUser.tags, (cTag, uTag) => {
+            return cTag === uTag._id;
+          })).length > 0;
+          KB.isReviewer = (_.intersectionWith(KB.stages[KB.currentStep - 1].reviewerTags, this.currentUser.tags, (cTag, uTag) => {
+            return cTag === uTag._id;
+          })).length > 0;
+        }
         KB.dueTick = 0;
         let found = _.find(this.selectedpmKBs, (item) => {
           return KB._id === item;
