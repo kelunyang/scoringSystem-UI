@@ -73,6 +73,11 @@
           <v-icon>fab fa-line</v-icon>
           綁定LINE Notify（會開新視窗）
         </v-btn><br />
+        <span>
+          <v-icon>fas fa-exclamation-triangle</v-icon>
+          請務必要把本平台的LINE Notify放到「1對1聊天接收LINE Notify通知」中（如下圖）！
+        </span>
+        <img width="100%" src="/storages/lineSupport.png" />
         <v-icon>fab fa-slack-hash</v-icon>
         <span class="text-subtitle-2 font-weight-bold">您所隸屬的使用者標籤：</span><br/>
         <div class='d-flex flex-row flex-wrap'>
