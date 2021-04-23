@@ -51,7 +51,7 @@
         </v-container>
         <v-text-field prepend-icon='fa-key' type='password' label='你的新密碼' hint="如果你要設定密碼的話，請輸入您的新密碼" v-model='password' :class='firstRun'></v-text-field>
         <password v-model="password" :strength-meter-only="true"/>
-        <v-text-field prepend-icon='fa-user-alt' label='用戶名稱' v-model='currentUser.name'></v-text-field>
+        <v-text-field prepend-icon='fa-user-alt' label='用戶名稱' hint="事涉核銷，請務必輸入中文完整姓名" v-model='currentUser.name'></v-text-field>
         <v-select
             prepend-icon='fa-transgender-alt'
             v-model='currentUser.types'

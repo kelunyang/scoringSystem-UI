@@ -206,9 +206,32 @@
                         {{ objective.name }}<span v-if='"signUser" in objective'>[已通過]</span>
                       </td>
                       <td class='d-flex flex-row justify-end'>
-                        <v-btn outlined icon @click='removeObjective(objective._id)'>
-                          <v-icon>fa-trash</v-icon>
-                        </v-btn>
+                        <v-tooltip bottom v-if='"signUser" in objective'>
+                          <template v-slot:activator="{ on, attrs }">
+                            <v-btn
+                              outlined
+                              icon
+                              @click='revokeObjective(objective._id)'
+                              v-bind="attrs" v-on="on"
+                            >
+                              <v-icon>fa-history</v-icon>
+                            </v-btn>
+                          </template>
+                          <span>撤回目標許可</span>
+                        </v-tooltip>
+                        <v-tooltip bottom>
+                          <template v-slot:activator="{ on, attrs }">
+                            <v-btn
+                              outlined
+                              icon
+                              @click='removeObjective(objective._id)'
+                              v-bind="attrs" v-on="on"
+                            >
+                              <v-icon>fa-trash</v-icon>
+                            </v-btn>
+                          </template>
+                          <span>刪除目標</span>
+                        </v-tooltip>
                       </td>
                     </tr>
                   </tbody>
@@ -648,6 +671,14 @@ export default {
     }
   },
   methods: {
+    revokeObjective: function (OID) {
+      this.$emit('toastPop', '移除單一目標許可權中...');
+      this.$socket.client.emit('revokeObjective', {
+        KB: this.currentStage.KB,
+        oid: OID,
+        stage: this.currentStage._id
+      });
+    },
     revokeObjectives: function () {
       this.$socket.client.emit('revokeObjectives', {
         KB: this.currentStage.KB,
