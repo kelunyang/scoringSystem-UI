@@ -138,13 +138,32 @@
                       >
                         套用設定
                       </v-btn>
-                      <v-btn
-                        color='red accent-4'
-                        class='white--text ma-1'
-                        @click='deletePreset(preset)'
+                      <v-menu
+                        offset-y
+                        attach
+                        transition="slide-y-transition"
                       >
-                        刪除
-                      </v-btn>
+                        <template v-slot:activator="{ on, attrs }">
+                          <v-btn
+                            color='red accent-4'
+                            class='white--text ma-1'
+                            v-bind="attrs" v-on="on"
+                          >
+                            刪除
+                          </v-btn>
+                        </template>
+                        <v-sheet class='d-flex flex-column pa-1'>
+                          <div class='text-h6'>確認刪除舊有設定檔？</div>
+                          <v-btn
+                            color='red accent-4'
+                            class='white--text ma-1'
+                            @click='deletePreset(preset)'
+                          >
+                            刪除
+                          </v-btn>
+                          <div class='text-caption'>如果你只是誤觸，請隨意點擊其他地方即會關閉本對話框</div>
+                        </v-sheet>
+                      </v-menu>
                     </td>
                   </tr>
                 </tbody>

@@ -283,6 +283,11 @@
           <v-btn
             icon
             @click='citeColor = "#2C7AD6"'>
+            <v-icon color="#2C7AD6">fa-square</v-icon>
+          </v-btn>
+          <v-btn
+            icon
+            @click='citeColor = "#2CDA76"'>
             <v-icon color="#2CDA76">fa-square</v-icon>
           </v-btn>
           <v-btn
@@ -354,6 +359,44 @@
         </v-card-text>
       </v-card>
     </v-dialog>
+    <v-dialog
+      v-model="fabIssue"
+      max-width="50vw"
+    >
+      <template>
+        <v-sheet class='d-flex flex-column pa-1'>
+          <div class='text-h6'>確認發新Issue？</div>
+          <v-btn
+            color='red accent-4'
+            class='white--text ma-1'
+            @click='addIssue'
+          >
+            是，快讓我發Issue！
+          </v-btn>
+          <div class='text-caption'>如果你只是誤觸，請隨意點擊其他地方即會關閉本對話框，請注意，只有PM、審查者才有權力刪除Issue</div>
+        </v-sheet>
+      </template>
+    </v-dialog>
+    <v-fab-transition v-if='pinMode'>
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn
+            v-bind="attrs" v-on="on"
+            color="pink"
+            fixed
+            fab
+            dark
+            bottom
+            right
+            style='margin-bottom: 80px'
+            @click.stop='fabIssue = true'
+          >
+            <v-icon>fas fa-comment-medical</v-icon>
+          </v-btn>
+        </template>
+        <span>發Issue</span>
+      </v-tooltip>
+    </v-fab-transition>
     <v-speed-dial v-if='!hideFilterBtns' v-model="filterBtn" fixed bottom right direction="left" :open-on-hover="true" transition="slide-y-reverse-transition">
       <template v-slot:activator>
         <v-btn
@@ -472,13 +515,33 @@
           >
             {{ objectiveWConvert() }}
           </v-btn>
-          <v-btn
-            color='red accent-4'
-            class='white--text ma-1'
-            @click='addIssue'
+          <v-menu
+            offset-y
+            attach
+            transition="slide-y-transition"
           >
-            發Issue
-          </v-btn>
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                color='red accent-4'
+                class='white--text ma-1'
+                v-bind="attrs" v-on="on"
+                :disabled='currentStage.coolDown'
+              >
+                發Issue
+              </v-btn>
+            </template>
+            <v-sheet class='d-flex flex-column pa-1'>
+              <div class='text-h6'>確認發新Issue？</div>
+              <v-btn
+                color='red accent-4'
+                class='white--text ma-1'
+                @click='addIssue'
+              >
+                是，我要發Issue
+              </v-btn>
+              <div class='text-caption'>如果你只是誤觸，請隨意點擊其他地方即會關閉本對話框，請注意，只有PM、審查者才有權力刪除Issue</div>
+            </v-sheet>
+          </v-menu>
           <v-btn
             @click='editlogw = true'
             color="grey lighten-1"
@@ -911,29 +974,30 @@
             </div>
             <div class='text-right'>@{{ currentPosD }}</div>
           </v-card-text>
-          <v-card-actions class='d-flex flex-column align-self-baseline justify-end'>
-            <v-spacer></v-spacer>
-            <v-btn
-              color="grey lighten-1"
-              class='black--text ma-1 flex-grow-1'
-              @click="snapshotPaint(0)"
-            >
-              手繪標註目前版本預覽畫面
-            </v-btn>
-            <v-btn
-              color="grey lighten-1"
-              class='black--text ma-1 flex-grow-1'
-              @click="snapshotPaint(1)"
-            >
-              手繪標註對比版本的預覽畫面
-            </v-btn>
-            <v-btn
-              color="red darken-4"
-              class='white--text ma-1 flex-grow-1'
-              @click="setIssue"
-            >
-              儲存Issue
-            </v-btn>
+          <v-card-actions>
+            <div style='width: 100%' class='d-flex flex-column align-self-baseline justify-end'>
+              <v-btn
+                color="grey lighten-1"
+                class='black--text ma-1 flex-grow-1'
+                @click="snapshotPaint(0)"
+              >
+                手繪標註目前版本預覽畫面
+              </v-btn>
+              <v-btn
+                color="grey lighten-1"
+                class='black--text ma-1 flex-grow-1'
+                @click="snapshotPaint(1)"
+              >
+                手繪標註對比版本的預覽畫面
+              </v-btn>
+              <v-btn
+                color="red darken-4"
+                class='white--text ma-1 flex-grow-1'
+                @click="setIssue"
+              >
+                儲存Issue
+              </v-btn>
+            </div>
           </v-card-actions>
         </v-card>
         <v-sheet
@@ -951,15 +1015,34 @@
               <div v-else>{{ timeConvert(issuesInView.main.position) }} @  {{ versionnameConvert(issuesInView.main.version.name) }}版</div>
             </div>
             <div class='d-flex flex-row justify-end align-self-end ma-0 pa-0'>
-              <v-btn
-                class='white--text ma-1'
-                color='red darken-4'
+              <v-menu
+                offset-y
+                attach
+                transition="slide-y-transition"
                 v-if='!currentStage.isFinal'
                 v-show='!issuesInView.main.status'
-                @click='addIssue(issuesInView.main)'
               >
-                回復Issue
-              </v-btn>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn
+                    class='white--text ma-1'
+                    color='red darken-4'
+                    v-bind="attrs" v-on="on"
+                  >
+                    回復Issue
+                  </v-btn>
+                </template>
+                <v-sheet class='d-flex flex-column pa-1'>
+                  <div class='text-h6'>確認回復Issue？</div>
+                  <v-btn
+                    class='white--text ma-1'
+                    color='red darken-4'
+                    @click='addIssue(issuesInView.main)'
+                  >
+                    是，我要回復Issue！
+                  </v-btn>
+                  <div class='text-caption'>如果你只是誤觸，請隨意點擊其他地方即會關閉本對話框，請注意，只有PM、審查者才有權力刪除Issue</div>
+                </v-sheet>
+              </v-menu>
               <v-btn
                 class='white--text ma-1'
                 color='light-blue darken-4'
@@ -1160,7 +1243,7 @@ import * as htmlToImage from 'html-to-image';
 import IssueView from './modules/IssueView.vue';
 import IssueList from './modules/IssueList.vue';
 import * as Diff from 'diff'
-import * as pdfjsLib from 'pdfjs-dist/build/pdf';
+import * as pdfjsLib from 'pdfjs-dist/es5/build/pdf';
 import PdfjsWorker from 'workerize-loader!pdfjs-dist/build/pdf.worker.js';
 pdfjsLib.GlobalWorkerOptions.workerPort = new PdfjsWorker();
 import 'pdfjs-dist/build/pdf.worker.entry';
@@ -1651,6 +1734,10 @@ export default {
       }
     },
     playVideo: function (type) {
+      this.$emit('toastPop', {
+        message: "小提示：，如果你開啟右下角沙漏的「按照時間過濾Issue」，你可以只看到當前撥放秒數的Issue",
+        time: 5000
+      });
       let player = type === 0 ? this.currentPlayer : this.previousPlayer;
       player.play();
     },
@@ -2532,6 +2619,7 @@ export default {
   },
   data () {
     return {
+      fabIssue: false,
       pinOn: false,
       disableIssueDiff: false,
       diffW: false,

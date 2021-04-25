@@ -214,7 +214,7 @@
                               @click='revokeObjective(objective._id)'
                               v-bind="attrs" v-on="on"
                             >
-                              <v-icon>fa-history</v-icon>
+                              <v-icon>fas fa-undo-alt</v-icon>
                             </v-btn>
                           </template>
                           <span>撤回目標許可</span>

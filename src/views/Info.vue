@@ -13,14 +13,33 @@
             <v-container>
               <v-row dense>
                 <v-col class='d-flex flex-row justify-end'>
-                  <v-btn
-                    class='white--text ma-1'
-                    color='red darken-4'
+                  <v-menu
+                    offset-y
+                    attach
+                    transition="slide-y-transition"
                     v-show='!feedbacksInView.main.status'
-                    @click='addFeedback(feedbacksInView.main._id)'
                   >
-                    回復feedback
-                  </v-btn>
+                    <template v-slot:activator="{ on, attrs }">
+                      <v-btn
+                        class='white--text ma-1'
+                        color='red darken-4'
+                        v-bind="attrs" v-on="on"
+                      >
+                        回復feedback
+                      </v-btn>
+                    </template>
+                    <v-sheet class='d-flex flex-column pa-1'>
+                      <div class='text-h6'>確認回復feedback？</div>
+                      <v-btn
+                        class='white--text ma-1'
+                        color='red darken-4'
+                        @click='addFeedback(feedbacksInView.main._id)'
+                      >
+                        是，我要回復feedback！
+                      </v-btn>
+                      <div class='text-caption'>如果你只是誤觸，請隨意點擊其他地方即會關閉本對話框，請注意，只有系統管理員可以刪除feedback</div>
+                    </v-sheet>
+                  </v-menu>
                   <v-btn icon @click='setRating(true)' :disabled='ratingConvert(true)'>
                     <v-icon>fa-thumbs-up</v-icon>
                   </v-btn>
@@ -229,10 +248,30 @@
       <v-row>
         <v-col class='pa-0 d-flex flex-column'>
           <div class='text-h5 font-weight-bold text-left'>許願池</div>
-          <v-btn @click='addFeedback(undefined)'>
-            <v-icon>fa-pray</v-icon>
-            我需要新的功能&amp;反映現有功能的問題！
-          </v-btn>
+          <v-menu
+            offset-y
+            attach
+            transition="slide-y-transition"
+            v-show='!feedbacksInView.main.status'
+          >
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn v-bind="attrs" v-on="on">
+                <v-icon>fa-pray</v-icon>
+                我需要新的功能&amp;反映現有功能的問題！
+              </v-btn>
+            </template>
+            <v-sheet class='d-flex flex-column pa-1'>
+              <div class='text-h6'>確認發feedback？</div>
+              <v-btn
+                class='white--text ma-1'
+                color='red darken-4'
+                @click='addFeedback(undefined)'
+              >
+                是，我要發feedback！
+              </v-btn>
+              <div class='text-caption'>如果你只是誤觸，請隨意點擊其他地方即會關閉本對話框，請注意，只有系統管理員可以刪除feedback</div>
+            </v-sheet>
+          </v-menu>
           <v-skeleton-loader
             class="mx-auto"
             type="card"
