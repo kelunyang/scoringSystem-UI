@@ -4,7 +4,7 @@ import Vuex, {Store} from "vuex";
 import { randomColor } from 'randomcolor';
 
 Vue.config.productionTip = false;
-Vue.config.devtools = true;
+Vue.config.devtools = false;
 
 Vue.use(Vuex)
 
