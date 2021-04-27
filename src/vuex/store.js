@@ -2,6 +2,7 @@ import moment from 'moment';
 import Vue from 'vue';
 import Vuex, {Store} from "vuex";
 import { randomColor } from 'randomcolor';
+import _ from 'lodash';
 
 Vue.config.productionTip = false;
 Vue.config.devtools = false;
@@ -42,7 +43,7 @@ const store = new Store({
       state.randomColor = color;
     },
     updateSavedTags(state, tags) {
-      state.savedTags = tags;
+      state.savedTags = _.orderBy(tags, ['name'], ['asc']);
     },
     updateGlobalSetting(state, settings) {
       state.siteSettings = settings;

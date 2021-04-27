@@ -12,6 +12,17 @@
     item-text='name'
     item-value='_id'
   >
+    <template v-slot:item='data'>
+      <v-list-item v-bind='data.attrs' v-on='data.on'>
+        <template v-slot:default="{ active }">
+          <v-list-item-icon>
+            <v-icon v-if='active'>far fa-check-square</v-icon>
+            <v-icon v-else>far fa-square</v-icon>
+          </v-list-item-icon>
+          <v-list-item-content class='text-left'>{{ data.item.name }}</v-list-item-content>
+        </template>
+      </v-list-item>
+    </template>
     <template v-slot:selection="data">
       <v-chip
         v-bind="data.attrs"
@@ -60,6 +71,9 @@ export default {
     mustSelected: Boolean
   },
   methods: {
+    test: function (item) {
+      console.dir(item);
+    },
     emitPlus: function () {
       this.$emit('plusItem', this.newTerm);
     },

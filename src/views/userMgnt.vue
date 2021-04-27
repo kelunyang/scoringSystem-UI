@@ -242,6 +242,10 @@
               <v-card-title class="headline">設定用戶所屬標籤</v-card-title>
               <v-card-text>
                   <v-alert type="alert" icon="fa-exclamation-triangle" class='ma-0'>請注意選取你要複寫或是新增用戶標籤到使用者的帳號中</v-alert>
+                  <v-switch
+                    v-model="moduserTagMode"
+                    label="啟動複寫模式（預設值是新增）"
+                  ></v-switch>
                   <tag-filter @plusItem='plusTag' :single='false' :selectedItem='selectednewTags' @valueUpdated='newTagUpdated' :candidatedItem='savedTags' :createable='true' label='請輸入您想加入的使用者標籤' />
                   <div class='text-caption'>
                     目前選取的 {{ selectedUsers.length }} 個用戶的使用者標籤聯集為：
@@ -708,7 +712,8 @@ export default {
       modUserTags: function () {
         this.$socket.client.emit('modUserTags', {
             users: this.selectedUsers,
-            tags: this.selectednewTags
+            tags: this.selectednewTags,
+            mode: this.moduserTagMode
         });
       },
       newTagUpdated: function (value) {
@@ -746,6 +751,7 @@ export default {
     },
     data () {
       return {
+        moduserTagMode: false,
         emailW: false,
         passwordW: false,
         editingUser: {
