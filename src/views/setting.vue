@@ -69,23 +69,101 @@
       thumb-label
     ></v-slider>
     <div class='text-subtitle-2 font-weight-blod'>授權系統設定功能的使用者標籤</div>
-    <tag-filter :mustSelected='true' :single='false' @plusItem='plusTag' :selectedItem='selectedSysTags' @valueUpdated='updateSysTag' :candidatedItem='savedTags' :createable='true' label='請輸入授權系統設定功能的使用者標籤' />
+    <tag-filter
+      :mustSelected='true'
+      :single='false'
+      @updateTags='updateTags'
+      @plusItem='plusTag'
+      :selectedItem='selectedSysTags'
+      @valueUpdated='updateSysTag'
+      :candidatedItem='savedTags'
+      :createable='true'
+      label='請輸入授權系統設定功能的使用者標籤'
+    />
     <div class='text-subtitle-2 font-weight-blod'>授權用戶管理功能的使用者標籤</div>
-    <tag-filter :mustSelected='true' :single='false' @plusItem='plusTag' :selectedItem='selectedUsrTags' @valueUpdated='updateUsrTag' :candidatedItem='savedTags' :createable='true' label='請輸入授權用戶管理功能的使用者標籤' />
+    <tag-filter
+      :mustSelected='true'
+      :single='false'
+      @updateTags='updateTags'
+      @plusItem='plusTag'
+      :selectedItem='selectedUsrTags'
+      @valueUpdated='updateUsrTag'
+      :candidatedItem='savedTags'
+      :createable='true'
+      label='請輸入授權用戶管理功能的使用者標籤'
+    />
     <div class='text-subtitle-2 font-weight-blod'>授權知識點管理功能的使用者標籤</div>
-    <tag-filter :mustSelected='true' :single='false' @plusItem='plusTag' :selectedItem='selectedflowTags' @valueUpdated='updateFlowTag' :candidatedItem='savedTags' :createable='true' label='請輸入授權知識點管理功能的使用者標籤' />
+    <tag-filter
+      :mustSelected='true'
+      :single='false'
+      @updateTags='updateTags'
+      @plusItem='plusTag'
+      :selectedItem='selectedflowTags'
+      @valueUpdated='updateFlowTag'
+      :candidatedItem='savedTags'
+      :createable='true'
+      label='請輸入授權知識點管理功能的使用者標籤'
+    />
     <div class='text-subtitle-2 font-weight-blod'>授權統計功能的使用者標籤</div>
-    <tag-filter :mustSelected='true' :single='false' @plusItem='plusTag' :selectedItem='selectedstatisticsTags' @valueUpdated='updateStatisticsTag' :candidatedItem='savedTags' :createable='true' label='請輸入授權使用統計功能的使用者標籤' />
+    <tag-filter
+      :mustSelected='true'
+      :single='false'
+      @updateTags='updateTags'
+      @plusItem='plusTag'
+      :selectedItem='selectedstatisticsTags'
+      @valueUpdated='updateStatisticsTag'
+      :candidatedItem='savedTags'
+      :createable='true'
+      label='請輸入授權使用統計功能的使用者標籤'
+    />
     <div class='text-subtitle-2 font-weight-blod'>顯示在系統資訊頁的使用者標籤</div>
-    <tag-filter :mustSelected='true' :single='false' @plusItem='plusTag' :selectedItem='selectedserviceTags' @valueUpdated='updateServiceTag' :candidatedItem='savedTags' :createable='true' label='請輸入顯示在系統資訊頁的使用者標籤' />
+    <tag-filter
+      :mustSelected='true'
+      :single='false'
+      @updateTags='updateTags'
+      @plusItem='plusTag'
+      :selectedItem='selectedserviceTags'
+      @valueUpdated='updateServiceTag'
+      :candidatedItem='savedTags'
+      :createable='true'
+      label='請輸入顯示在系統資訊頁的使用者標籤'
+    />
     <div class='text-subtitle-2 font-weight-blod'>機器人的使用者標籤</div>
-    <tag-filter :mustSelected='true' :single='true' @plusItem='plusTag' :selectedItem='selectedrobotTag' @valueUpdated='updateRobotTag' :candidatedItem='savedTags' :createable='true' label='請輸入授權用戶管理功能的使用者標籤' />
+    <tag-filter
+      :mustSelected='true'
+      :single='true'
+      @updateTags='updateTags'
+      @plusItem='plusTag'
+      :selectedItem='selectedrobotTag'
+      @valueUpdated='updateRobotTag'
+      :candidatedItem='savedTags'
+      :createable='true'
+      label='請輸入授權用戶管理功能的使用者標籤'
+    />
     <div class='text-h5 text-center pt-5 font-weight-black'>機器人巡邏參數</div>
     <v-divider inset></v-divider>
     <div class='text-subtitle-2 font-weight-blod'>機器人代表帳號</div>
-    <tag-filter :mustSelected='true' :single='true' :selectedItem='PatrolAccount' @valueUpdated='updateRobatAccount' :candidatedItem='savedUsers' :createable='false' label='請輸入巡邏機器人代表帳號' />
+    <tag-filter
+      :mustSelected='true'
+      :single='true'
+      :selectedItem='PatrolAccount'
+      @valueUpdated='updateRobatAccount'
+      :candidatedItem='savedUsers'
+      :createable='false'
+      @updateTags='updateUsers'
+      label='請輸入巡邏機器人代表帳號'
+    />
     <div class='text-subtitle-2 font-weight-blod'>無人操作代表帳號</div>
-    <tag-filter :mustSelected='true' :single='true' :selectedItem='nobodyAccount' @valueUpdated='updateNobodyAccount' :candidatedItem='savedUsers' :createable='false' label='請輸入紀錄機器人代表帳號' />
+    <tag-filter
+      :mustSelected='true'
+      :single='true'
+      :selectedItem='nobodyAccount'
+      @valueUpdated='updateNobodyAccount'
+      :candidatedItem='savedUsers'
+      @updateTags='updateUsers'
+      :createable='false'
+      label='請輸入紀錄機器人代表帳號'
+    />
     <v-text-field label='EMail帳號' v-model='mailAccount' hint='請注意，這是在Google/Outlook.com裡建立的應用程式帳號'></v-text-field>
     <v-text-field label='EMail密碼' v-model='mailPassword' hint='請注意，這是在Google/Outlook.com裡建立的應用程式密碼'></v-text-field>
     <v-text-field label='EMail主機' v-model='mailSMTP' hint='請貼上你的主機的SMTP位置'></v-text-field>
@@ -218,6 +296,9 @@ export default {
     this.$socket.client.on('v2rayReport', this.socketv2rayReport);
   },
   methods: {
+    updateTags: function() {
+      this.$emit('updateTags');
+    },
     dateConvert: function (time) {
       return time === 0 ? '尚未發生' : moment.unix(time).format('YYYY/MM/DD HH:mm:ss');
     },
@@ -332,7 +413,7 @@ export default {
       });
     },
     plusTag: function (val) {
-      this.$socket.client.emit('addTag', val);
+      this.$emit('addTag', val);
     },
     updateSysTag: function (value) {
       this.selectedSysTags = value;
@@ -348,6 +429,9 @@ export default {
     },
     updateFlowTag: function (value) {
       this.selectedflowTags = value;
+    },
+    updateUsers: function () {
+      this.$socket.client.emit('getRobotUsers');
     },
     updateStatisticsTag: function (value) {
       this.selectedstatisticsTags = value;

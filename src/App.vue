@@ -494,7 +494,7 @@
       </v-menu>
     </v-app-bar>
     <div class='pa-5 ma-0' style='width: 100vw'>
-      <router-view @viewIn='changePage' @toastPop='sendToast' @timerOn='timerOn' @preventReloadDetect='preventReloadDetect' @downloadFile='downloadFile'></router-view>
+      <router-view @updateTags='updateTags' @addTag='addTag' @viewIn='changePage' @toastPop='sendToast' @timerOn='timerOn' @preventReloadDetect='preventReloadDetect' @downloadFile='downloadFile'></router-view>
     </div>
   </v-app>
 </template>
@@ -538,6 +538,12 @@ export default {
   name: 'App',
   components: { TiptapVuetify },
   methods: {
+    addTag: function (val) {
+      this.$socket.client.emit('addTag', val);
+    },
+    updateTags: function () {
+      this.$socket.client.emit('getTags');
+    },
     downloadFile: function (file) {
       if (file.type.indexOf('image') === -1) {
         this.forceDownload(file);
@@ -816,7 +822,19 @@ export default {
       localStorage.setItem('chatDB', JSON.stringify(this.chatDB));
     }
     let oriobj = this;
-
+    this.$socket.client.on('addTag', (data) => {
+      if(!data) {
+        oriobj.sendToast({
+          message: '您要新增的標籤已經重複了，無法新增！',
+          time: 1000
+        });
+      } else {
+        oriobj.sendToast({
+          message: '標籤新增完成！請按右側放大鏡按鈕回到查詢模式',
+          time: 1000
+        });
+      }
+    });
     this.$socket.client.on('getCurrentUser', (data) => {
       oriobj.currentUser = oriobj.$store.commit('updateUser', data);
       oriobj.timerOn(true);

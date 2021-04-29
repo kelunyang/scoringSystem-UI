@@ -43,9 +43,29 @@
         <v-card-text class='d-flex flex-column text-left'>
           <div class='red--text text-caption'>這個功能是提供給匯入知識點於各個平台的統計數據使用，特別提醒，如果你發現匯入進度一直停在同一處，那可能是資料庫寫入的時間差，但實際上已經匯入完成了，如果有疑惑，可以重新整理網頁，再匯入一次</div>
           <div class='text-h6'>資料來源標籤</div>
-          <tag-filter @plusItem='plusTag' :mustSelected='true' :single='true' :selectedItem='sourceTag' @valueUpdated='updatesourceTag' :candidatedItem='savedTags' :createable='true' label='數據來源標籤，如學習吧、酷課學習之類的' />
+          <tag-filter
+            @updateTags='updateTags'
+            @plusItem='plusTag'
+            :mustSelected='true'
+            :single='true'
+            :selectedItem='sourceTag'
+            @valueUpdated='updatesourceTag'
+            :candidatedItem='savedTags'
+            :createable='true'
+            label='數據來源標籤，如學習吧、酷課學習之類的'
+          />
           <div class='text-h6'>資料類型標籤</div>
-          <tag-filter @plusItem='plusTag' :mustSelected='true' :single='false' :selectedItem='typeTags' @valueUpdated='updatetypeTags' :candidatedItem='savedTags' :createable='true' label='數據類型標籤，如瀏覽次數、瀏覽時長之類的' />
+          <tag-filter
+            @updateTags='updateTags'
+            @plusItem='plusTag'
+            :mustSelected='true'
+            :single='false'
+            :selectedItem='typeTags'
+            @valueUpdated='updatetypeTags'
+            :candidatedItem='savedTags'
+            :createable='true'
+            label='數據類型標籤，如瀏覽次數、瀏覽時長之類的'
+          />
           <div class='text-h6' v-if='typeTags.length > 0 && sourceTag !== ""'>檔案上傳</div>
           <v-file-input
             v-if='typeTags.length > 0 && sourceTag !== ""'
@@ -450,6 +470,9 @@ export default {
   },
   name: 'charts',
   methods: {
+    updateTags: function() {
+      this.$emit('updateTags');
+    },
     openFilterW: function () {
       this.currentPreset = 0;
       this.querysourceTags = [];
@@ -541,7 +564,7 @@ export default {
       this.typeTags = val;
     },
     plusTag: function (val) {
-        this.$socket.client.emit('addTag', val);
+      this.$emit('addTag', val);
     },
     socketimportKBstatistics: function (data) {
       if(data.length > 0) {

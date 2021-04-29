@@ -113,36 +113,15 @@
           >
             <v-icon>fa-times</v-icon>
           </v-btn>
-          <v-toolbar-title>設定知識點編輯階段</v-toolbar-title>
+          <v-toolbar-title>設定知識點編輯階段<span v-if='currentStage._id === ""'>： {{ currentStage.name }}</span></v-toolbar-title>
         </v-toolbar>
         <v-card-actions>
-          <v-btn @click='addStage'>新增階段</v-btn>
           <v-btn @click='removeStage'>刪除目前的階段</v-btn>
           <v-btn @click='setStage'>儲存目前的階段</v-btn>
           <v-btn @click='closeAssign'>關閉對話框</v-btn>
         </v-card-actions>
         <v-card-text class='pa-5'>
           <div v-if='currentKB.stages.length === 0'>目前沒有設定階段</div>
-          <v-stepper v-model="stepPointer" v-if='currentKB.stages.length > 0'>
-            <v-stepper-header>
-              <template
-                v-for='(stage, index) in currentKB.stages'
-              >
-                <v-stepper-step
-                  :key='stage._id'
-                  :complete="stepPointer > index"
-                  :step='index + 1'
-                  editable
-                >
-                  <span v-show='(index + 1) === stepPointer'>{{ stage.name }}</span>
-                </v-stepper-step>
-                <v-divider
-                  :key='"divider" + stage._id'
-                  v-if='(index + 1) !== currentKB.stages.length'
-                ></v-divider>
-              </template>
-            </v-stepper-header>
-          </v-stepper>
           <v-skeleton-loader
             class="mx-auto"
             type="card"
@@ -239,15 +218,65 @@
               </v-simple-table>
               <v-btn class='flex-grow-1' @click='revokeObjectives'>全數撤回本階段審查目標許可</v-btn>
               <div class='text-subtitle-2 font-weight-blod'>本階段的PM標籤</div>
-              <tag-filter :mustSelected='false' @plusItem='plusTag' :single='false' :selectedItem='currentStage.pmTags' @valueUpdated='filterPMTagUpdated' :candidatedItem='savedTags' :createable='true' label='請輸入本階段的PM標籤' />
+              <tag-filter
+                :mustSelected='false'
+                @updateTags='updateTags'
+                @plusItem='plusTag'
+                :single='false'
+                :selectedItem='currentStage.pmTags'
+                @valueUpdated='filterPMTagUpdated'
+                :candidatedItem='savedTags'
+                :createable='true'
+                label='請輸入本階段的PM標籤'
+              />
               <div class='text-subtitle-2 font-weight-blod'>本階段的審查者標籤</div>
-              <tag-filter :mustSelected='false' @plusItem='plusTag' :single='false' :selectedItem='currentStage.reviewerTags' @valueUpdated='filterreviewerTagUpdated' :candidatedItem='savedTags' :createable='true' label='請輸入本階段的審查者標籤' />
+              <tag-filter
+                :mustSelected='false'
+                @updateTags='updateTags'
+                @plusItem='plusTag'
+                :single='false'
+                :selectedItem='currentStage.reviewerTags'
+                @valueUpdated='filterreviewerTagUpdated'
+                :candidatedItem='savedTags'
+                :createable='true'
+                label='請輸入本階段的審查者標籤'
+              />
               <div class='text-subtitle-2 font-weight-blod'>本階段的廠商標籤</div>
-              <tag-filter :mustSelected='false' @plusItem='plusTag' :single='false' :selectedItem='currentStage.vendorTags' @valueUpdated='filtervendorTagUpdated' :candidatedItem='savedTags' :createable='true' label='請輸入本階段的廠商標籤' />
+              <tag-filter
+                :mustSelected='false'
+                @updateTags='updateTags'
+                @plusItem='plusTag'
+                :single='false'
+                :selectedItem='currentStage.vendorTags'
+                @valueUpdated='filtervendorTagUpdated'
+                :candidatedItem='savedTags'
+                :createable='true'
+                label='請輸入本階段的廠商標籤'
+              />
               <div class='text-subtitle-2 font-weight-blod'>本階段的寫手標籤</div>
-              <tag-filter :mustSelected='false' @plusItem='plusTag' :single='false' :selectedItem='currentStage.writerTags' @valueUpdated='filterwriterTagUpdated' :candidatedItem='savedTags' :createable='true' label='請輸入本階段的寫手標籤' />
+              <tag-filter
+                :mustSelected='false'
+                @updateTags='updateTags'
+                @plusItem='plusTag'
+                :single='false'
+                :selectedItem='currentStage.writerTags'
+                @valueUpdated='filterwriterTagUpdated'
+                :candidatedItem='savedTags'
+                :createable='true'
+                label='請輸入本階段的寫手標籤'
+              />
               <div class='text-subtitle-2 font-weight-blod'>本階段的行政組標籤</div>
-              <tag-filter :mustSelected='false' @plusItem='plusTag' :single='false' :selectedItem='currentStage.finalTags' @valueUpdated='filterfinalTagUpdated' :candidatedItem='savedTags' :createable='true' label='請輸入本階段的行政組標籤' />
+              <tag-filter
+                :mustSelected='false'
+                @updateTags='updateTags'
+                @plusItem='plusTag'
+                :single='false'
+                :selectedItem='currentStage.finalTags'
+                @valueUpdated='filterfinalTagUpdated'
+                :candidatedItem='savedTags'
+                :createable='true'
+                label='請輸入本階段的行政組標籤'
+              />
             </div>
           </div>
         </v-card-text>
@@ -277,7 +306,27 @@
         </v-toolbar>
         <v-card-text class='ma-0 pa-0'>
           <v-alert type='info'>請選擇您要編輯的科目標籤（如：109年國中數學科），如果您需要新增，直接輸入即可</v-alert>
-          <tag-filter :mustSelected='true' @plusItem='plusTag' :single='true' :selectedItem='selectedKBTag' @valueUpdated='updateKBTag' :candidatedItem='savedTags' :createable='true' label='請輸入知識點標籤' />
+          <tag-filter
+            :mustSelected='true'
+            @updateTags='updateTags'
+            @plusItem='plusTag'
+            :single='true'
+            :selectedItem='selectedKBTag'
+            @valueUpdated='updateKBTag'
+            :candidatedItem='savedTags'
+            :createable='true'
+            label='請輸入知識點標籤'
+          />
+          <div class='text-body-2'>最近查詢的標籤（點擊後載入）</div>
+          <div class='d-flex flex-row flex-wrap ma-1'>
+            <v-chip
+              v-for='ch in queriedChapters'
+              :key="ch" @click='selectedKBTag = ch'
+              class='ma-1'
+            >
+              {{ tagQuery(ch) }}
+            </v-chip>
+          </div>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -483,16 +532,13 @@
           </v-subheader>
           <draggable v-model="mitem.KBs" group="KBitems" handle=".subhandle" style="min-height: 10px" v-show='mitem.collapse === false'>
             <template v-for="KBitem in mitem.KBs">
-              <v-row :key="KBitem._id" class='KBsub d-flex'>
-                <v-col col='1' class='flex-grow-0 flex-shrink-1 align-center'>
-                  <v-icon>fa-angle-double-right</v-icon>
-                </v-col>
-                <v-col col='8' class='flex-grow-1 text-left'>
+              <v-row :key="KBitem._id + 'handler'" class='KBsub d-flex'>
+                <v-col col='9' class='flex-grow-1 text-left'>
                   {{ KBitem.title }}
                 </v-col>
                 <v-col col='3' class='align-center flex-grow-0 flex-shrink-0 ma-0 pa-0 d-flex flex-row'>
                   <v-checkbox v-model="selectedKBs" :value='KBitem._id' off-icon="far fa-square" on-icon="fa-check-square"></v-checkbox>
-                  <v-tooltip bottom>
+                  <v-tooltip top>
                     <template v-slot:activator="{ on, attrs }">
                       <v-btn @click="loadKBEditor(KBitem)" v-bind="attrs" v-on="on" icon>
                         <v-icon>fa-pencil-alt</v-icon>
@@ -500,7 +546,7 @@
                     </template>
                     <span>編輯知識點</span>
                   </v-tooltip>
-                  <v-tooltip bottom>
+                  <v-tooltip top>
                     <template v-slot:activator="{ on, attrs }">
                       <v-btn @click="currentKB = KBitem" v-bind="attrs" v-on="on" icon>
                         <v-icon>fa-copy</v-icon>
@@ -508,29 +554,59 @@
                     </template>
                     <span>設定為知識點複製範本</span>
                   </v-tooltip>
-                  <v-tooltip bottom>
-                    <template v-slot:activator="{ on, attrs }">
-                      <v-btn v-bind="attrs" v-on="on" icon @click="loadReviewer(KBitem)">
-                        <v-icon>fa-stopwatch</v-icon>
-                      </v-btn>
-                    </template>
-                    <span>設定知識點編輯階段</span>
-                  </v-tooltip>
-                  <v-tooltip bottom>
+                  <v-tooltip top>
                     <template v-slot:activator="{ on, attrs }">
                       <v-btn v-bind="attrs" v-on="on" icon @click='removeKB(KBitem)'>
-                        <v-icon>fa-minus</v-icon>
+                        <v-icon>fas fa-trash</v-icon>
                       </v-btn>
                     </template>
                     <span>刪除知識點</span>
                   </v-tooltip>
-                  <v-tooltip bottom>
+                  <v-tooltip top>
                     <template v-slot:activator="{ on, attrs }">
                       <v-btn v-bind="attrs" v-on="on" icon class='subhandle'>
                         <v-icon>fa-arrows-alt</v-icon>
                       </v-btn>
                     </template>
                     <span>上下移動知識點</span>
+                  </v-tooltip>
+                </v-col>
+              </v-row>
+              <v-row :key="KBitem._id + 'steps'">
+                <v-col class='text-center text-caption grey--text darken-1 flex-grow-1' v-if='KBitem.stages.length === 0'>
+                  本知識點沒有任何階段，點右邊加號圖案去增加階段吧
+                </v-col>
+                <v-col class='flex-grow-1' v-if='KBitem.stages.length > 0'>
+                  <v-stepper v-model="KBitem.stepPointer">
+                    <v-stepper-header>
+                      <template
+                        v-for='(stage, index) in KBitem.stages'
+                      >
+                        <v-stepper-step
+                          :key='stage._id'
+                          :complete="KBitem.stepPointer > index"
+                          :step='index + 1'
+                          editable
+                          @click="loadReviewer(KBitem)"
+                        >
+                          <span v-show='(index + 1) === KBitem.stepPointer'>{{ stage.name }}</span>
+                        </v-stepper-step>
+                        <v-divider
+                          :key='"divider" + stage._id'
+                          v-if='(index + 1) !== KBitem.stages.length'
+                        ></v-divider>
+                      </template>
+                    </v-stepper-header>
+                  </v-stepper>
+                </v-col>
+                <v-col class='flex-shrink-1 flex-grow-0'>
+                  <v-tooltip top>
+                    <template v-slot:activator="{ on, attrs }">
+                      <v-btn v-bind="attrs" v-on="on" icon @click="addStage(KBitem)">
+                        <v-icon>fas fa-plus</v-icon>
+                      </v-btn>
+                    </template>
+                    <span>新增知識點編輯階段</span>
                   </v-tooltip>
                 </v-col>
               </v-row>
@@ -547,16 +623,8 @@
   border-left: none;
 }
 
-.KBcata:hover {
-  border-left: 10px solid #333;
-}
-
 .KBsub {
   border-left: none;
-}
-
-.KBsub:hover {
-  border-left: 5px solid #AAA;
 }
 
 .handle, .subhandle {
@@ -598,14 +666,6 @@ export default {
     TiptapVuetify
   },
   watch: {
-    stepPointer: function () {
-      if(this.stepPointer > 0) {
-        if(this.currentKB.stages.length >= this.stepPointer) {
-          this.stagePopulated = false;
-          this.$socket.client.emit('getStage', this.currentKB.stages[this.stepPointer - 1]._id);
-        }
-      }
-    },
     currentStageDate: function () {
       this.currentStage.dueTick = moment(this.currentStageDate).unix();
     },
@@ -671,6 +731,15 @@ export default {
     }
   },
   methods: {
+    tagQuery: function(tag) {
+      let tagItem = _.find(this.savedTags, (item) => {
+        return item._id === tag
+      });
+      return tagItem === undefined ? '' : tagItem.name;
+    },
+    updateTags: function() {
+      this.$emit('updateTags');
+    },
     revokeObjective: function (OID) {
       this.$emit('toastPop', '移除單一目標許可權中...');
       this.$socket.client.emit('revokeObjective', {
@@ -709,7 +778,8 @@ export default {
         textbook: '',
         desc: '',
         descAtt: [],
-        stages: []
+        stages: [],
+        stepPointer: -1
       };
     },
     resetStage: function () {
@@ -734,6 +804,7 @@ export default {
       };
     },
     socketgetStage: function (data) {
+      this.assignW = true;
       this.objectiveAwaited = '';
       if(data === null || data === undefined) {
         this.resetStage();
@@ -762,9 +833,9 @@ export default {
       this.resetStage();
       this.$emit('toastPop', '知識點流程移除完成');
       if(this.currentKB.stages.length > 0) {
-        this.stepPointer = 1;
+        this.currentKB.stepPointer = 1;
       } else {
-        this.stepPointer = -1;
+        this.currentKB.stepPointer = -1;
       }
     },
     removeStage: function () {
@@ -836,6 +907,9 @@ export default {
       this.selectedKBTag = val;
     },
     socketgetChapters: function (data) {
+      this.queriedChapters.push(this.selectedKBTag);
+      this.queriedChapters = _.uniq(this.queriedChapters);
+      localStorage.setItem('queriedChapters', JSON.stringify(this.queriedChapters));
       this.$emit('toastPop', '取得章節中');
       let KBs = [];
       for(let i=0; i< data.length; i++) {
@@ -848,6 +922,8 @@ export default {
           KB.stages.sort((a,b) => {
             return a.sort - b.sort;
           });
+          let stepPointer = _.findIndex(KB.stages, { current: true });
+          KB.stepPointer = stepPointer === -1 ? -1 : stepPointer + 1;
         }
         chapter.KBs.sort((a,b) => {
           return a.sort - b.sort;
@@ -882,7 +958,7 @@ export default {
       }
     },
     plusTag: function (val) {
-      this.$socket.client.emit('addTag', val);
+      this.$emit('addTag', val);
     },
     plusObjective: function () {
       this.$emit('toastPop', '取得新的目標清單中...');
@@ -977,10 +1053,10 @@ export default {
       this.uploadzipprogress = 0;
       this.uploadzipstatus = '';
     },
-    addStage: function () {
+    addStage: function (KB) {
       this.$emit('toastPop', '新增知識點流程中');
       this.$socket.client.emit('addStage', {
-        _id: this.currentKB._id,
+        _id: KB._id,
         tag: this.selectedKBTag
       });
     },
@@ -1013,15 +1089,18 @@ export default {
       this.KBeditorW = true;
     },
     loadReviewer: function (data) {
-      this.currentKB = data;
-      this.stepPointer = -1;
       let oriobj = this;
-      if (data.stages.length > 0) {
-        Vue.nextTick(() => {
-          oriobj.stepPointer = 1;
-        });
-      }
-      this.assignW = true;
+      this.resetKB();
+      oriobj.currentKB = data;
+      setTimeout(() => {  //奇怪的問題，Vue nexttick也抓不到vmodel更新，只好用setTimeout
+        if(oriobj.currentKB.stepPointer > 0) {
+          if(oriobj.currentKB.stages.length >= oriobj.currentKB.stepPointer) {
+            oriobj.stagePopulated = false;
+            oriobj.$socket.client.emit('getStage', oriobj.currentKB.stages[oriobj.currentKB.stepPointer - 1]._id);
+          }
+        }
+      }, 100);
+      this.$emit('toastPop', '階段載入中...');
     },
     insertMCata: function () {
       this.$emit('toastPop', '新增章節中');
@@ -1030,9 +1109,6 @@ export default {
         title: this.currentChapter.title,
         tag: this.selectedKBTag
       });
-    },
-    TimeUpdate: function (value) {
-      this.currentKB.stages[this.stepPointer - 1].dueTick = value;
     },
     removeMutipleKB: function () {
       this.$emit('toastPop', '刪除多個知識點...');
@@ -1106,6 +1182,7 @@ export default {
   },
   data () {
     return {
+      queriedChapters: [],
       currentStageDate: '1970-01-01 00:00:00',
       stagePopulated: true,
       currentStage: {
@@ -1151,9 +1228,9 @@ export default {
         textbook: '',
         desc: '',
         descAtt: [],
-        stages: []
+        stages: [],
+        stepPointer: -1
       },
-      stepPointer: -1,
       stageStatus: '',
       extensions: [
         History,
@@ -1213,6 +1290,10 @@ export default {
       module: '知識節點模組',
       location: '/createKB'
     });
+    let queriedChapters = window.localStorage.getItem('queriedChapters');
+    if(queriedChapters) {
+      this.queriedChapters = JSON.parse(queriedChapters);
+    }
     this.$socket.client.on('KBFileUploadDone', this.soketKBFileUploadDone);
     this.$socket.client.on('getKBAttachment', this.socketgetKBAttachment);
     this.$socket.client.on('KBFileUploadError', this.socketKBFileUploadError);

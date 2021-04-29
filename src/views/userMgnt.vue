@@ -105,7 +105,20 @@
                     label='用戶性別'
                   ></v-select>
                   <span class='text-subtitle-1 font-weight-bold'>使用者標籤：</span><br/>
-                  <tag-filter :mustSelected='false' @plusItem='plusTag' :single='false' :selectedItem='editingUser.tags' @valueUpdated='modTagUpdated' :candidatedItem='savedTags' :createable='true' label='請輸入使用者歸屬的標籤' />
+                  <tag-filter
+                    :mustSelected='false'
+                    @updateTags='updateTags'
+                    @plusItem='plusTag'
+                    :single='false'
+                    :selectedItem='editingUser.tags'
+                    @valueUpdated='modTagUpdated'
+                    :candidatedItem='savedTags'
+                    :createable='true'
+                    label='請輸入使用者歸屬的標籤'
+                  />
+                  <v-btn @click='savemodUser'>
+                    儲存設定
+                  </v-btn>
                 </v-col>
               </v-row>
               <v-row>
@@ -179,7 +192,17 @@
                 <v-container class='pa-5'>
                   <v-row>
                     <v-col class='d-flex flex-column'>
-                      <tag-filter :mustSelected='false' @plusItem='plusTag' :single='false' :selectedItem='selectedAddTags' @valueUpdated='addTagUpdated' :candidatedItem='savedTags' :createable='true' label='請輸入使用者歸屬的標籤' />
+                      <tag-filter
+                        :mustSelected='false'
+                        @updateTags='updateTags'
+                        @plusItem='plusTag'
+                        :single='false'
+                        :selectedItem='selectedAddTags'
+                        @valueUpdated='addTagUpdated'
+                        :candidatedItem='savedTags'
+                        :createable='true'
+                        label='請輸入使用者歸屬的標籤'
+                      />
                       <v-textarea
                         solo
                         v-model='newEmail'
@@ -213,7 +236,16 @@
         <v-card>
           <v-card-title class="headline">設定標籤過濾</v-card-title>
           <v-card-text>
-            <tag-filter :mustSelected='false' :single='false' :selectedItem='selectedFilterTags' @valueUpdated='filterTagUpdated' :candidatedItem='savedTags' :createable='false' label='請輸入您想篩選的使用者標籤' />
+            <tag-filter
+              @updateTags='updateTags'
+              :mustSelected='false'
+              :single='false'
+              :selectedItem='selectedFilterTags'
+              @valueUpdated='filterTagUpdated'
+              :candidatedItem='savedTags'
+              :createable='false'
+              label='請輸入您想篩選的使用者標籤'
+            />
           </v-card-text>
           <v-card-actions>
           <v-spacer></v-spacer>
@@ -241,12 +273,21 @@
           <v-card>
               <v-card-title class="headline">設定用戶所屬標籤</v-card-title>
               <v-card-text>
-                  <v-alert type="alert" icon="fa-exclamation-triangle" class='ma-0'>請注意選取你要複寫或是新增用戶標籤到使用者的帳號中</v-alert>
+                  <v-alert type="alert" icon="fa-exclamation-triangle" class='ma-0'>請注意選取你要複寫或是新增用戶標籤到使用者的帳號中，然後，記得按右下方的儲存設定，才會把變更存起來</v-alert>
                   <v-switch
                     v-model="moduserTagMode"
                     label="啟動複寫模式（預設值是新增）"
                   ></v-switch>
-                  <tag-filter @plusItem='plusTag' :single='false' :selectedItem='selectednewTags' @valueUpdated='newTagUpdated' :candidatedItem='savedTags' :createable='true' label='請輸入您想加入的使用者標籤' />
+                  <tag-filter
+                    @updateTags='updateTags'
+                    @plusItem='plusTag'
+                    :single='false'
+                    :selectedItem='selectednewTags'
+                    @valueUpdated='newTagUpdated'
+                    :candidatedItem='savedTags'
+                    :createable='true'
+                    label='請輸入您想加入的使用者標籤'
+                  />
                   <div class='text-caption'>
                     目前選取的 {{ selectedUsers.length }} 個用戶的使用者標籤聯集為：
                     <v-simple-table>
@@ -269,12 +310,9 @@
               </v-card-text>
               <v-card-actions>
               <v-spacer></v-spacer>
-              <v-btn @click='checkTagUsers'>
-                <v-icon>fa-sort-numeric-down</v-icon>
-                確認各標籤用戶數量
-              </v-btn>
-              <v-btn color="brown darken-4" text @click='modUserTags'>設定 {{ selectedUsers.length }} 個用戶的使用者標籤</v-btn>
-              <v-btn color="green darken-1" text @click="closeTagW">回到檢視畫面</v-btn>
+              <v-btn class='indigo darken-4 white--text' @click='checkTagUsers'>確認各標籤用戶數量</v-btn>
+              <v-btn class="red darken-4 white--text" @click='modUserTags'>儲存用戶標籤設定</v-btn>
+              <v-btn @click="closeTagW">回到檢視畫面</v-btn>
               </v-card-actions>
           </v-card>
       </v-dialog>
@@ -601,6 +639,9 @@ export default {
       }
     },
     methods: {
+      updateTags: function() {
+        this.$emit('updateTags');
+      },
       socketmodUsers: function (data) {
         this.$emit('toastPop', data.name + '的用戶資訊修改完成，寫入失敗的使用者標籤有' + data.zeroTag + '個');
       },
@@ -720,7 +761,7 @@ export default {
           this.selectednewTags = value;
       },
       plusTag: function (val) {
-          this.$socket.client.emit('addTag', val);
+        this.$emit('addTag', val);
       },
       termQuery: function () {
         this.userfilteredList = this.userList.filter((item) => {

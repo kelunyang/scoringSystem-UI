@@ -12,7 +12,17 @@
         <v-card-text class='d-flex flex-column'>
           <v-alert type='info'>請注意，不要亂刪除你看不懂的標籤，否則你可能會在知識點管理中找不到這個知識點</v-alert>
           <div class='red--text text-caption'>這是提供給PM，針對不同知識點下標籤的功能，可能具有行銷或管理上的幫助（例如，你可以針對某一支是點下「粉紅色」、「買賣問題」、「時事性」之類的標籤）</div>
-          <tag-filter @plusItem='plusTag' :mustSelected='true' :single='false' :selectedItem='currentKB.tag' @valueUpdated='updateKBTag' :candidatedItem='savedTags' :createable='true' label='請輸入標籤' />
+          <tag-filter
+            @updateTags='updateTags'
+            @plusItem='plusTag'
+            :mustSelected='true'
+            :single='false'
+            :selectedItem='currentKB.tag'
+            @valueUpdated='updateKBTag'
+            :candidatedItem='savedTags'
+            :createable='true'
+            label='請輸入標籤'
+          />
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -281,7 +291,16 @@
       <v-card>
         <v-card-title class="headline">設定標籤過濾</v-card-title>
         <v-card-text>
-          <tag-filter :mustSelected='false' :single='false' :selectedItem='selectedFilterTags' @valueUpdated='updateFilterTag' :candidatedItem='savedTags' :createable='false' label='請輸入過濾用的標籤' />
+          <tag-filter
+            @updateTags='updateTags'
+            :mustSelected='false'
+            :single='false'
+            :selectedItem='selectedFilterTags'
+            @valueUpdated='updateFilterTag'
+            :candidatedItem='savedTags'
+            :createable='false'
+            label='請輸入過濾用的標籤'
+          />
         </v-card-text>
         <v-card-actions>
         <v-spacer></v-spacer>
@@ -568,6 +587,9 @@ export default {
     TagFilter
   },
   methods: {
+    updateTags: function() {
+      this.$emit('updateTags');
+    },
     saveKBTag: function () {
       this.$emit('toastPop', '新增標籤中...');
       this.$socket.client.emit('setKBTag', this.currentKB);
@@ -576,7 +598,7 @@ export default {
       this.currentKB.tag = val;
     },
     plusTag: function (val) {
-        this.$socket.client.emit('addTag', val);
+      this.$emit('addTag', val);
     },
     openTagW: function (item) {
       this.currentKB = item;
