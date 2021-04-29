@@ -1,14 +1,47 @@
 <template>
   <v-sheet class='d-flex flex-column'>
     <v-dialog
+      v-model="initW"
+      persistent
+      max-width="50vw"
+    >
+      <v-card>
+        <v-toolbar
+          color="primary"
+          dark
+        >初次使用設定
+        </v-toolbar>
+        <v-card-text class='d-flex flex-column pa-0'>
+          <v-alert type='info'>若您日後還要修改這條設定，請選擇右下角工具箱的i圖示開啟即可</v-alert>
+          <v-switch
+            v-model="initStatstics"
+            label="每次開啟Dashboard都先打開知識點進度總統計（通常是PM才會需要打開）"
+          ></v-switch>
+          <div class='text-caption red--text'>統計圖表的開關在右下角折線圖圖示，您就算不開啟此設定，平時也可以自己點擊叫出統計圖</div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            color='red'
+            class='white--text'
+            @click='closeInitW'
+          >
+            關閉對話框
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog
       v-model="tagW"
       persistent
       max-width="50vw"
     >
       <v-card>
-        <v-card-title class="headline">
-          指定 {{ currentKB.title }} 的標籤
-        </v-card-title>
+        <v-toolbar
+          color="primary"
+          dark
+        >指定 {{ currentKB.title }} 的標籤
+        </v-toolbar>
         <v-card-text class='d-flex flex-column'>
           <v-alert type='info'>請注意，不要亂刪除你看不懂的標籤，否則你可能會在知識點管理中找不到這個知識點</v-alert>
           <div class='red--text text-caption'>這是提供給PM，針對不同知識點下標籤的功能，可能具有行銷或管理上的幫助（例如，你可以針對某一支是點下「粉紅色」、「買賣問題」、「時事性」之類的標籤）</div>
@@ -445,6 +478,21 @@
           <span>參與者名單</span>
         </v-tooltip>
       </v-badge>
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn
+            v-bind="attrs" v-on="on"
+            fab
+            dark
+            small
+            color="deep-orange darken-4"
+            @click.stop='initW = true'
+          >
+            <v-icon>fas fa-info</v-icon>
+          </v-btn>
+        </template>
+        <span>修改預設值</span>
+      </v-tooltip>
     </v-speed-dial>
     <v-speed-dial v-model="filterBtn" fixed bottom right direction="left" :open-on-hover="true" transition="slide-y-reverse-transition">
       <template v-slot:activator>
@@ -587,6 +635,10 @@ export default {
     TagFilter
   },
   methods: {
+    closeInitW: function() {
+      this.initW = false;
+      window.localStorage.setItem('dashBoardFirstUse', JSON.stringify(false));
+    },
     updateTags: function() {
       this.$emit('updateTags');
     },
@@ -798,6 +850,21 @@ export default {
     }
   },
   watch: {
+    dashBoardFirstUse: function () {
+      if(this.localLoaded) {
+        window.localStorage.setItem('dashBoardFirstUse', JSON.stringify(this.dashBoardFirstUse));
+      }
+    },
+    initStatstics: function () {
+      if(this.localLoaded) {
+        window.localStorage.setItem('initStatstics', JSON.stringify(this.initStatstics));
+      }
+      if(this.initStatstics) {
+        this.showStatstics = true;
+      } else {
+        this.showStatstics = false;
+      }
+    },
     versionFile: {
       immediate: true,
       handler () {
@@ -1001,7 +1068,7 @@ export default {
           },
           colors: randomColor({
             luminosity: 'dark',
-            hue: this.$store.state.randomColor,
+            hue: 'random',
             count: 5,
             format: 'rgb'
           }),
@@ -1038,6 +1105,10 @@ export default {
   },
   data () {
     return {
+      initStatstics: false,
+      initW: false,
+      dashBoardFirstUse: true,
+      localLoaded: false,
       tagW: false,
       authDetailW: false,
       dashboardPopulated: false,
@@ -1088,6 +1159,23 @@ export default {
     this.$socket.client.off('setKBTag', this.soketsetKBTag);
     window.clearTimeout(this.queryTimer);
     this.queryTimer = null;
+  },
+  mounted () {
+    let dashBoardFirstUse = window.localStorage.getItem('dashBoardFirstUse');
+    if(dashBoardFirstUse) {
+      this.dashBoardFirstUse = JSON.parse(dashBoardFirstUse);
+    }
+    let initStatstics = window.localStorage.getItem('initStatstics');
+    if(initStatstics) {
+      this.initStatstics = JSON.parse(initStatstics);
+    }
+    if(this.dashBoardFirstUse) {
+      this.initW = true;
+    }
+    if(initStatstics) {
+      this.showStatstics = true;
+    }
+    this.localLoaded = true;
   },
   created () {
     this.$emit('viewIn', {

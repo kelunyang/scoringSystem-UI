@@ -3,11 +3,15 @@ import Vue from 'vue';
 import Vuex, {Store} from "vuex";
 import { randomColor } from 'randomcolor';
 import _ from 'lodash';
+import VueGtag from "vue-gtag";
 
 Vue.config.productionTip = false;
 Vue.config.devtools = false;
 
-Vue.use(Vuex)
+Vue.use(Vuex);
+Vue.use(VueGtag, {
+  config: { id: "G-HJFFVTFX4X" }  //CooC GA
+});
 
 const store = new Store({
   state: {

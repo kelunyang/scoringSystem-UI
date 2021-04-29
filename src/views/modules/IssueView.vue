@@ -98,6 +98,15 @@ export default {
       if(this.enableDiff !== undefined) {
         this.eDiff = this.enableDiff;
       }
+    },
+    currentStage: function () {
+      this.cStage = this.currentStage === undefined ? {
+        isPM: false,
+        isReviewer: false,
+        isVendor: false,
+        isFinal: false,
+        isWriter: false
+      } : this.currentStage;
     }
   },
   created() {

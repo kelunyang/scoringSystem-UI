@@ -1,6 +1,75 @@
 <template>
   <v-sheet class='pa-0'>
     <v-dialog
+      v-model="cloneW"
+      persistent
+      max-width="50vw"
+    >
+      <v-card>
+        <v-toolbar
+          color="primary"
+          dark
+        >選擇性複製知識點</v-toolbar>
+        <v-card-text class='pa-0 d-flex flex-column'>
+          <v-alert type='info'>請注意，所有的複製都是用「累加」的模式，不會複寫知識點原本的階段與權限設定</v-alert>
+          <div class='red--text text-center'>
+            你目前選擇的知識點： {{ currentKB.name }} 
+          </div>
+          <div class='d-flex flex-column pa-3'>
+            <v-switch
+              v-model="cloneSetting.issues"
+              label="複製0秒的Issue"
+            ></v-switch>
+            <div class='text-h6'>要複製的階段</div>
+            <v-item-group
+              v-model="cloneSetting.stages"
+              multiple
+              color="indigo"
+            >
+              <div class='d-flex flex-row flex-wrap; height: 50px;'>
+                <v-item
+                  v-for="(stage, i) in currentKB.stages"
+                  :key="stage._id"
+                  v-slot="{ active, toggle }"
+                  height='50'
+                  class='pa-1 flex-grow-1'
+                  style='height: 60px'
+                >
+                  <v-card
+                    :color="active ? 'primary' : ''"
+                    class="d-flex align-center"
+                    @click="toggle"
+                  >
+                    第{{ i+1 }}階段
+                    <v-scroll-y-transition>
+                      <div
+                        v-if="active"
+                        class="display-3 flex-grow-1 text-center"
+                      >
+                        <v-icon v-if='active' large>far fa-check-square</v-icon>
+                      </div>
+                    </v-scroll-y-transition>
+                  </v-card>
+                </v-item>
+              </div>
+            </v-item-group>
+            <v-switch
+              v-model="cloneSetting.objectives"
+              label="複製選取的階段的審查目標"
+            ></v-switch>
+            <v-switch
+              v-model="cloneSetting.roles"
+              label="複製選取的階段的權限角色分配"
+            ></v-switch>
+          </div>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn @click='cloneW = false'>關閉對話框</v-btn>
+          <div class='text-caption red--text'>關閉對話框後，請將目標知識點打勾（右側），然後在右下角工具箱中選擇「複製」，就會按照你的設定複製過去了</div>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog
       v-model="importW"
       persistent
       max-width="50vw"
@@ -548,7 +617,7 @@
                   </v-tooltip>
                   <v-tooltip top>
                     <template v-slot:activator="{ on, attrs }">
-                      <v-btn @click="currentKB = KBitem" v-bind="attrs" v-on="on" icon>
+                      <v-btn @click="cloneConfigs(KBitem)" v-bind="attrs" v-on="on" icon>
                         <v-icon>fa-copy</v-icon>
                       </v-btn>
                     </template>
@@ -894,6 +963,8 @@ export default {
       this.$emit('toastPop', '知識點新增完成');
     },
     socketcloneStages: function (data) {
+      this.resetKB();
+      this.cloneSetting.stages = [];
       if(data) {
         this.$emit('toastPop', '知識點流程複製完成');
       }
@@ -1129,8 +1200,13 @@ export default {
       this.$socket.client.emit('cloneStages', {
         subject: this.currentKB,
         target: this.selectedKBs,
-        tag: this.selectedKBTag
+        tag: this.selectedKBTag,
+        setting: this.cloneSetting
       });
+    },
+    cloneConfigs: function (KB) {
+      this.currentKB = KB;
+      this.cloneW = true;
     },
     setKB: function () {
       this.$emit('toastPop', '設定知識點...');
@@ -1182,6 +1258,13 @@ export default {
   },
   data () {
     return {
+      cloneW: false,
+      cloneSetting: {
+        issues: false,
+        objectives: false,
+        stages: [],
+        roles: false
+      },
       queriedChapters: [],
       currentStageDate: '1970-01-01 00:00:00',
       stagePopulated: true,
