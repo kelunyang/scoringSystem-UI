@@ -1169,9 +1169,6 @@ export default {
     if(this.dashBoardFirstUse) {
       this.initW = true;
     }
-    if(initStatstics) {
-      this.showStatstics = true;
-    }
     this.localLoaded = true;
   },
   created () {
