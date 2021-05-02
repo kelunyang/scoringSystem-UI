@@ -525,6 +525,13 @@ import TurndownService from 'turndown';
 import { v4 as uuidv4 } from 'uuid';
 import _ from 'lodash';
 
+const renderer = new marked.Renderer();
+const linkRenderer = renderer.link;
+renderer.link = (href, title, text) => {
+    const html = linkRenderer.call(renderer, href, title, text);
+    return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
+};
+
 library.add(faUserTag, faCog, faVideo, faUserCog, faCommentAlt, fas, faSnapchatGhost, faTachometerAlt, faSignInAlt, faUsersCog, faChartLine, faInfoCircle, faStamp, faSlidersH, faNetworkWired);
 Vue.component('font-awesome-icon', FontAwesomeIcon);
 Vue.component('font-awesome-layers', FontAwesomeLayers);
@@ -600,7 +607,7 @@ export default {
     },
     HTMLConverter: function (msg) {
       msg = msg === null || msg == undefined ? '**test**' : msg;
-      return marked(msg);
+      return marked(msg, { renderer });
     },
     authClass: function (obj) {
       if (!obj.vis) {
@@ -929,7 +936,7 @@ export default {
 
     this.$socket.client.on('messageBroadcast', (data) => {
       oriobj.broadcastW = true;
-      data.body = marked(data.body);
+      data.body = marked(data.body, { renderer });
       oriobj.broadcastMsg = data;
     });
 

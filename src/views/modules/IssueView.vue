@@ -1,74 +1,89 @@
 <template>
-  <v-main class='pa-1 ma-1 black--text' style='border: 1px solid black'>
-    <v-row class='d-flex flex-row pa-0 ma-0'>
-      <div v-if='cCommit.tick > 0'>
-        <v-tooltip top v-if='cCommit.tick < issue.tick'>
-          <template v-slot:activator="{ on, attrs }">
-            <v-icon
-              dense
-              color="red accent-4"
-              v-bind="attrs" v-on="on"
-            >fa-history</v-icon>
-          </template>
-          <span>本Issue晚於您指定的版本發布</span>
-        </v-tooltip>
-      </div>
-      <div v-if='cUser.tick > 0'>
-        <v-tooltip top v-if='cUser.tick < issue.tick'>
-          <template v-slot:activator="{ on, attrs }">
-            <v-icon
-              dense
-              color="red accent-4"
-              v-bind="attrs" v-on="on"
-            >fa-user-clock</v-icon>
-          </template>
-          <span>本Issue晚於您登入之後發布</span>
-        </v-tooltip>
-      </div>
-      <v-spacer></v-spacer>
-      <v-btn
-        v-if='cStage.isPM || issue.user === currentUser._id'
-        @click='removeIssue(issue)'
-        color='grey lighten-1'
-        class='black--text'
-      >
-        刪除
-      </v-btn>
-      <v-btn
-        v-if='eDiff'
-        @click='sendDiff'
-        color='grey lighten-1'
-        class='black--text'
-      >
-        啟動對比
-      </v-btn>
-    </v-row>
-    <v-row class='pa-0 ma-0'>
-      <v-col cols='2' class='pa-0 ma-0'>
-        <v-avatar>
-          <img :src='"https://avatars.dicebear.com/api/" + issue.user.types + "/" + encodeURIComponent(issue.user.name + "@" + issue.user.unit) + ".svg"' />
-        </v-avatar>
-      </v-col>
-      <v-col cols="10" class='text-left ma-0 pa-1'>
-        <div class='text-caption'>{{ dateConvert(issue.tick) }}</div>
-        <div class='text-body-2' v-html="HTMLConverter(issue.body)"></div>
-      </v-col>
-    </v-row>
-    <v-row class='d-flex flex-row flex-wrap pa-2'>
-      <v-chip
-        v-for='file in issue.attachments'
-        :key="file._id"
-        class="ma-2"
-        @click="downloadFile(file)"
-      >{{ filenameConvert(file) }}</v-chip>
-    </v-row>
-  </v-main>
+  <v-lazy
+    :options="{
+      threshold: 0.5
+    }"
+    min-height="100"
+    transition="fade-transition"
+  >
+    <v-main class='pa-1 ma-1 black--text' style='border: 1px solid black'>
+      <v-row class='d-flex flex-row pa-0 ma-0'>
+        <div v-if='cCommit.tick > 0'>
+          <v-tooltip top v-if='cCommit.tick < issue.tick'>
+            <template v-slot:activator="{ on, attrs }">
+              <v-icon
+                dense
+                color="red accent-4"
+                v-bind="attrs" v-on="on"
+              >fa-history</v-icon>
+            </template>
+            <span>本Issue晚於您指定的版本發布</span>
+          </v-tooltip>
+        </div>
+        <div v-if='cUser.tick > 0'>
+          <v-tooltip top v-if='cUser.tick < issue.tick'>
+            <template v-slot:activator="{ on, attrs }">
+              <v-icon
+                dense
+                color="red accent-4"
+                v-bind="attrs" v-on="on"
+              >fa-user-clock</v-icon>
+            </template>
+            <span>本Issue晚於您登入之後發布</span>
+          </v-tooltip>
+        </div>
+        <v-spacer></v-spacer>
+        <v-btn
+          v-if='cStage.isPM || issue.user === currentUser._id'
+          @click='removeIssue(issue)'
+          color='grey lighten-1'
+          class='black--text'
+        >
+          刪除
+        </v-btn>
+        <v-btn
+          v-if='eDiff'
+          @click='sendDiff'
+          color='grey lighten-1'
+          class='black--text'
+        >
+          啟動對比
+        </v-btn>
+      </v-row>
+      <v-row class='pa-0 ma-0'>
+        <v-col cols='2' class='pa-0 ma-0'>
+          <v-avatar>
+            <img :src='"https://avatars.dicebear.com/api/" + issue.user.types + "/" + encodeURIComponent(issue.user.name + "@" + issue.user.unit) + ".svg"' />
+          </v-avatar>
+        </v-col>
+        <v-col cols="10" class='text-left ma-0 pa-1'>
+          <div class='text-caption'>{{ dateConvert(issue.tick) }}</div>
+          <div class='text-body-2' v-html="HTMLConverter(issue.body)"></div>
+        </v-col>
+      </v-row>
+      <v-row class='d-flex flex-row flex-wrap pa-2'>
+        <v-chip
+          v-for='file in issue.attachments'
+          :key="file._id"
+          class="ma-2"
+          @click="downloadFile(file)"
+        >{{ filenameConvert(file) }}</v-chip>
+      </v-row>
+    </v-main>
+  </v-lazy>
 </template>
 
 <script>
 import marked from 'marked';
 import moment from 'moment';
 import prettyBytes from 'pretty-bytes';
+
+const renderer = new marked.Renderer();
+const linkRenderer = renderer.link;
+renderer.link = (href, title, text) => {
+    const html = linkRenderer.call(renderer, href, title, text);
+    return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
+};
 
 export default {
   name: 'IssueView',
@@ -141,7 +156,7 @@ export default {
     },
     HTMLConverter: function (msg) {
       msg = msg === null || msg == undefined ? '**test**' : msg;
-      return marked(msg);
+      return marked(msg, { renderer });
     },
     editIssue: function (issue) {
       return this.$emit('edit', issue);

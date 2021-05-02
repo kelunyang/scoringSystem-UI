@@ -600,7 +600,8 @@
     ></v-skeleton-loader>
     <v-sheet v-if='dashboardPopulated' class='pa-0 ma-0 d-flex flex-column'>
       <div v-if='convertedList.length === 0'>您目前沒有待處理的項目</div>
-      <progress-tile @tags='openTagW' @requestUpload='openUploadW' @viewDetail='openauthDetail' @KBselected='KBupdated' v-for="item in convertedList" :key="item._id" :progressItem='item' />
+      <div v-if='convertedList.length > 0' v-show='!showStatstics' class='blue-grey--text darken-1 text-caption'>已篩選出{{ convertedList.length }}個知識點，為節省資源，不會全部展現出來，往下滑會載入更多</div>
+      <progress-tile v-for="item in convertedList" :key="item._id" @tags='openTagW' @requestUpload='openUploadW' @viewDetail='openauthDetail' @KBselected='KBupdated' :progressItem='item' />
     </v-sheet>
   </v-sheet>
 </template>
@@ -859,11 +860,7 @@ export default {
       if(this.localLoaded) {
         window.localStorage.setItem('initStatstics', JSON.stringify(this.initStatstics));
       }
-      if(this.initStatstics) {
-        this.showStatstics = true;
-      } else {
-        this.showStatstics = false;
-      }
+      this.showStatstics = this.initStatstics;
     },
     versionFile: {
       immediate: true,

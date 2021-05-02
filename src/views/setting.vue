@@ -245,6 +245,13 @@ import TurndownService from 'turndown';
 import marked from 'marked';
 import moment from 'moment';
 
+const renderer = new marked.Renderer();
+const linkRenderer = renderer.link;
+renderer.link = (href, title, text) => {
+    const html = linkRenderer.call(renderer, href, title, text);
+    return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
+};
+
 import '@fortawesome/fontawesome-free/css/all.css';
 library.add(faCog, faBomb, faRobot, faCommentDots);
 Vue.component('font-awesome-icon', FontAwesomeIcon);
@@ -263,7 +270,7 @@ export default {
   },
   beforeDestroy () {
     this.$socket.client.off('setSetting', this.socketsetSetting);
-    this.$socket.client.off('getRobotUsers', this.socketgetRobotUsers);
+    this.$socket.client.off('getTagUsers', this.socketgetTagUsers);
     this.$socket.client.off('getGlobalSettings', this.socketgetGlobalSettings);
     this.$socket.client.off('getRobotSetting', this.socketgetRobotSetting);
     this.$socket.client.off('getGithubBackendCommit', this.socketgetGithubBackendCommit);
@@ -279,7 +286,7 @@ export default {
       module: '設定模組',
       location: '/setting'
     });
-    this.$socket.client.emit('getRobotUsers');
+    this.$socket.client.emit('getTagUsers');
     this.$socket.client.emit('getGlobalSettings');
     this.$socket.client.emit('getRobotSetting');
     this.$socket.client.emit('getGithubBackendCommit');
@@ -288,7 +295,7 @@ export default {
     this.$socket.client.on('setSetting', this.socketsetSetting);
     this.$socket.client.on('getserverADDR', this.socketgetserverADDR);
     this.$socket.client.on('checkV2ray', this.socketcheckV2ray);
-    this.$socket.client.on('getRobotUsers', this.socketgetRobotUsers);
+    this.$socket.client.on('getTagUsers', this.socketgetTagUsers);
     this.$socket.client.on('getGlobalSettings', this.socketgetGlobalSettings);
     this.$socket.client.on('getRobotSetting', this.socketgetRobotSetting);
     this.$socket.client.on('getGithubBackendCommit', this.socketgetGithubBackendCommit);
@@ -362,7 +369,7 @@ export default {
       this.storageLocation = data.storageLocation;
       this.selectedserviceTags = data.serviceTags;
     },
-    socketgetRobotUsers: function (data) {
+    socketgetTagUsers: function (data) {
       this.savedUsers = data;
     },
     socketsetSetting: function () {
@@ -371,7 +378,7 @@ export default {
     },
     HTMLConverter: function (msg) {
       msg = msg === null || msg == undefined ? '**test**' : msg;
-      return marked(msg);
+      return marked(msg, { renderer });
     },
     saveSetting: function () {
       this.$emit('toastPop', "儲存系統設定中...");
@@ -431,7 +438,7 @@ export default {
       this.selectedflowTags = value;
     },
     updateUsers: function () {
-      this.$socket.client.emit('getRobotUsers');
+      this.$socket.client.emit('getTagUsers');
     },
     updateStatisticsTag: function (value) {
       this.selectedstatisticsTags = value;

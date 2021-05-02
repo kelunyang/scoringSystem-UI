@@ -1,179 +1,13 @@
 <template>
   <v-sheet class='pa-0'>
     <v-dialog
-      v-model="cloneW"
-      persistent
-      max-width="50vw"
-    >
-      <v-card>
-        <v-toolbar
-          color="primary"
-          dark
-        >選擇性複製知識點</v-toolbar>
-        <v-card-text class='pa-0 d-flex flex-column'>
-          <v-alert type='info'>請注意，所有的複製都是用「累加」的模式，不會複寫知識點原本的階段與權限設定</v-alert>
-          <div class='red--text text-center'>
-            你目前選擇的知識點： {{ currentKB.name }} 
-          </div>
-          <div class='d-flex flex-column pa-3'>
-            <v-switch
-              v-model="cloneSetting.issues"
-              label="複製0秒的Issue"
-            ></v-switch>
-            <div class='text-h6'>要複製的階段</div>
-            <v-item-group
-              v-model="cloneSetting.stages"
-              multiple
-              color="indigo"
-            >
-              <div class='d-flex flex-row flex-wrap; height: 50px;'>
-                <v-item
-                  v-for="(stage, i) in currentKB.stages"
-                  :key="stage._id"
-                  v-slot="{ active, toggle }"
-                  height='50'
-                  class='pa-1 flex-grow-1'
-                  style='height: 60px'
-                >
-                  <v-card
-                    :color="active ? 'primary' : ''"
-                    class="d-flex align-center"
-                    @click="toggle"
-                  >
-                    第{{ i+1 }}階段
-                    <v-scroll-y-transition>
-                      <div
-                        v-if="active"
-                        class="display-3 flex-grow-1 text-center"
-                      >
-                        <v-icon v-if='active' large>far fa-check-square</v-icon>
-                      </div>
-                    </v-scroll-y-transition>
-                  </v-card>
-                </v-item>
-              </div>
-            </v-item-group>
-            <v-switch
-              v-model="cloneSetting.objectives"
-              label="複製選取的階段的審查目標"
-            ></v-switch>
-            <v-switch
-              v-model="cloneSetting.roles"
-              label="複製選取的階段的權限角色分配"
-            ></v-switch>
-          </div>
-        </v-card-text>
-        <v-card-actions>
-          <v-btn @click='cloneW = false'>關閉對話框</v-btn>
-          <div class='text-caption red--text'>關閉對話框後，請將目標知識點打勾（右側），然後在右下角工具箱中選擇「複製」，就會按照你的設定複製過去了</div>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-    <v-dialog
-      v-model="importW"
-      persistent
-      max-width="50vw"
-    >
-      <v-card>
-        <v-card-title class="headline">
-          匯入知識點
-        </v-card-title>
-        <v-card-text>
-          <div class='text-caption red--text text-left'>
-            知識點匯入功能，請完全按照以下說明操作
-            <ol>
-              <li><a href='/storages/importSample.zip' target='_blank'>請點這裡，下載範例檔，你也只能仿造範例檔的格式，上傳一個zip</a></li>
-              <li>請按照範例檔中的CSV修改資料，一個知識點一條</li>
-              <li>每一個知識點你都得在CSV裡給一個流水號（隨意，不重複即可），如果你的知識點說明無法使用文字描述（例如有公式），請直接將說明存成圖片，圖片檔名必須是和流水號一模一樣的圖檔（如[1].jpg）</li>
-              <li>寫匯入成功就是成功了，如果清單沒有載入，請嘗試重新整理網頁</li>
-            </ol>
-          </div>
-          <v-file-input 
-            prepend-icon="fa-paperclip" 
-            v-model="importFile" 
-            label='上傳知識點匯入檔' 
-            accept="application/zip"
-            :loading="uploadzipprogress !== 0">
-            <template v-slot:progress>
-              <v-progress-circular :value="uploadzipprogress"></v-progress-circular>速度：{{ uploadzipstatus }}
-            </template>
-          </v-file-input>
-          <div class='text-caption'>{{ importStatus }}</div>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn
-            color="primary"
-            @click="closeImport()"
-          >
-            關閉對話框
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-    <v-dialog v-model='KBeditorW' persistent width='60vw'>
-      <v-card>
-        <v-toolbar dark color='primary'>
-          <v-toolbar-title>編輯知識點</v-toolbar-title>
-        </v-toolbar>
-        <v-card-text>
-          <v-text-field
-            label="知識點標題"
-            v-model='currentKB.title'
-          ></v-text-field>
-          <v-text-field
-            label="對應課綱學習表現或是課本內容"
-            v-model='currentKB.textbook'
-          ></v-text-field>
-          <div class='red--text text-caption text-left'>以下兩項為細部說明相關內容，細部說明指的是出現在審查畫面抬頭提供參考用的資料</div>
-          <tiptap-vuetify
-            v-model="currentKB.desc"
-            :extensions="extensions"
-            max-height="20vh"
-            min-height="10vh"
-            placeholder='細部說明，請不要留白'
-            class='text-left'
-          />
-          <v-file-input prepend-icon="fa-paperclip" v-model="KBFile" label='輔助說明文件／圖片上傳' :loading="uploadprogress !== 0">
-            <template v-slot:progress>
-              <v-progress-circular :value="uploadprogress"></v-progress-circular>速度：{{ uploadstatus }}
-            </template>
-          </v-file-input>
-          <div v-if="currentKB.descAtt.length > 0" class='d-flex flex-row flex-wrap'>
-            <v-tooltip 
-              v-for='file in currentKB.descAtt'
-              :key="file._id"
-              bottom
-            >
-              <template v-slot:activator="{ on, attrs }">
-                <v-chip
-                  v-bind="attrs" v-on="on"
-                  class="ma-2"
-                  close
-                  close-icon="fa-times"
-                  @click:close="deleteKBFile(file)"
-                  @click="downloadFile(file)"
-                >
-                  {{ filenameConvert(file.name) }} ({{ byteConvert(file.size) }})
-                </v-chip>
-              </template>
-              <span>{{ file.name }}</span>
-            </v-tooltip>
-          </div>
-        </v-card-text>
-        <v-card-actions>
-          <v-btn :disabled='KBwatch' @click='setKB()'>送出細部說明</v-btn>
-          <v-btn @click='KBeditorW = false'>關閉對話框</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-    <v-dialog
       v-model='assignW'
       fullscreen
       hide-overlay
+      scrollable
       transition="dialog-bottom-transition"
     >
-      <v-card>
+      <v-card tile>
         <v-toolbar dark color='primary'>
           <v-btn
             icon
@@ -187,6 +21,7 @@
         <v-card-actions>
           <v-btn @click='removeStage'>刪除目前的階段</v-btn>
           <v-btn @click='setStage'>儲存目前的階段</v-btn>
+          <v-btn @click='tagUserW = true'>快速建立新的用戶群組標籤</v-btn>
           <v-btn @click='closeAssign'>關閉對話框</v-btn>
         </v-card-actions>
         <v-card-text class='pa-5'>
@@ -201,7 +36,7 @@
             找不到編輯階段
           </div>
           <div v-if='stagePopulated' v-show='currentStage._id !== ""'>
-            <div class='d-flex flex-column'>
+            <div class='d-flex flex-column black--text'>
               <div class='text-caption red--text text-left'>
                 請注意以下事項：
                 <ol>
@@ -286,69 +121,291 @@
                 </template>
               </v-simple-table>
               <v-btn class='flex-grow-1' @click='revokeObjectives'>全數撤回本階段審查目標許可</v-btn>
-              <div class='text-subtitle-2 font-weight-blod'>本階段的PM標籤</div>
+              <div class='text-subtitle-2 font-weight-blod'>本階段的PM群組標籤</div>
               <tag-filter
                 :mustSelected='false'
                 @updateTags='updateTags'
-                @plusItem='plusTag'
                 :single='false'
                 :selectedItem='currentStage.pmTags'
                 @valueUpdated='filterPMTagUpdated'
                 :candidatedItem='savedTags'
-                :createable='true'
+                :createable='false'
                 label='請輸入本階段的PM標籤'
               />
-              <div class='text-subtitle-2 font-weight-blod'>本階段的審查者標籤</div>
+              <div class='text-subtitle-2 font-weight-blod'>本階段的審查者群組標籤</div>
               <tag-filter
                 :mustSelected='false'
                 @updateTags='updateTags'
-                @plusItem='plusTag'
                 :single='false'
                 :selectedItem='currentStage.reviewerTags'
                 @valueUpdated='filterreviewerTagUpdated'
                 :candidatedItem='savedTags'
-                :createable='true'
+                :createable='false'
                 label='請輸入本階段的審查者標籤'
               />
-              <div class='text-subtitle-2 font-weight-blod'>本階段的廠商標籤</div>
+              <div class='text-subtitle-2 font-weight-blod'>本階段的廠商群組標籤</div>
               <tag-filter
                 :mustSelected='false'
                 @updateTags='updateTags'
-                @plusItem='plusTag'
                 :single='false'
                 :selectedItem='currentStage.vendorTags'
                 @valueUpdated='filtervendorTagUpdated'
                 :candidatedItem='savedTags'
-                :createable='true'
+                :createable='false'
                 label='請輸入本階段的廠商標籤'
               />
-              <div class='text-subtitle-2 font-weight-blod'>本階段的寫手標籤</div>
+              <div class='text-subtitle-2 font-weight-blod'>本階段的寫手群組標籤</div>
               <tag-filter
                 :mustSelected='false'
                 @updateTags='updateTags'
-                @plusItem='plusTag'
                 :single='false'
                 :selectedItem='currentStage.writerTags'
                 @valueUpdated='filterwriterTagUpdated'
                 :candidatedItem='savedTags'
-                :createable='true'
+                :createable='false'
                 label='請輸入本階段的寫手標籤'
               />
-              <div class='text-subtitle-2 font-weight-blod'>本階段的行政組標籤</div>
+              <div class='text-subtitle-2 font-weight-blod'>本階段的行政組群組標籤</div>
               <tag-filter
                 :mustSelected='false'
                 @updateTags='updateTags'
-                @plusItem='plusTag'
                 :single='false'
                 :selectedItem='currentStage.finalTags'
                 @valueUpdated='filterfinalTagUpdated'
                 :candidatedItem='savedTags'
-                :createable='true'
+                :createable='false'
                 label='請輸入本階段的行政組標籤'
               />
             </div>
           </div>
         </v-card-text>
+      </v-card>
+    </v-dialog>
+    <v-dialog
+      v-model="tagUserW"
+      max-width="50vw"
+    >
+      <v-card>
+        <v-toolbar
+          color="primary"
+          dark
+        >快速建立用戶標籤</v-toolbar>
+        <v-card-text class='pa-0 d-flex flex-column'>
+          <v-alert type='info'>本功能提供快速建立參與知識點各階段的用戶小群組，請注意，現階段沒有開放刪除標籤的規劃（避免權限表操作異常），打字不要打錯字，真的要修改請找管理員直接從資料庫修改</v-alert>
+          <div class='black--text d-flex flex-column pa-3 text-left'>
+            <div class='text-h6'>請選擇你要框選的用戶所在的用戶標籤</div>
+            <div class='text-caption grey--text darken-3'>可以不選，那你就會在下一個選單裡要從全部的用戶去篩選名單，基於多數用戶在帳號開設時已經被納入如「110年寫手群」這類的大標籤群組，建議你先在這裡選好，方便過濾</div>
+            <tag-filter
+              :mustSelected='false'
+              @updateTags='updateTags'
+              :single='false'
+              :selectedItem='filteruserTag'
+              @valueUpdated='filteruserTagUpdated'
+              :candidatedItem='savedTags'
+              :createable='false'
+              label='請選擇用戶所在的標籤'
+            />
+            <v-btn @click='getAllUsers'>上欄留空，按此，可以列出全部的用戶清單</v-btn>
+            <div class='text-h6'>請選擇你要框選的用戶</div>
+            <div class='text-caption grey--text darken-3'>系統在此會把email、姓名全部合併成一個欄位，方便你搜尋，你輸入什麼，系統都會直接顯示出來</div>
+            <tag-filter
+              :mustSelected='true'
+              :single='false'
+              :selectedItem='selectedUsers'
+              @updateTags='getUsers'
+              @valueUpdated='selecteduserUpdated'
+              :candidatedItem='savedUsers'
+              :createable='false'
+              label='請選擇要框選的用戶'
+            />
+            <div class='text-h6'>請建立新的用戶標籤</div>
+            <div class='text-caption grey--text darken-3'>如果這些用戶要放置的新標籤不再選單裡（通常都是），請按右側加號自己建立一個，再勾選，記得要存檔</div>
+            <tag-filter
+              :mustSelected='true'
+              @updateTags='updateTags'
+              @plusItem='plusTag'
+              :single='false'
+              :selectedItem='selectednewTags'
+              @valueUpdated='newtagUpdated'
+              :candidatedItem='savedTags'
+              :createable='true'
+              label='請新的用戶標籤'
+            />
+          </div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn class='white--text indigo darken-4' @click='saveuserTags'>儲存設定值</v-btn>
+          <v-btn @click='tagUserW = false'>關閉對話框</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog
+      v-model="cloneW"
+      persistent
+      max-width="50vw"
+    >
+      <v-card>
+        <v-toolbar
+          color="primary"
+          dark
+        >選擇性複製知識點</v-toolbar>
+        <v-card-text class='pa-0 d-flex flex-column'>
+          <v-alert type='info'>請注意，所有的複製都是用「累加」的模式，不會複寫知識點原本的階段與權限設定</v-alert>
+          <div class='red--text text-center'>
+            你目前選擇的知識點： {{ currentKB.name }} 
+          </div>
+          <div class='d-flex flex-column pa-3'>
+            <v-switch
+              v-model="cloneSetting.issues"
+              label="複製0秒的Issue"
+            ></v-switch>
+            <div class='text-h6'>要複製的階段</div>
+            <v-item-group
+              v-model="cloneSetting.stages"
+              multiple
+              color="indigo"
+            >
+              <div class='d-flex flex-row flex-wrap; height: 50px;'>
+                <v-item
+                  v-for="(stage, i) in currentKB.stages"
+                  :key="stage._id"
+                  v-slot="{ active, toggle }"
+                  height='50'
+                  class='pa-1 flex-grow-1'
+                  style='height: 60px'
+                >
+                  <v-card
+                    :color="active ? 'primary' : ''"
+                    class="d-flex align-center"
+                    @click="toggle"
+                  >
+                    第{{ i+1 }}階段
+                    <v-scroll-y-transition>
+                      <div
+                        v-if="active"
+                        class="display-3 flex-grow-1 text-center"
+                      >
+                        <v-icon v-if='active' large>far fa-check-square</v-icon>
+                      </div>
+                    </v-scroll-y-transition>
+                  </v-card>
+                </v-item>
+              </div>
+            </v-item-group>
+            <v-switch
+              v-model="cloneSetting.objectives"
+              label="複製選取的階段的審查目標"
+            ></v-switch>
+            <v-switch
+              v-model="cloneSetting.roles"
+              label="複製選取的階段的權限角色分配"
+            ></v-switch>
+          </div>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn @click='cloneW = false'>關閉對話框</v-btn>
+          <div class='text-caption red--text'>關閉對話框後，請將目標知識點打勾（右側），然後在右下角工具箱中選擇「複製」，就會按照你的設定複製過去了</div>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog
+      v-model="importW"
+      persistent
+      max-width="50vw"
+    >
+      <v-card>
+        <v-toolbar
+          color="primary"
+          dark
+        >匯入知識點</v-toolbar>
+        <v-card-text>
+          <div class='text-caption red--text text-left'>
+            知識點匯入功能，請完全按照以下說明操作
+            <ol>
+              <li><a href='/storages/importSample.zip' target='_blank'>請點這裡，下載範例檔，你也只能仿造範例檔的格式，上傳一個zip</a></li>
+              <li>請按照範例檔中的CSV修改資料，一個知識點一條</li>
+              <li>每一個知識點你都得在CSV裡給一個流水號（隨意，不重複即可），如果你的知識點說明無法使用文字描述（例如有公式），請直接將說明存成圖片，圖片檔名必須是和流水號一模一樣的圖檔（如[1].jpg）</li>
+              <li>寫匯入成功就是成功了，如果清單沒有載入，請嘗試重新整理網頁</li>
+            </ol>
+          </div>
+          <v-file-input 
+            prepend-icon="fa-paperclip" 
+            v-model="importFile" 
+            label='上傳知識點匯入檔' 
+            accept="application/zip"
+            :loading="uploadzipprogress !== 0">
+            <template v-slot:progress>
+              <v-progress-circular :value="uploadzipprogress"></v-progress-circular>速度：{{ uploadzipstatus }}
+            </template>
+          </v-file-input>
+          <div class='text-caption'>{{ importStatus }}</div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            color="primary"
+            @click="closeImport()"
+          >
+            關閉對話框
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog v-model='KBeditorW' persistent width='60vw'>
+      <v-card>
+        <v-toolbar dark color='primary'>
+          <v-toolbar-title>編輯知識點</v-toolbar-title>
+        </v-toolbar>
+        <v-card-text>
+          <v-text-field
+            label="知識點標題"
+            v-model='currentKB.title'
+          ></v-text-field>
+          <v-text-field
+            label="對應課綱學習表現或是課本內容"
+            v-model='currentKB.textbook'
+          ></v-text-field>
+          <div class='red--text text-caption text-left'>以下兩項為細部說明相關內容，細部說明指的是出現在審查畫面抬頭提供參考用的資料</div>
+          <tiptap-vuetify
+            v-model="currentKB.desc"
+            :extensions="extensions"
+            max-height="20vh"
+            min-height="10vh"
+            placeholder='細部說明，請不要留白'
+            class='text-left'
+          />
+          <v-file-input prepend-icon="fa-paperclip" v-model="KBFile" label='輔助說明文件／圖片上傳' :loading="uploadprogress !== 0">
+            <template v-slot:progress>
+              <v-progress-circular :value="uploadprogress"></v-progress-circular>速度：{{ uploadstatus }}
+            </template>
+          </v-file-input>
+          <div v-if="currentKB.descAtt.length > 0" class='d-flex flex-row flex-wrap'>
+            <v-tooltip 
+              v-for='file in currentKB.descAtt'
+              :key="file._id"
+              bottom
+            >
+              <template v-slot:activator="{ on, attrs }">
+                <v-chip
+                  v-bind="attrs" v-on="on"
+                  class="ma-2"
+                  close
+                  close-icon="fa-times"
+                  @click:close="deleteKBFile(file)"
+                  @click="downloadFile(file)"
+                >
+                  {{ filenameConvert(file.name) }} ({{ byteConvert(file.size) }})
+                </v-chip>
+              </template>
+              <span>{{ file.name }}</span>
+            </v-tooltip>
+          </div>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn :disabled='KBwatch' @click='setKB()'>儲存設定值</v-btn>
+          <v-btn @click='KBeditorW = false'>關閉對話框</v-btn>
+        </v-card-actions>
       </v-card>
     </v-dialog>
     <v-dialog v-model='insertM' persistent width='60vw'>
@@ -544,144 +601,154 @@
       <v-btn class='white--text text-h5 indigo darken-4' @click='tagW = true'>請點這裡載入科目標籤</v-btn>
       <div class='text-caption'>你之後可以從右下角工具箱按鈕切換至其他的科目標籤，或者是由鉛筆按鈕新增本標簽下的章節知識點</div>
     </div>
+    <div v-if='DB.length > 0' class='blue-grey--text darken-1 text-caption'>已篩選出{{ DB.length }}個章節，為節省資源，不會全部展現出來，往下滑會載入更多</div>
     <draggable group="Mitems" v-model="DB" style="min-height: 10px" handle='.handle'>
       <template v-for="mitem in DB">
-        <v-list class='KBcata pa-0 mt-6 d-flex flex-column justify-start' dense :key='mitem._id'>
-          <div class='d-flex flex-row justify-start'>
-              <v-tooltip bottom>
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn v-bind="attrs" v-on="on" icon @click="addKB(mitem)">
-                    <v-icon>fa-plus</v-icon>
-                  </v-btn>
-                </template>
-                <span>新增知識點</span>
-              </v-tooltip>
-              <v-tooltip bottom>
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn v-bind="attrs" v-on="on" icon @click='removeChapter(mitem)'>
-                    <v-icon>fa-minus</v-icon>
-                  </v-btn>
-                </template>
-                <span>刪除本分類</span>
-              </v-tooltip>
-              <v-tooltip bottom v-show='mitem.collapse === false'>
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn v-bind="attrs" v-on="on" icon @click='mitem.collapse = true' v-show='mitem.collapse === false'>
-                    <v-icon>fa-angle-up</v-icon>
-                  </v-btn>
-                </template>
-                <span>折起本分類</span>
-              </v-tooltip>
-              <v-tooltip bottom v-show='mitem.collapse === true'>
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn v-bind="attrs" v-on="on" icon @click='mitem.collapse = false' v-show='mitem.collapse === true'>
-                    <v-icon>fa-angle-down</v-icon>
-                  </v-btn>
-                </template>
-                <span>打開本分類</span>
-              </v-tooltip>
-              <v-tooltip bottom>
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn v-bind="attrs" v-on="on" icon class='handle'>
-                    <v-icon>fa-arrows-alt</v-icon>
-                  </v-btn>
-                </template>
-                <span>上下移動本分類</span>
-              </v-tooltip>
-              <div v-show='mitem.collapse === true'>
-                {{ mitem.title }}（共 {{ mitem.KBs.length }} 項）
-              </div>
-          </div>
-          <v-subheader class='black--text text-h6' v-show='mitem.collapse === false'>
-            <v-icon>fa-folder-open</v-icon>
-            {{mitem.title}}
-            <v-btn icon @click='editChapter(mitem)'>
-              <v-icon>fa-pencil-alt</v-icon>
-            </v-btn>
-          </v-subheader>
-          <draggable v-model="mitem.KBs" group="KBitems" handle=".subhandle" style="min-height: 10px" v-show='mitem.collapse === false'>
-            <template v-for="KBitem in mitem.KBs">
-              <v-row :key="KBitem._id + 'handler'" class='KBsub d-flex'>
-                <v-col col='9' class='flex-grow-1 text-left'>
-                  {{ KBitem.title }}
-                </v-col>
-                <v-col col='3' class='align-center flex-grow-0 flex-shrink-0 ma-0 pa-0 d-flex flex-row'>
-                  <v-checkbox v-model="selectedKBs" :value='KBitem._id' off-icon="far fa-square" on-icon="fa-check-square"></v-checkbox>
-                  <v-tooltip top>
-                    <template v-slot:activator="{ on, attrs }">
-                      <v-btn @click="loadKBEditor(KBitem)" v-bind="attrs" v-on="on" icon>
-                        <v-icon>fa-pencil-alt</v-icon>
-                      </v-btn>
-                    </template>
-                    <span>編輯知識點</span>
-                  </v-tooltip>
-                  <v-tooltip top>
-                    <template v-slot:activator="{ on, attrs }">
-                      <v-btn @click="cloneConfigs(KBitem)" v-bind="attrs" v-on="on" icon>
-                        <v-icon>fa-copy</v-icon>
-                      </v-btn>
-                    </template>
-                    <span>設定為知識點複製範本</span>
-                  </v-tooltip>
-                  <v-tooltip top>
-                    <template v-slot:activator="{ on, attrs }">
-                      <v-btn v-bind="attrs" v-on="on" icon @click='removeKB(KBitem)'>
-                        <v-icon>fas fa-trash</v-icon>
-                      </v-btn>
-                    </template>
-                    <span>刪除知識點</span>
-                  </v-tooltip>
-                  <v-tooltip top>
-                    <template v-slot:activator="{ on, attrs }">
-                      <v-btn v-bind="attrs" v-on="on" icon class='subhandle'>
-                        <v-icon>fa-arrows-alt</v-icon>
-                      </v-btn>
-                    </template>
-                    <span>上下移動知識點</span>
-                  </v-tooltip>
-                </v-col>
-              </v-row>
-              <v-row :key="KBitem._id + 'steps'">
-                <v-col class='text-center text-caption grey--text darken-1 flex-grow-1' v-if='KBitem.stages.length === 0'>
-                  本知識點沒有任何階段，點右邊加號圖案去增加階段吧
-                </v-col>
-                <v-col class='flex-grow-1' v-if='KBitem.stages.length > 0'>
-                  <v-stepper v-model="KBitem.stepPointer">
-                    <v-stepper-header>
-                      <template
-                        v-for='(stage, index) in KBitem.stages'
-                      >
-                        <v-stepper-step
-                          :key='stage._id'
-                          :complete="KBitem.stepPointer > index"
-                          :step='index + 1'
-                          editable
-                          @click="loadReviewer(KBitem)"
-                        >
-                          <span v-show='(index + 1) === KBitem.stepPointer'>{{ stage.name }}</span>
-                        </v-stepper-step>
-                        <v-divider
-                          :key='"divider" + stage._id'
-                          v-if='(index + 1) !== KBitem.stages.length'
-                        ></v-divider>
+        <v-lazy
+          :options="{
+            threshold: 0.5
+          }"
+          min-height="65"
+          transition="fade-transition"
+          :key='mitem._id'
+        >
+          <v-list class='KBcata pa-0 mt-6 d-flex flex-column justify-start' dense>
+            <div class='d-flex flex-row justify-start'>
+                <v-tooltip bottom>
+                  <template v-slot:activator="{ on, attrs }">
+                    <v-btn v-bind="attrs" v-on="on" icon @click="addKB(mitem)">
+                      <v-icon>fa-plus</v-icon>
+                    </v-btn>
+                  </template>
+                  <span>新增知識點</span>
+                </v-tooltip>
+                <v-tooltip bottom>
+                  <template v-slot:activator="{ on, attrs }">
+                    <v-btn v-bind="attrs" v-on="on" icon @click='removeChapter(mitem)'>
+                      <v-icon>fa-minus</v-icon>
+                    </v-btn>
+                  </template>
+                  <span>刪除本分類</span>
+                </v-tooltip>
+                <v-tooltip bottom v-show='mitem.collapse === false'>
+                  <template v-slot:activator="{ on, attrs }">
+                    <v-btn v-bind="attrs" v-on="on" icon @click='mitem.collapse = true' v-show='mitem.collapse === false'>
+                      <v-icon>fa-angle-up</v-icon>
+                    </v-btn>
+                  </template>
+                  <span>折起本分類</span>
+                </v-tooltip>
+                <v-tooltip bottom v-show='mitem.collapse === true'>
+                  <template v-slot:activator="{ on, attrs }">
+                    <v-btn v-bind="attrs" v-on="on" icon @click='mitem.collapse = false' v-show='mitem.collapse === true'>
+                      <v-icon>fa-angle-down</v-icon>
+                    </v-btn>
+                  </template>
+                  <span>打開本分類</span>
+                </v-tooltip>
+                <v-tooltip bottom>
+                  <template v-slot:activator="{ on, attrs }">
+                    <v-btn v-bind="attrs" v-on="on" icon class='handle'>
+                      <v-icon>fa-arrows-alt</v-icon>
+                    </v-btn>
+                  </template>
+                  <span>上下移動本分類</span>
+                </v-tooltip>
+                <div v-show='mitem.collapse === true'>
+                  {{ mitem.title }}（共 {{ mitem.KBs.length }} 項）
+                </div>
+            </div>
+            <v-subheader class='black--text text-h6' v-show='mitem.collapse === false'>
+              <v-icon>fa-folder-open</v-icon>
+              {{mitem.title}}
+              <v-btn icon @click='editChapter(mitem)'>
+                <v-icon>fa-pencil-alt</v-icon>
+              </v-btn>
+            </v-subheader>
+            <draggable v-model="mitem.KBs" group="KBitems" handle=".subhandle" style="min-height: 10px" v-show='mitem.collapse === false'>
+              <template v-for="KBitem in mitem.KBs">
+                <v-row :key="KBitem._id + 'handler'" class='KBsub d-flex'>
+                  <v-col col='9' class='flex-grow-1 text-left'>
+                    {{ KBitem.title }}
+                  </v-col>
+                  <v-col col='3' class='align-center flex-grow-0 flex-shrink-0 ma-0 pa-0 d-flex flex-row'>
+                    <v-checkbox v-model="selectedKBs" :value='KBitem._id' off-icon="far fa-square" on-icon="fa-check-square"></v-checkbox>
+                    <v-tooltip top>
+                      <template v-slot:activator="{ on, attrs }">
+                        <v-btn @click="loadKBEditor(KBitem)" v-bind="attrs" v-on="on" icon>
+                          <v-icon>fa-pencil-alt</v-icon>
+                        </v-btn>
                       </template>
-                    </v-stepper-header>
-                  </v-stepper>
-                </v-col>
-                <v-col class='flex-shrink-1 flex-grow-0'>
-                  <v-tooltip top>
-                    <template v-slot:activator="{ on, attrs }">
-                      <v-btn v-bind="attrs" v-on="on" icon @click="addStage(KBitem)">
-                        <v-icon>fas fa-plus</v-icon>
-                      </v-btn>
-                    </template>
-                    <span>新增知識點編輯階段</span>
-                  </v-tooltip>
-                </v-col>
-              </v-row>
-            </template>
-          </draggable>
-        </v-list>
+                      <span>編輯知識點</span>
+                    </v-tooltip>
+                    <v-tooltip top>
+                      <template v-slot:activator="{ on, attrs }">
+                        <v-btn @click="cloneConfigs(KBitem)" v-bind="attrs" v-on="on" icon>
+                          <v-icon>fa-copy</v-icon>
+                        </v-btn>
+                      </template>
+                      <span>設定為知識點複製範本</span>
+                    </v-tooltip>
+                    <v-tooltip top>
+                      <template v-slot:activator="{ on, attrs }">
+                        <v-btn v-bind="attrs" v-on="on" icon @click='removeKB(KBitem)'>
+                          <v-icon>fas fa-trash</v-icon>
+                        </v-btn>
+                      </template>
+                      <span>刪除知識點</span>
+                    </v-tooltip>
+                    <v-tooltip top>
+                      <template v-slot:activator="{ on, attrs }">
+                        <v-btn v-bind="attrs" v-on="on" icon class='subhandle'>
+                          <v-icon>fa-arrows-alt</v-icon>
+                        </v-btn>
+                      </template>
+                      <span>上下移動知識點</span>
+                    </v-tooltip>
+                  </v-col>
+                </v-row>
+                <v-row :key="KBitem._id + 'steps'">
+                  <v-col class='text-center text-caption grey--text darken-1 flex-grow-1' v-if='KBitem.stages.length === 0'>
+                    本知識點沒有任何階段，點右邊加號圖案去增加階段吧
+                  </v-col>
+                  <v-col class='flex-grow-1' v-if='KBitem.stages.length > 0'>
+                    <v-stepper v-model="KBitem.stepPointer">
+                      <v-stepper-header>
+                        <template
+                          v-for='(stage, index) in KBitem.stages'
+                        >
+                          <v-stepper-step
+                            :key='stage._id'
+                            :complete="KBitem.stepPointer > index"
+                            :step='index + 1'
+                            editable
+                            @click="loadReviewer(KBitem)"
+                          >
+                            <span v-show='(index + 1) === KBitem.stepPointer'>{{ stage.name }}</span>
+                          </v-stepper-step>
+                          <v-divider
+                            :key='"divider" + stage._id'
+                            v-if='(index + 1) !== KBitem.stages.length'
+                          ></v-divider>
+                        </template>
+                      </v-stepper-header>
+                    </v-stepper>
+                  </v-col>
+                  <v-col class='flex-shrink-1 flex-grow-0'>
+                    <v-tooltip top>
+                      <template v-slot:activator="{ on, attrs }">
+                        <v-btn v-bind="attrs" v-on="on" icon @click="addStage(KBitem)">
+                          <v-icon>fas fa-plus</v-icon>
+                        </v-btn>
+                      </template>
+                      <span>新增知識點編輯階段</span>
+                    </v-tooltip>
+                  </v-col>
+                </v-row>
+              </template>
+            </draggable>
+          </v-list>
+        </v-lazy>
       </template>
     </draggable>
   </v-sheet>
@@ -721,6 +788,12 @@ import VueCtkDateTimePicker from 'vue-ctk-date-time-picker';
 import 'vue-ctk-date-time-picker/dist/vue-ctk-date-time-picker.css';
 import '@fortawesome/fontawesome-free/css/all.css';
 
+const renderer = new marked.Renderer();
+const linkRenderer = renderer.link;
+renderer.link = (href, title, text) => {
+    const html = linkRenderer.call(renderer, href, title, text);
+    return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
+};
 let files = [];
 
 library.add(faNetworkWired);
@@ -800,6 +873,46 @@ export default {
     }
   },
   methods: {
+    getUsers: function () {
+      if(this.filteruserTag.length > 0) {
+        this.$socket.client.emit('getTagUsers', this.filteruserTag);
+      } else {
+        this.$socket.client.emit('getUsers');
+      }
+    },
+    socketmodUserTags: function (data) {
+      this.$emit('toastPop', '為' + data.processed + '/' + data.planned + '個用戶的加上' + data.tags + '個使用者標籤已完成');
+    },
+    saveuserTags: function () {
+      this.$emit('toastPop', '設定用戶的使用者標籤中...');
+      this.$socket.client.emit('modUserTags', {
+          users: _.map(this.selectedUsers, (item) => {
+            return {
+              _id: item
+            }
+          }),
+          tags: this.selectednewTags,
+          mode: false
+      });
+    },
+    newtagUpdated: function (val) {
+      this.selectednewTags = val;
+    },
+    selecteduserUpdated: function (val) {
+      this.selectedUsers = val;
+    },
+    socketgetUsers: function (data) {
+      this.savedUsers = _.map(data, (item) => {
+        return {
+          _id: item._id,
+          name: item.name+"@"+item.unit+" ("+item.email+")"
+        }
+      });
+    },
+    filteruserTagUpdated: function(val) {
+      this.filteruserTag = val;
+      this.getUsers();
+    },
     tagQuery: function(tag) {
       let tagItem = _.find(this.savedTags, (item) => {
         return item._id === tag
@@ -952,7 +1065,7 @@ export default {
       });
     },
     socketeditKB: function (data) {
-      data.desc = marked(data.desc);
+      data.desc = marked(data.desc, { renderer });
       data.stages.sort((a,b) => {
         return a.sort - b.sort;
       });
@@ -989,7 +1102,7 @@ export default {
         KBs.push(chapter.KBs);
         for(let k=0; k<chapter.KBs.length; k++) {
           let KB = chapter.KBs[k];
-          KB.desc = marked(KB.desc);
+          KB.desc = marked(KB.desc, { renderer });
           KB.stages.sort((a,b) => {
             return a.sort - b.sort;
           });
@@ -1017,7 +1130,7 @@ export default {
       }
     },
     socketgetKB: function (data) {
-      data.desc = marked(data.desc);
+      data.desc = marked(data.desc, { renderer });
       data.stages.sort((a,b) => {
         return a.sort - b.sort;
       });
@@ -1258,6 +1371,11 @@ export default {
   },
   data () {
     return {
+      tagUserW: false,
+      selectednewTags: [],
+      selectedUsers: [],
+      savedUsers: [],
+      filteruserTag: [],
       cloneW: false,
       cloneSetting: {
         issues: false,
@@ -1341,6 +1459,9 @@ export default {
       DB: this.DB,
       tag: this.selectedKBTag
     });
+    this.$socket.client.off('modUserTags', this.socketmodUserTags);
+    this.$socket.client.off('getUsers', this.socketgetUsers);
+    this.$socket.client.off('getTagUsers', this.socketgetUsers);
     this.$socket.client.off('KBFileUploadDone', this.soketKBFileUploadDone);
     this.$socket.client.off('getKBAttachment', this.socketgetKBAttachment);
     this.$socket.client.off('KBFileUploadError', this.socketKBFileUploadError);
@@ -1377,6 +1498,9 @@ export default {
     if(queriedChapters) {
       this.queriedChapters = JSON.parse(queriedChapters);
     }
+    this.$socket.client.on('modUserTags', this.socketmodUserTags);
+    this.$socket.client.on('getUsers', this.socketgetUsers);
+    this.$socket.client.on('getTagUsers', this.socketgetUsers);
     this.$socket.client.on('KBFileUploadDone', this.soketKBFileUploadDone);
     this.$socket.client.on('getKBAttachment', this.socketgetKBAttachment);
     this.$socket.client.on('KBFileUploadError', this.socketKBFileUploadError);

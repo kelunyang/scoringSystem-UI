@@ -33,7 +33,6 @@
       :multiple='multipleD'
       prepend-icon="fab fa-slack-hash"
       solo
-      cache-items
       :search-input.sync="newTerm"
       item-text='name'
       item-value='_id'
@@ -171,7 +170,8 @@ export default {
         let searchItem = _.filter(this.candidatedItem, (item) => {
           return (new RegExp(this.newTerm)).test(item.name);
         });
-        let selectedItem = _.intersectionWith(this.candidatedItem, this.selectedItems, (cItem, sItem) => {
+        let passedsItems = this.multipleD ? this.selectedItems : [this.selectedItems];
+        let selectedItem = _.intersectionWith(this.candidatedItem, passedsItems, (cItem, sItem) => {
           return cItem._id === sItem;
         });
         this.filteredItems = _.unionWith(searchItem, selectedItem, (qItem, sItem) => {
@@ -195,7 +195,8 @@ export default {
       let searchItem = _.filter(this.candidatedItem, (item) => {
         return (new RegExp(this.newTerm)).test(item.name);
       });
-      let selectedItem = _.intersectionWith(this.candidatedItem, this.selectedItems, (cItem, sItem) => {
+      let passedsItems = this.multipleD ? this.selectedItems : [this.selectedItems];
+      let selectedItem = _.intersectionWith(this.candidatedItem, passedsItems, (cItem, sItem) => {
         return cItem._id === sItem;
       });
       this.filteredItems = _.unionWith(searchItem, selectedItem, (qItem, sItem) => {

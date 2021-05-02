@@ -446,52 +446,62 @@
               <span>設定關鍵字過濾</span>
           </v-tooltip>
       </v-speed-dial>
-      <v-list-item v-for='item in userfilteredList' :key='item._id'>
-        <v-list-item-avatar>
-          <v-avatar size="48">
-            <img :src='"https://avatars.dicebear.com/api/" + item.types + "/" + encodeURIComponent(item.name + "@" + item.unit) + ".svg"' />
-          </v-avatar>
-        </v-list-item-avatar>
-        <v-list-item-content class="text-left">
-          <v-list-item-title>
-            <span class='text-caption red--text' v-if='item.firstRun'>新用戶</span>
-            {{ item.name }} @ {{ item.unit }}</v-list-item-title>
-          <v-list-item-subtitle>
-            <v-icon>fa-envelope-open</v-icon>
-            {{item.email }}
-            <v-icon :color="item.lineDate > 0 ? 'green accent-4' : 'grey darken-1'">fab fa-line</v-icon>
-            <span v-if='item.lineDate > 0'>已於 {{ dateConvert(item.lineDate) }} 綁定LINE</span>
-            <span v-else>未綁定LINE</span>
-          </v-list-item-subtitle>
-        </v-list-item-content>
-        <v-list-item-action class='d-flex flex-row'>
-          <v-tooltip bottom>
-            <template v-slot:activator="{ on, attrs }">
-              <v-btn icon v-bind="attrs" v-on="on" @click='modUser(item)'>
-                <v-icon>fa-pencil-alt</v-icon>
-              </v-btn>
-            </template>
-            <span>編輯用戶</span>
-          </v-tooltip>
-          <v-tooltip bottom>
-            <template v-slot:activator="{ on, attrs }">
-              <v-btn icon v-bind="attrs" v-on="on" @click='passwordReset(item)'>
-                <v-icon>fa-key</v-icon>
-              </v-btn>
-            </template>
-            <span>寄出密碼遺忘信</span>
-          </v-tooltip>
-          <v-tooltip bottom>
-            <template v-slot:activator="{ on, attrs }">
-              <v-btn icon v-bind="attrs" v-on="on" @click='setEmail(item)'>
-                <v-icon>fa-at</v-icon>
-              </v-btn>
-            </template>
-            <span>修改用戶Email</span>
-          </v-tooltip>
-          <v-checkbox off-icon="far fa-square" on-icon="fa-check-square" v-model='selectedUsers' :value='item'></v-checkbox>
-        </v-list-item-action>
-      </v-list-item>
+      <div class='blue-grey--text darken-1 text-caption'>已篩選出{{ userfilteredList.length }}個用戶，為節省資源，不會全部展現出來，往下滑會載入更多</div>
+      <v-lazy
+        :options="{
+          threshold: 0.5
+        }"
+        min-height="70"
+        transition="fade-transition"
+        v-for='item in userfilteredList' :key='item._id'
+      >
+        <v-list-item>
+          <v-list-item-avatar>
+            <v-avatar size="48">
+              <img :src='"https://avatars.dicebear.com/api/" + item.types + "/" + encodeURIComponent(item.name + "@" + item.unit) + ".svg"' />
+            </v-avatar>
+          </v-list-item-avatar>
+          <v-list-item-content class="text-left">
+            <v-list-item-title>
+              <span class='text-caption red--text' v-if='item.firstRun'>新用戶</span>
+              {{ item.name }} @ {{ item.unit }}</v-list-item-title>
+            <v-list-item-subtitle>
+              <v-icon>fa-envelope-open</v-icon>
+              {{item.email }}
+              <v-icon :color="item.lineDate > 0 ? 'green accent-4' : 'grey darken-1'">fab fa-line</v-icon>
+              <span v-if='item.lineDate > 0'>已於 {{ dateConvert(item.lineDate) }} 綁定LINE</span>
+              <span v-else>未綁定LINE</span>
+            </v-list-item-subtitle>
+          </v-list-item-content>
+          <v-list-item-action class='d-flex flex-row'>
+            <v-tooltip bottom>
+              <template v-slot:activator="{ on, attrs }">
+                <v-btn icon v-bind="attrs" v-on="on" @click='modUser(item)'>
+                  <v-icon>fa-pencil-alt</v-icon>
+                </v-btn>
+              </template>
+              <span>編輯用戶</span>
+            </v-tooltip>
+            <v-tooltip bottom>
+              <template v-slot:activator="{ on, attrs }">
+                <v-btn icon v-bind="attrs" v-on="on" @click='passwordReset(item)'>
+                  <v-icon>fa-key</v-icon>
+                </v-btn>
+              </template>
+              <span>寄出密碼遺忘信</span>
+            </v-tooltip>
+            <v-tooltip bottom>
+              <template v-slot:activator="{ on, attrs }">
+                <v-btn icon v-bind="attrs" v-on="on" @click='setEmail(item)'>
+                  <v-icon>fa-at</v-icon>
+                </v-btn>
+              </template>
+              <span>修改用戶Email</span>
+            </v-tooltip>
+            <v-checkbox off-icon="far fa-square" on-icon="fa-check-square" v-model='selectedUsers' :value='item'></v-checkbox>
+          </v-list-item-action>
+        </v-list-item>
+      </v-lazy>
     </v-sheet>
 </template>
 
@@ -664,9 +674,6 @@ export default {
       },
       socketmodUserTags: function (data) {
         this.$emit('toastPop', '為' + data.processed + '/' + data.planned + '個用戶的加上' + data.tags + '個使用者標籤已完成');
-        if (data.zeroTag.length > 0) {
-          this.doneMsg += '，' + JSON.stringify(data.zeroTag) + '等標籤由於剩餘用戶數小於1，因此無法將用戶移出';
-        }
       },
       socketcreateUsers: function (data) {
         this.addUserW = false;

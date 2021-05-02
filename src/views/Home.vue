@@ -47,6 +47,12 @@ import moment from 'moment';
 import prettyBytes from 'pretty-bytes';
 import marked from 'marked';
 
+const renderer = new marked.Renderer();
+const linkRenderer = renderer.link;
+renderer.link = (href, title, text) => {
+    const html = linkRenderer.call(renderer, href, title, text);
+    return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
+};
 library.add(faSnapchatGhost, faBomb, faRobot, faCommentDots, faPhotoVideo, faClipboard, faVideo, faSearch, faSkullCrossbones, faExclamationTriangle, faPencilAlt);
 Vue.component('font-awesome-icon', FontAwesomeIcon);
 
@@ -57,7 +63,7 @@ export default {
     },
     HTMLConverter: function (msg) {
       msg = msg === null || msg == undefined ? '**test**' : msg;
-      return marked(msg);
+      return marked(msg, { renderer });
     },
     filenameConvert: function (file) {
       let str = file.name;

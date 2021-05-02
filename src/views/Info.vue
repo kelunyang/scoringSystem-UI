@@ -355,6 +355,12 @@ import prettyBytes from 'pretty-bytes';
 import _ from 'lodash';
 import IssueView from './modules/IssueView.vue';
 
+const renderer = new marked.Renderer();
+const linkRenderer = renderer.link;
+renderer.link = (href, title, text) => {
+    const html = linkRenderer.call(renderer, href, title, text);
+    return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
+};
 library.add(faInfoCircle);
 Vue.component('font-awesome-icon', FontAwesomeIcon);
 
@@ -508,7 +514,7 @@ export default {
     },
     HTMLConverter: function (msg) {
       msg = msg === null || msg == undefined ? '**test**' : msg;
-      return marked(msg);
+      return marked(msg, { renderer });
     },
     filenameConvert: function (file) {
       let str = file.name;
