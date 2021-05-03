@@ -260,7 +260,7 @@
               v-model="cloneSetting.issues"
               label="複製0秒的Issue"
             ></v-switch>
-            <div class='text-h6'>要複製的階段</div>
+            <div class='text-h6'>要複製的階段請點擊打勾</div>
             <v-item-group
               v-model="cloneSetting.stages"
               multiple
@@ -1013,6 +1013,7 @@ export default {
     },
     socketremoveStage: function () {
       this.resetStage();
+      this.assignW = false;
       this.$emit('toastPop', '知識點流程移除完成');
       if(this.currentKB.stages.length > 0) {
         this.currentKB.stepPointer = 1;

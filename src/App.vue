@@ -763,7 +763,7 @@ export default {
     },
     currentUser: function () {
       let oriobj = this;
-      if(this.currentPage.location === '/Login') {
+      if(this.currentPage.location === '/Login' || this.currentPage.location === '/Dashboard') {
         if(this.currentUser._id !== '') {
           this.$socket.client.emit("userInbound");
           if ('firstRun' in this.currentUser) {
