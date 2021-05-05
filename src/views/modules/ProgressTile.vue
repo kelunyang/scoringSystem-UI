@@ -167,7 +167,6 @@
 <script>
 import moment from 'moment';
 import _ from 'lodash';
-import '@fortawesome/fontawesome-free/css/all.css';
 import momentDurationFormatSetup from 'moment-duration-format';
 
 momentDurationFormatSetup(moment);

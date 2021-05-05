@@ -38,15 +38,8 @@
 
 <script>
 // @ is an alias to /src
-import Vue from 'vue';
-import { library } from '@fortawesome/fontawesome-svg-core';
-import { faSkull, faGrinWink, faSignInAlt, faBomb, faRobot, faCommentDots } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import moment from 'moment';
 import axios from 'axios';
-
-library.add(faSkull, faGrinWink, faSignInAlt, faBomb, faRobot, faCommentDots);
-Vue.component('font-awesome-icon', FontAwesomeIcon);
 
 export default {
   name: 'login',

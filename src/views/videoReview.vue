@@ -1,7 +1,7 @@
 <template>
   <v-main ref='mainBlock' class='pa-0' style="width: 100% !important;">
     <v-alert type="error" v-if="statistics.unfinishObj === 0">
-      本階段審查目標已全部完成，請回到DashBoard，可進入下一個階段（如果你在下一個階段還有權力的話）
+      本階段審查指標已全部完成，請回到DashBoard，可進入下一個階段（如果你在下一個階段還有權力的話）
     </v-alert>
     <v-alert type="error" v-if="!currentStage.current">
       本階段已經是歷史了，離開吧！
@@ -500,7 +500,7 @@
           height="25"
         >
           <template v-slot:default="{ value }">
-            <span>本階段審查目標完成度：{{ Math.ceil(value) }}%</span>
+            <span>本階段審查指標完成度：{{ Math.ceil(value) }}%</span>
             <span v-if='statistics.unfinishObj > 0'>
               <span v-if='statistics.unfinishObj - statistics.finishObj <= 1'>（再通過一個你就不能回頭啦！）</span>
               <span v-else>（階段死線： {{ dateConvert(currentStage.dueTick) }}）</span>
@@ -574,13 +574,12 @@
         </div>
       </div>
       <v-expand-transition>
-        <!-- <v-alert type="error" v-if='statistics.unfinishObj - statistics.finishObj <= 1'>請注意！如果同意了最後一個審查目標，這個階段就結束啦，而且是不會回頭的喔！</v-alert> -->
         <v-simple-table class='text-left' v-show='objectiveW'>
           <template v-slot:default>
             <thead>
               <tr>
                 <th class="text-left" style="width:25px">
-                  審查目標名稱
+                  審查指標名稱
                 </th>
                 <th class="text-left" style="width:25px">
                   同意人
@@ -924,6 +923,11 @@
           width="100%"
           v-show='!issueListPopulated'
         ></v-skeleton-loader>
+        <v-text-field
+          label="輸入關鍵字篩選Issue標題"
+          v-model="issuekeywordFilter"
+          hint='只篩選Issue標題，支援正規表達式'
+        ></v-text-field>
         <div class='text-caption' v-show='issueListPopulated'>篩選出 {{ filteredIssues.length }}條Issue／{{ unReadedCount }}條未讀</div>
         <div v-if='filteredIssues.length === 0' v-show='issueListPopulated'>
           目前沒有任何Issue
@@ -946,13 +950,11 @@
           </v-card-title>
           <v-card-text class='text-left'>
             <v-text-field label="Issue標題" v-model='issue.title' v-if='issue.parent === undefined'/>
-            <tiptap-vuetify
+            <Tip-Tap
               v-model="issue.body"
-              :extensions="extensions"
-              max-height="40vh"
-              min-height="20vh"
-              placeholder='請不要留白'
-              class='text-left'
+              maxHeight="40vh"
+              minHeight="20vh"
+              hint='請不要留白'
             />
             <v-file-input prepend-icon="fa-paperclip" v-model="issueFile" label='輔助說明文件／圖片上傳' :loading="uploadprogress !== 0">
               <template v-slot:progress>
@@ -1221,9 +1223,6 @@
 <script>
 // @ is an alias to /src
 import Vue from 'vue';
-import { library } from '@fortawesome/fontawesome-svg-core';
-import { fas, faVideo } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import moment from 'moment';
 import momentDurationFormatSetup from 'moment-duration-format';
 import videojs from 'video.js';
@@ -1231,9 +1230,7 @@ import _ from 'lodash';
 import 'video.js/dist/video-js.css';
 import marked from 'marked';
 import { v4 as uuidv4 } from 'uuid';
-import '@fortawesome/fontawesome-free/css/all.css';
-import { TiptapVuetify, Bold, Italic, Strike, Underline, Code, Paragraph, BulletList, OrderedList, ListItem, Link, HardBreak, History } from 'tiptap-vuetify';
-import 'tiptap-vuetify/dist/main.css';
+import TipTap from './modules/TipTap';
 import prettyBytes from 'pretty-bytes';
 import axios from 'axios';
 import JSZip from 'jszip';
@@ -1258,13 +1255,11 @@ renderer.link = (href, title, text) => {
 let files = [];
 
 momentDurationFormatSetup(moment);
-library.add(fas, faVideo);
-Vue.component('font-awesome-icon', FontAwesomeIcon);
 Vue.use(Paintable);
 
 export default {
   name: 'videoReview',
-  components: { TiptapVuetify, IssueView, IssueList },
+  components: { TipTap, IssueView, IssueList },
   methods: {
     addDiff: function (issue) {
       let tempDiff = this.diffIssues;
@@ -1825,7 +1820,7 @@ export default {
       return item.loaded ? 'd-flex flex-column loadedItem' : 'd-flex flex-column loadingItem';
     },
     objectiveWConvert: function () {
-      return this.objectiveW ? '隱藏審查目標' : '顯示審查目標';
+      return this.objectiveW ? '隱藏審查指標' : '顯示審查指標';
     },
     objectiveConvert: function (data) {
       return 'signUser' in data ? '標記為未完成' : '標記為完成';
@@ -2110,6 +2105,11 @@ export default {
       let filterList = _.filter(this.issueList, (issue) => {
         return !('parent' in issue) || issue.parent === undefined;
       });
+      if(this.issuekeywordFilter !== '') {
+        filterList = _.filter(filterList, (issue) => {
+          return new RegExp(oriobj.issuekeywordFilter, 'g').test(issue.title);
+        });
+      }
       if(obj !== undefined) {
         filterList = _.filter(filterList, (issue) => {
           return issue.objective === obj;
@@ -2172,7 +2172,7 @@ export default {
           }
         }
       }
-      return _.orderBy(filterList, ['readed', 'star', 'status', 'position', 'version.tick'], ['desc', 'desc', 'asc', 'desc', 'desc']);
+      return _.orderBy(filterList, ['star', 'tick', 'readed', 'position', 'status', 'version.tick'], ['desc', 'desc', 'desc', 'asc', 'desc', 'desc']);
     },
     currentPosD: function () {
       return this.timeConvert(this.currentData.position);
@@ -2626,6 +2626,7 @@ export default {
   },
   data () {
     return {
+      issuekeywordFilter: '',
       fabIssue: false,
       pinOn: false,
       disableIssueDiff: false,
@@ -2718,20 +2719,6 @@ export default {
       objectiveW: false,
       previousPos: 0,
       issueFile: undefined,
-      extensions: [
-        History,
-        Link,
-        Underline,
-        Strike,
-        Italic,
-        ListItem,
-        BulletList,
-        OrderedList,
-        Bold,
-        Code,
-        Paragraph,
-        HardBreak
-      ],
       issueW: false,
       issue: {
         type: [],

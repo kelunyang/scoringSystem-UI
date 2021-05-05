@@ -320,39 +320,6 @@
         </v-card-text>
       </v-card>
     </v-dialog>
-    <v-dialog v-model="tagFilterW" persistent>
-      <v-card>
-        <v-card-title class="headline">設定標籤過濾</v-card-title>
-        <v-card-text>
-          <tag-filter
-            @updateTags='updateTags'
-            :mustSelected='false'
-            :single='false'
-            :selectedItem='selectedFilterTags'
-            @valueUpdated='updateFilterTag'
-            :candidatedItem='savedTags'
-            :createable='false'
-            label='請輸入過濾用的標籤'
-          />
-        </v-card-text>
-        <v-card-actions>
-        <v-spacer></v-spacer>
-          <v-btn color="green darken-1" text @click="tagFilterW = false">回到檢視畫面</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-    <v-dialog v-model="termFilterW" persistent>
-      <v-card>
-        <v-card-title class="headline">搜尋關鍵字</v-card-title>
-        <v-card-text>
-          <v-text-field label='搜尋關鍵字' prepend-icon="fa-search" v-model="queryTerm" full-width></v-text-field>
-        </v-card-text>
-        <v-card-actions>
-        <v-spacer></v-spacer>
-            <v-btn color="green darken-1" text @click="termFilterW = false">回到檢視畫面</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
     <v-dialog v-model="authDetailW" persistent>
       <v-card>
         <v-card-title class="headline">你在 {{ currentKB.title }} 目前階段中的的角色</v-card-title>
@@ -375,7 +342,7 @@
         </v-card-text>
         <v-card-actions>
         <v-spacer></v-spacer>
-            <v-btn color="green darken-1" text @click="authDetailW = false">關閉角色說明</v-btn>
+          <v-btn color="green darken-1" text @click="authDetailW = false">關閉角色說明</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -494,57 +461,18 @@
         <span>修改預設值</span>
       </v-tooltip>
     </v-speed-dial>
-    <v-speed-dial v-model="filterBtn" fixed bottom right direction="left" :open-on-hover="true" transition="slide-y-reverse-transition">
-      <template v-slot:activator>
-        <v-btn
-          v-model="filterBtn"
-          :color="filterColor"
-          dark
-          fab
-        >
-          <v-icon v-if="filterBtn">fa-chevron-left</v-icon>
-          <v-icon v-else>fa-filter</v-icon>
-        </v-btn>
-      </template>
-      <v-tooltip top>
+    <v-fab-transition>
+      <v-tooltip bottom>
         <template v-slot:activator="{ on, attrs }">
           <v-btn
-            fab
-            dark
-            small
-            color="teal darken-4"
-            @click.stop='tagFilterW = true'
             v-bind="attrs" v-on="on"
-          >
-            <v-icon>fab fa-slack-hash</v-icon>
-          </v-btn>
-        </template>
-        <span>過濾標籤</span>
-      </v-tooltip>
-      <v-tooltip top>
-        <template v-slot:activator="{ on, attrs }">
-          <v-btn
+            color="pink"
+            fixed
             fab
             dark
-            small
-            color="indigo"
-            @click.stop='termFilterW = true'
-            v-bind="attrs" v-on="on"
-          >
-            <v-icon>fa-search</v-icon>
-          </v-btn>
-        </template>
-        <span>搜尋關鍵字</span>
-      </v-tooltip>
-      <v-tooltip top>
-        <template v-slot:activator="{ on, attrs }">
-          <v-btn
-            fab
-            dark
-            small
-            color="blue-grey darken-4"
+            bottom
+            right
             @click.stop='queryHistory = !queryHistory'
-            v-bind="attrs" v-on="on"
           >
             <v-icon>fa-history</v-icon>
           </v-btn>
@@ -552,8 +480,26 @@
         <span v-if='queryHistory'>查看目前屬於你的知識點</span>
         <span v-if='!queryHistory'>查看所有和你有關的知識點</span>
       </v-tooltip>
-    </v-speed-dial>
+    </v-fab-transition>
     <div v-show='showStatstics'>
+      <tag-filter
+        @updateTags='updateTags'
+        :mustSelected='false'
+        :single='false'
+        :selectedItem='selectedFilterTags'
+        @valueUpdated='updateFilterTag'
+        :candidatedItem='savedTags'
+        :createable='false'
+        label='請輸入過濾用的標籤（如：國中、理化）'
+      />
+      <v-slider
+        label='需要統計的階段數量'
+        hint="請注意，如果你要統計的專案有6個階段，你只填了5個，這裡真的不會幫你算到第6階段"
+        min='1'
+        :max='maxStep'
+        v-model="statisticSteps"
+        thumb-label
+      ></v-slider>
       <apexchart width="100%" type="bar" :options="chartData.chartOptions" :series="chartData.series"></apexchart>
       <v-simple-table>
         <template v-slot:default>
@@ -599,7 +545,8 @@
       width="100%"
     ></v-skeleton-loader>
     <v-sheet v-if='dashboardPopulated' class='pa-0 ma-0 d-flex flex-column'>
-      <div v-if='convertedList.length === 0'>您目前沒有待處理的項目</div>
+      <div v-if='progressList.length === 0'>您目前沒有待處理的項目</div>
+      <v-text-field v-if='progressList.length > 0' label='搜尋知識點關鍵字' prepend-icon="fa-search" v-model="queryTerm"></v-text-field>
       <div v-if='convertedList.length > 0' v-show='!showStatstics' class='blue-grey--text darken-1 text-caption'>已篩選出{{ convertedList.length }}個知識點，為節省資源，不會全部展現出來，往下滑會載入更多</div>
       <progress-tile v-for="item in convertedList" :key="item._id" @tags='openTagW' @requestUpload='openUploadW' @viewDetail='openauthDetail' @KBselected='KBupdated' :progressItem='item' />
     </v-sheet>
@@ -608,10 +555,6 @@
 
 <script>
 import Vue from 'vue';
-import { library } from '@fortawesome/fontawesome-svg-core';
-import { faSnapchatGhost } from '@fortawesome/free-brands-svg-icons';
-import { faPhotoVideo, faClipboard, faTachometerAlt, faVideo, faSearch, faSkullCrossbones, faExclamationTriangle, faPencilAlt } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import moment from 'moment';
 import { randomColor } from 'randomcolor';
 import ProgressTile from './modules/ProgressTile';
@@ -620,13 +563,8 @@ import _ from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
 import VueApexCharts from 'vue-apexcharts';
 import prettyBytes from 'pretty-bytes';
-
-import '@fortawesome/fontawesome-free/css/all.css';
-
-library.add(faTachometerAlt, faSnapchatGhost, faPhotoVideo, faClipboard, faVideo, faSearch, faSkullCrossbones, faExclamationTriangle, faPencilAlt);
 Vue.use(VueApexCharts);
 Vue.component('apexchart', VueApexCharts);
-Vue.component('font-awesome-icon', FontAwesomeIcon);
 let files = [];
 
 export default {
@@ -851,6 +789,9 @@ export default {
     }
   },
   watch: {
+    maxStep: function () {
+      this.statisticSteps = this.maxStep;
+    },
     dashBoardFirstUse: function () {
       if(this.localLoaded) {
         window.localStorage.setItem('dashBoardFirstUse', JSON.stringify(this.dashBoardFirstUse));
@@ -893,6 +834,13 @@ export default {
     }
   },
   computed: {
+    maxStep: function () {
+      let steps = _.map(this.convertedList, (item) => {
+        return item.stages.length;
+      });
+      let orderedSteps = _.orderBy(steps, ['desc']);
+      return orderedSteps.length > 0 ? orderedSteps[0] : 5;
+    },
     currentUser: function () {
       return this.$store.state.currentUser;
     },
@@ -920,7 +868,7 @@ export default {
       }
       if(this.queryTerm !== '') {
         list = _.filter(list, (item) => {
-          return (new RegExp(oriobj.queryTerm)).test(item.title + item.desc);
+          return (new RegExp(oriobj.queryTerm, 'g')).test(item.title + item.desc);
         });
       }
       for (let i = 0; i< list.length; i++) {
@@ -1102,6 +1050,7 @@ export default {
   },
   data () {
     return {
+      statisticSteps: 1,
       initStatstics: false,
       initW: false,
       dashBoardFirstUse: true,
@@ -1134,8 +1083,6 @@ export default {
       pmtoolsBtns: false,
       queryTimer: null,
       queryHistory: false,
-      tagFilterW: false,
-      termFilterW: false,
       filterBtn: false,
       filterTags: [],
       queryTerm: '',

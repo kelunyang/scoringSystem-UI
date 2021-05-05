@@ -113,13 +113,11 @@
           <v-card-text class='text-left'>
             <v-select :items='wishFeatures' label='指定功能' multiple v-model='feedback.type' v-if='feedback.parent === undefined'></v-select>
             <v-text-field v-model='feedback.title' v-if='feedback.parent === undefined'/>
-            <tiptap-vuetify
+            <Tip-Tap
               v-model="feedback.body"
-              :extensions="extensions"
-              max-height="20vh"
-              min-height="10vh"
-              placeholder='請不要留白'
-              class='text-left'
+              maxHeight="20vh"
+              minHeight="10vh"
+              hint='請不要留白'
             />
             <v-file-input prepend-icon="fa-paperclip" v-model="feedbackFile" label='輔助說明文件／圖片上傳' :loading="uploadprogress !== 0">
               <template v-slot:progress>
@@ -340,17 +338,12 @@
 
 <script>
 import Vue from 'vue';
-import { library } from '@fortawesome/fontawesome-svg-core';
-import { faInfoCircle } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import VueClipboard from 'vue-clipboard2';
 import moment from 'moment';
 import TurndownService from 'turndown';
 import marked from 'marked';
 import { v4 as uuidv4 } from 'uuid';
-import '@fortawesome/fontawesome-free/css/all.css';
-import { TiptapVuetify, Bold, Italic, Strike, Underline, Code, Paragraph, BulletList, OrderedList, ListItem, Link, HardBreak, History } from 'tiptap-vuetify';
-import 'tiptap-vuetify/dist/main.css';
+import TipTap from './modules/TipTap';
 import prettyBytes from 'pretty-bytes';
 import _ from 'lodash';
 import IssueView from './modules/IssueView.vue';
@@ -361,8 +354,6 @@ renderer.link = (href, title, text) => {
     const html = linkRenderer.call(renderer, href, title, text);
     return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
 };
-library.add(faInfoCircle);
-Vue.component('font-awesome-icon', FontAwesomeIcon);
 
 VueClipboard.config.autoSetContainer = true;
 Vue.use(VueClipboard);
@@ -372,7 +363,7 @@ let files = [];
 
 export default {
   name: 'Info',
-  components: { TiptapVuetify, IssueView },
+  components: { TipTap, IssueView },
   methods: {
     socketrequestfeedbackSlice: function (data) {
       let oriobj = this;
@@ -645,20 +636,6 @@ export default {
       return {
         backendCommits: [],
         frontendCommits: [],
-        extensions: [
-          History,
-          Link,
-          Underline,
-          Strike,
-          Italic,
-          ListItem,
-          BulletList,
-          OrderedList,
-          Bold,
-          Code,
-          Paragraph,
-          HardBreak
-        ],
         feedbackW: false,
         feedbackListW: false,
         feedbackFile: undefined,

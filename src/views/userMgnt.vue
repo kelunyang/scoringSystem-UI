@@ -174,63 +174,63 @@
         </v-card>
       </v-dialog>
       <v-dialog v-model='addUserW' fullscreen hide-overlay transition='dialog-bottom-transition'>
-          <v-card>
-              <v-toolbar dark color='primary'>
-                <v-btn icon dark @click='addUserW = false'>
-                  <v-icon>fa-times</v-icon>
-                </v-btn>
-                <v-toolbar-title>新增使用者</v-toolbar-title>
-                <v-spacer></v-spacer>
-                <v-btn icon dark @click='createUsers'>
-                  <v-icon>fa-cloud-upload-alt</v-icon>
-                </v-btn>
-              </v-toolbar>
-              <v-card-text class='ma-0 pa-0'>
-                <v-alert type="info" icon="fa-exclamation-circle">
-                  由於本系統的用戶都是廠商、各校老師，因此新增用戶功能採用邀請制，這裡只能設定你要建立幾個User，系統會在下面出現邀請碼，你可以自己把邀請碼寄給使用者，讓他們填完自己的相關資料，你唯一能修改的只有用戶的標籤
-                </v-alert>
-                <v-container class='pa-5'>
-                  <v-row>
-                    <v-col class='d-flex flex-column'>
-                      <tag-filter
-                        :mustSelected='false'
-                        @updateTags='updateTags'
-                        @plusItem='plusTag'
-                        :single='false'
-                        :selectedItem='selectedAddTags'
-                        @valueUpdated='addTagUpdated'
-                        :candidatedItem='savedTags'
-                        :createable='true'
-                        label='請輸入使用者歸屬的標籤'
-                      />
-                      <v-textarea
-                        solo
-                        v-model='newEmail'
-                        label='請貼上用戶的Email'
-                      ></v-textarea>
-                    </v-col>
-                  </v-row>
-                  <v-row>
-                    <v-col class='d-flex flex-column'>
-                      已記錄 {{ emailList.length + invalidEmailList.length }} 支Email，有 {{ invalidEmailList.length }} 支格式錯誤， {{ emailList.length }} 支格式正確
-                      <v-simple-table v-if='invalidEmailList.length > 0'>
-                        <template v-slot:default>
-                          <thead>
-                            <tr>
-                              <th class='text-center'>錯誤的Email</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr v-for="item in invalidEmailList" :key="'invalid' + item">
-                              <td>{{ item }}</td>
-                            </tr>
-                          </tbody>
-                        </template>
-                      </v-simple-table>
-                    </v-col>
-                  </v-row>
-              </v-card-text>
-          </v-card>
+        <v-card>
+          <v-toolbar dark color='primary'>
+            <v-btn icon dark @click='addUserW = false'>
+              <v-icon>fa-times</v-icon>
+            </v-btn>
+            <v-toolbar-title>新增使用者</v-toolbar-title>
+            <v-spacer></v-spacer>
+            <v-btn icon dark @click='createUsers'>
+              <v-icon>fa-cloud-upload-alt</v-icon>
+            </v-btn>
+          </v-toolbar>
+          <v-card-text class='ma-0 pa-0'>
+            <v-alert type="info" icon="fa-exclamation-circle">
+              由於本系統的用戶都是廠商、各校老師，因此新增用戶功能採用邀請制，這裡只能設定你要建立幾個User，系統會在下面出現邀請碼，你可以自己把邀請碼寄給使用者，讓他們填完自己的相關資料，你唯一能修改的只有用戶的標籤
+            </v-alert>
+            <v-container class='pa-5'>
+              <v-row>
+                <v-col class='d-flex flex-column'>
+                  <tag-filter
+                    :mustSelected='false'
+                    @updateTags='updateTags'
+                    @plusItem='plusTag'
+                    :single='false'
+                    :selectedItem='selectedAddTags'
+                    @valueUpdated='addTagUpdated'
+                    :candidatedItem='savedTags'
+                    :createable='true'
+                    label='請輸入使用者歸屬的標籤'
+                  />
+                  <v-textarea
+                    solo
+                    v-model='newEmail'
+                    label='請貼上用戶的Email'
+                  ></v-textarea>
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col class='d-flex flex-column'>
+                  已記錄 {{ emailList.length + invalidEmailList.length }} 支Email，有 {{ invalidEmailList.length }} 支格式錯誤， {{ emailList.length }} 支格式正確
+                  <v-simple-table v-if='invalidEmailList.length > 0'>
+                    <template v-slot:default>
+                      <thead>
+                        <tr>
+                          <th class='text-center'>錯誤的Email</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="item in invalidEmailList" :key="'invalid' + item">
+                          <td>{{ item }}</td>
+                        </tr>
+                      </tbody>
+                    </template>
+                  </v-simple-table>
+                </v-col>
+              </v-row>
+          </v-card-text>
+        </v-card>
       </v-dialog>
       <v-dialog v-model="tagFilterW" persistent>
         <v-card>
@@ -251,21 +251,6 @@
           <v-spacer></v-spacer>
           <v-btn color="brown darken-4" text @click="selectedFilterTags = ''">清除過濾標籤</v-btn>
           <v-btn color="green darken-1" text @click="tagFilterW = false">回到檢視畫面</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
-      <v-dialog v-model="termFilterW" persistent>
-        <v-card>
-          <v-card-title class="headline">搜尋用戶關鍵字</v-card-title>
-          <v-card-text>
-            <v-alert type="alert" icon="fa-exclamation-circle" class='ma-0'>系統會針對用戶的Email、帳號名稱、服務單位進行關鍵字搜尋（使用正規表達式，<a href='https://regex101.com/' target='_blank'>語法請看此</a>）</v-alert>
-            <v-text-field label='搜尋關鍵字' prepend-icon='fa-search' v-model='queryTerm' full-width></v-text-field>
-          </v-card-text>
-          <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="deep-orange darken-4" text @click="termQuery">搜尋關鍵字</v-btn>
-          <v-btn color="brown darken-4" text @click="userfilteredList = userList">清除搜尋結果</v-btn>
-          <v-btn color="green darken-1" text @click="termFilterW = false">回到檢視畫面</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -318,134 +303,125 @@
       </v-dialog>
       <v-speed-dial style='margin-bottom: 80px' v-model="functionBtn" fixed bottom right direction="left" :open-on-hover="true" transition="slide-x-reverse-transition">
           <template v-slot:activator>
-              <v-btn
-                  v-model="functionBtn"
-                  color="#006064"
-                  dark
-                  fab
-              >
-                  <v-icon v-if="functionBtn">fa-chevron-left</v-icon>
-                  <v-icon v-else>fa-tools</v-icon>
-              </v-btn>
+            <v-btn
+                v-model="functionBtn"
+                color="#006064"
+                dark
+                fab
+            >
+                <v-icon v-if="functionBtn">fa-chevron-left</v-icon>
+                <v-icon v-else>fa-tools</v-icon>
+            </v-btn>
           </template>
           <v-tooltip bottom>
-              <template v-slot:activator="{ on, attrs }">
-                <v-badge
-                  color="red"
-                  :content="selectedUsers.length"
-                  :value="selectedUsers.length"
-                  overlap
+            <template v-slot:activator="{ on, attrs }">
+              <v-badge
+                color="red"
+                :content="selectedUsers.length"
+                :value="selectedUsers.length"
+                overlap
+              >
+                <v-btn
+                  fab
+                  dark
+                  small
+                  color="#BF360C"
+                  @click.stop='enableDelW'
+                  v-bind="attrs" v-on="on"
                 >
-                  <v-btn
+                  <v-icon>fa-trash-alt</v-icon>
+                </v-btn>
+              </v-badge>
+            </template>
+            <span>刪除 {{ selectedUsers.length }} 個用戶</span>
+          </v-tooltip>
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on, attrs }">
+              <v-badge
+                color="red"
+                :content="selectedUsers.length"
+                :value="selectedUsers.length"
+                overlap
+              >
+                <v-btn
+                  fab
+                  dark
+                  small
+                  color="green"
+                  v-bind="attrs" v-on="on"
+                  @click.stop='tagUserW = true'
+                >
+                  <v-icon>fab fa-slack-hash</v-icon>
+                </v-btn>
+              </v-badge>
+            </template>
+            <span>設定 {{ selectedUsers.length }} 個用戶的使用者標籤</span>
+          </v-tooltip>
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on, attrs }">
+                <v-btn
                     fab
                     dark
                     small
-                    color="#BF360C"
-                    @click.stop='enableDelW'
+                    color="indigo"
+                    @click.stop='addUserW = true'
                     v-bind="attrs" v-on="on"
-                  >
-                    <v-icon>fa-trash-alt</v-icon>
-                  </v-btn>
-                </v-badge>
-              </template>
-              <span>刪除 {{ selectedUsers.length }} 個用戶</span>
-          </v-tooltip>
-          <v-tooltip bottom>
-              <template v-slot:activator="{ on, attrs }">
-                <v-badge
-                  color="red"
-                  :content="selectedUsers.length"
-                  :value="selectedUsers.length"
-                  overlap
                 >
-                  <v-btn
-                    fab
-                    dark
-                    small
-                    color="green"
-                    v-bind="attrs" v-on="on"
-                    @click.stop='tagUserW = true'
-                  >
-                    <v-icon>fab fa-slack-hash</v-icon>
-                  </v-btn>
-                </v-badge>
-              </template>
-              <span>設定 {{ selectedUsers.length }} 個用戶的使用者標籤</span>
-          </v-tooltip>
-          <v-tooltip bottom>
-              <template v-slot:activator="{ on, attrs }">
-                  <v-btn
-                      fab
-                      dark
-                      small
-                      color="indigo"
-                      @click.stop='addUserW = true'
-                      v-bind="attrs" v-on="on"
-                  >
-                      <v-icon>fa-plus</v-icon>
-                  </v-btn>
-              </template>
-              <span>新增使用者</span>
+                    <v-icon>fa-plus</v-icon>
+                </v-btn>
+            </template>
+            <span>新增使用者</span>
           </v-tooltip>
       </v-speed-dial>
       <v-speed-dial v-model="filterBtn" fixed bottom right direction="left" :open-on-hover="true" transition="slide-x-reverse-transition">
           <template v-slot:activator>
-              <v-btn
-                  v-model="filterBtn"
-                  :color="filterColor"
-                  dark
-                  fab
-              >
-                  <v-icon v-if="filterBtn">fa-chevron-left</v-icon>
-                  <v-icon v-else>fa-filter</v-icon>
-              </v-btn>
+            <v-btn
+                v-model="filterBtn"
+                :color="filterColor"
+                dark
+                fab
+            >
+                <v-icon v-if="filterBtn">fa-chevron-left</v-icon>
+                <v-icon v-else>fa-filter</v-icon>
+            </v-btn>
           </template>
           <v-tooltip bottom>
-              <template v-slot:activator="{ on, attrs }">
-                  <v-btn
-                      fab
-                      dark
-                      small
-                      color="indigo darken-4"
-                      @click.stop='robotFilter = !robotFilter'
-                      v-bind="attrs" v-on="on"
-                  >
-                      <v-icon>fa-robot</v-icon>
-                  </v-btn>
-              </template>
-              <span>{{ robotConvert(robotFilter) }}</span>
+            <template v-slot:activator="{ on, attrs }">
+                <v-btn
+                    fab
+                    dark
+                    small
+                    color="indigo darken-4"
+                    @click.stop='robotFilter = !robotFilter'
+                    v-bind="attrs" v-on="on"
+                >
+                    <v-icon>fa-robot</v-icon>
+                </v-btn>
+            </template>
+            <span>{{ robotConvert(robotFilter) }}</span>
           </v-tooltip>
           <v-tooltip bottom>
-              <template v-slot:activator="{ on, attrs }">
-                  <v-btn
-                      fab
-                      dark
-                      small
-                      color="green"
-                      @click.stop='tagFilterW = true'
-                      v-bind="attrs" v-on="on"
-                  >
-                      <v-icon>fab fa-slack-hash</v-icon>
-                  </v-btn>
-              </template>
-              <span>設定標籤過濾</span>
-          </v-tooltip>
-          <v-tooltip bottom>
-              <template v-slot:activator="{ on, attrs }">
-                  <v-btn
-                      fab
-                      dark
-                      small
-                      color="indigo"
-                      @click.stop='termFilterW = true'
-                      v-bind="attrs" v-on="on"
-                  >
-                      <v-icon>fa-search</v-icon>
-                  </v-btn>
-              </template>
-              <span>設定關鍵字過濾</span>
+            <template v-slot:activator="{ on, attrs }">
+                <v-btn
+                    fab
+                    dark
+                    small
+                    color="green"
+                    @click.stop='tagFilterW = true'
+                    v-bind="attrs" v-on="on"
+                >
+                    <v-icon>fab fa-slack-hash</v-icon>
+                </v-btn>
+            </template>
+            <span>設定標籤過濾</span>
           </v-tooltip>
       </v-speed-dial>
+      <div class='d-flex flex-row'>
+        <v-text-field class='flex-grow-1' label='搜尋關鍵字' prepend-icon='fa-search' v-model='queryTerm' hint='系統會針對用戶的Email、帳號名稱、服務單位進行關鍵字搜尋（可使用正規表達式）'></v-text-field>
+        <v-btn color='indigo darken-4' class='white--text ma-1' @click="termQuery">搜尋</v-btn>
+        <v-btn color="brown darken-4" class='white--text ma-1' @click="userfilteredList = userList">清除</v-btn>
+      </div>
+      <div class='text-caption red--text'>如果要用標籤過濾請點下方漏斗呼叫#</div>
       <div class='blue-grey--text darken-1 text-caption'>已篩選出{{ userfilteredList.length }}個用戶，為節省資源，不會全部展現出來，往下滑會載入更多</div>
       <v-lazy
         :options="{
@@ -507,20 +483,10 @@
 
 <script>
 // @ is an alias to /src
-import Vue from 'vue';
-import { library } from '@fortawesome/fontawesome-svg-core';
-import { faUsersCog, faEnvelopeOpen } from '@fortawesome/free-solid-svg-icons';
-import { faSlackHash } from '@fortawesome/free-brands-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import moment from 'moment';
 import TagFilter from './modules/TagFilter';
 import validator from 'validator';
 import _ from 'lodash';
-
-import '@fortawesome/fontawesome-free/css/all.css';
-
-library.add(faUsersCog, faSlackHash, faEnvelopeOpen);
-Vue.component('font-awesome-icon', FontAwesomeIcon);
 
 export default {
     name: 'userMgnt',
@@ -677,6 +643,8 @@ export default {
       },
       socketcreateUsers: function (data) {
         this.addUserW = false;
+        this.selectedAddTags = [];
+        this.newEmail = '';
         this.$emit('toastPop', '新增' + data.processed + '/' + data.planned + '個用戶已完成');
       },
       socketgetGlobalSettings: function (data) {
@@ -812,7 +780,6 @@ export default {
         robotFilter: true,
         functionBtn: false,
         tagFilterW: false,
-        termFilterW: false,
         filterBtn: false,
         newEmail: '',
         expiredDate: 0,

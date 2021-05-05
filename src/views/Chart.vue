@@ -115,6 +115,9 @@
                       上次查詢時間
                     </th>
                     <th>
+                      查詢內容
+                    </th>
+                    <th>
                       資料源
                     </th>
                     <th>
@@ -136,6 +139,9 @@
                     <td class="text-left">
                       {{ dateConvert(preset.tick) }}
                     </td>
+                    <td class='text-left'>
+                      {{ preset.queryType }}
+                    </td>
                     <td class="text-left">
                       <span class="text-decoration-underline ml-1" v-for='tag in preset.querysourceTags' :key='tag'>
                         {{ tagConverter(tag) }}
@@ -143,7 +149,7 @@
                     </td>
                     <td class="text-left">
                       <span>{{ tagConverter(preset.querytypeTag) }}</span>
-                      <span v-if="preset.secondConvert">（秒時轉換）</span>
+                      <span v-if="preset.secondConvert">（秒-小時轉換）</span>
                     </td>
                     <td class="text-left">
                       <span class="text-decoration-underline ml-1" v-for='tag in preset.queryKBTags' :key='tag'>
@@ -189,42 +195,51 @@
                 </tbody>
               </template>
             </v-simple-table>
-            <div class='text-h6'>選擇資料源（如均一、學習吧等等）</div>
+            <div class='text-h6'>輸入你要查詢的內容（如「點擊量」／「瀏覽時數」）</div>
+            <v-text-field
+              label="輸入你要查詢的內容"
+              placeholder="範例：點擊量、瀏覽小時數"
+              v-model='queryType'
+              hint='這裡輸入的文字不會影響計算，但會直接取代掉統計表中的總「量」，例如會把總「量」改成總「點擊量」'
+            ></v-text-field>
+            <div class='text-h6'>選擇資料源（如均一、學習吧等等），請輸入關鍵字「統計用」就會列出結果</div>
             <tag-filter
               :mustSelected='true'
               :single='false'
-              :selectedItem='querysourceTags' 
+              :selectedItem='querysourceTags'
+              @updateTags='updateTags'
               @valueUpdated='updatequerysourceTags'
               :candidatedItem='savedTags'
               :createable='false'
-              label='數據來源標籤，如學習吧、酷課學習之類的'
+              label='數據來源標籤，如學習吧、酷課學習之類的（請輸入關鍵字「統計用」就會列出結果）'
               v-show='usedPresets.length === 0 || newPreset'
             />
-            <div class='text-h6' v-show='usedPresets.length === 0 || newPreset'>選擇資料類型（如點擊量、觀看時長等等）</div>
+            <div class='text-h6' v-show='usedPresets.length === 0 || newPreset'>選擇資料類型（如點擊量、觀看時長等等），請輸入關鍵字「統計用」就會列出結果</div>
             <tag-filter
               v-show='usedPresets.length === 0 || newPreset'
               :mustSelected='true'
               :single='true'
               :selectedItem='querytypeTag'
+              @updateTags='updateTags'
               @valueUpdated='updatequerytypeTag'
               :candidatedItem='savedTags'
               :createable='false'
-              label='數據類型標籤，如點擊量、時長之類的'
+              label='數據類型標籤，如點擊量、時長之類的（請輸入關鍵字「統計用」就會列出結果）'
             />
-            <div class='text-h6' v-show='usedPresets.length === 0 || newPreset'>科目標籤（如數學科、理化科等等，非必選）</div>
+            <div class='text-h6' v-show='usedPresets.length === 0 || newPreset'>科目標籤（如數學科、理化科等等，非必選），請輸入關鍵字「統計用」就會列出結果</div>
             <tag-filter
               v-show='usedPresets.length === 0 || newPreset'
               :mustSelected='false'
               :single='false'
               :selectedItem='queryKBTags'
+              @updateTags='updateTags'
               @valueUpdated='updatequeryKBTags'
               :candidatedItem='savedTags'
               :createable='false'
-              label='知識點科目標籤，如理化、數學之類的'
+              label='知識點科目標籤，如理化、數學之類的（請輸入關鍵字「統計用」就會列出結果）'
             />
             <div class='text-h6' v-show='usedPresets.length === 0 || newPreset'>秒/小時轉換，請打勾</div>
             <v-switch
-              v-show='usedPresets.length === 0 || newPreset'
               v-model="secondConvert"
               label="如果你選的是秒類型的資料，請在這裡打勾，會自動把秒轉換為小時"
             ></v-switch>
@@ -371,8 +386,19 @@
       </div>
       <v-btn @click='openFilterW'>改變查詢條件</v-btn>
     </div>
+    <div v-if='statisticsPopulated'>
+      <span v-if='selectedKB === undefined'>
+        <span class="text-decoration-underline ml-1" v-for='tag in querysourceTags' :key='tag'>
+          {{ tagConverter(tag) }}
+        </span>
+        的
+        <span class="text-decoration-underline ml-1" v-for='tag in queryKBTags' :key='tag'>
+          {{ tagConverter(tag) }}
+        </span>
+        <span>{{ tagConverter(querytypeTag) }}</span>
+      </span>
+    的目前總{{ queryType }}累計結果： {{ sumValue }} ／ 目前查詢的知識點共有：{{ rankings.length }} 個</div>
     <apexchart v-if='statisticsPopulated' width="100%" type="line" :options="chartData.chartOptions" :series="chartData.series"></apexchart>
-    <div v-if='statisticsPopulated'>總量： {{ sumValue }} ／ {{ rankings.length }} 個知識點</div>
     <v-simple-table v-if='statisticsPopulated'>
       <template v-slot:default>
         <thead>
@@ -381,10 +407,10 @@
               時間
             </th>
             <th>
-              逐時數據
+              當{{ rangeItems[range].title }}{{ queryType }}
             </th>
             <th>
-              總量
+              總{{ queryType }}累計結果
             </th>
           </tr>
         </thead>
@@ -415,7 +441,7 @@
               知識點名稱
             </th>
             <th>
-              數量
+              總{{ queryType }}累計結果
             </th>
             <th>
               &nbsp;
@@ -445,9 +471,6 @@
 
 <script>
 import Vue from 'vue';
-import { library } from '@fortawesome/fontawesome-svg-core';
-import { faChartLine } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import { v4 as uuidv4 } from 'uuid';
 import moment from 'moment';
 import _ from 'lodash';
@@ -459,10 +482,8 @@ import Decimal from 'decimal.js';
 
 let files = [];
 
-library.add(faChartLine);
 Vue.use(VueApexCharts);
 Vue.component('apexchart', VueApexCharts);
-Vue.component('font-awesome-icon', FontAwesomeIcon);
 
 export default {
   components: {
@@ -499,6 +520,7 @@ export default {
       this.querysourceTags = preset.querysourceTags;
       this.querytypeTag = preset.querytypeTag;
       this.queryKBTags = preset.queryKBTags;
+      this.queryType = preset.queryType;
       this.secondConvert = preset.secondConvert;
     },
     updatequeryKBTags: function (val) {
@@ -634,7 +656,8 @@ export default {
           querysourceTags: this.querysourceTags,
           querytypeTag: this.querytypeTag,
           secondConvert: this.secondConvert,
-          queryKBTags: this.queryKBTags
+          queryKBTags: this.queryKBTags,
+          queryType: this.queryType
         });
         this.currentPreset = now;
       } else {
@@ -664,7 +687,6 @@ export default {
       handler () {
         if(this.localLoaded) {
           window.localStorage.setItem('usedPresets', JSON.stringify(this.usedPresets));
-          console.log('exec watch');
         }
       }
     },
@@ -719,6 +741,7 @@ export default {
       range: 1,
       querystartTick: moment().format("YYYY-MM-DD"),
       queryendTick: moment().format("YYYY-MM-DD"),
+      queryType: '',
       queryKBTags: [],
       querysourceTags: [],
       querytypeTag: '',
@@ -756,12 +779,12 @@ export default {
       return {
         series: [
           {
-            name: "逐時結果",
+            name: "當" + this.rangeItems[this.range].title + this.queryType,
             type: 'column',
             data: periodColumn
           },
           {
-            name: "累計結果",
+            name: "累計" + this.queryType,
             type: 'line',
             data: accuLine
           },
@@ -779,9 +802,6 @@ export default {
             count: 2,
             format: 'rgb'
           }),
-          title: {
-            text: '知識點逐時統計'
-          },
           dataLabels: {
             enabled: true,
             enabledOnSeries: [1]
@@ -792,13 +812,13 @@ export default {
           },
           yaxis: [{
             title: {
-              text: '逐時量',
+              text: '當'+this.rangeItems[this.range].title+this.queryType
             },
           
           }, {
             opposite: true,
             title: {
-              text: '累計量'
+              text: '累計'+this.queryType
             }
           }],
           fill: {
@@ -830,10 +850,15 @@ export default {
     this.$socket.client.on('importKBstatistics', this.socketimportKBstatistics);
   },
   mounted () {
-    let oriobj = this;
     let usedPresets = window.localStorage.getItem('usedPresets');
     if(usedPresets) {
-      oriobj.usedPresets = JSON.parse(usedPresets);
+      let usedObj = JSON.parse(usedPresets);
+      for(let i=0;i<usedObj.length; i++) {
+        if(!('queryType' in usedObj[i])) {
+          usedObj[i].queryType = '量'
+        }
+      }
+      this.usedPresets = usedObj;
     }
     this.localLoaded = true;
   },

@@ -6,7 +6,7 @@
     min-height="100"
     transition="fade-transition"
   >
-    <v-main class='pa-1 ma-1 black--text' style='border: 1px solid black'>
+    <v-main class='mt-1 mb-0 ml-0 mr-0 pa-1 black--text' style='border: 1px solid black'>
       <v-row class='d-flex flex-row pa-0 ma-0'>
         <div v-if='cCommit.tick > 0'>
           <v-tooltip top v-if='cCommit.tick < issue.tick'>

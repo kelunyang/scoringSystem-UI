@@ -7,7 +7,7 @@
     transition="fade-transition"
     style='width: 100%'
   >
-    <v-main class='issueItem mt-1 mb-1 ml-0 mr-0 pa-1'>
+    <v-main class='issueItem mt-1 mb-0 ml-0 mr-0 pa-1'>
       <v-row class='ma-0 pt-1 pb-1 pl-0 pr-0'>
         <v-col class='ma-0 pa-0 d-flex flex-row justify-end'>
           <div v-if='currentIssue.star' class='red accent-4 text-caption white--text pa-1 mr-1'>

@@ -142,13 +142,11 @@
           <v-alert type="success">
             請注意，在這台電腦的聊天紀錄只會保存在這台電腦上，而且不保證對方會收到
           </v-alert>
-          <tiptap-vuetify
+          <Tip-Tap
             v-model="messageBody"
-            :extensions="extensions"
-            max-height="10vh"
-            min-height="5vh"
-            placeholder='請不要留白'
-            class='text-left'
+            maxHeight="10vh"
+            minHeight="5vh"
+            hint='請不要留白'
           />
           <v-timeline
             :dense="true"
@@ -500,11 +498,27 @@
 </template>
 
 <style>
+@import url('https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900&display=swap');
 body { 
   position: relative !important;  /* paintable 會改寫body的position，導致卷軸失效，必須有important */
 }
 html {
   scroll-behavior: smooth;
+}
+#app {
+  font-family: 'Noto Sans TC', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-align: center;
+  color: #2c3e50;
+  margin-top: 60px;
+}
+h1 {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-weight: 900;
+}
+.notAuth {
+  opacity: 0.3;
 }
 </style>
 
@@ -515,15 +529,11 @@ import VueSocketIOExt from 'vue-socket.io-extended';
 import moment from 'moment';
 import marked from 'marked';
 import momentDurationFormatSetup from 'moment-duration-format';
-import { library } from '@fortawesome/fontawesome-svg-core';
-import { fas, faUserCog, faCommentAlt, faCog, faVideo, faTachometerAlt, faSignInAlt, faUsersCog, faChartLine, faInfoCircle, faStamp, faSlidersH, faNetworkWired, faUserTag } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon, FontAwesomeLayers } from '@fortawesome/vue-fontawesome';
-import { faSnapchatGhost } from '@fortawesome/free-brands-svg-icons';
-import { TiptapVuetify, Bold, Italic, Strike, Underline, Paragraph, OrderedList, ListItem, Link, HardBreak, History } from 'tiptap-vuetify';
-import 'tiptap-vuetify/dist/main.css';
+import TipTap from './views/modules/TipTap';
 import TurndownService from 'turndown';
 import { v4 as uuidv4 } from 'uuid';
 import _ from 'lodash';
+import '@fortawesome/fontawesome-free/css/all.css';
 
 const renderer = new marked.Renderer();
 const linkRenderer = renderer.link;
@@ -532,9 +542,6 @@ renderer.link = (href, title, text) => {
     return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
 };
 
-library.add(faUserTag, faCog, faVideo, faUserCog, faCommentAlt, fas, faSnapchatGhost, faTachometerAlt, faSignInAlt, faUsersCog, faChartLine, faInfoCircle, faStamp, faSlidersH, faNetworkWired);
-Vue.component('font-awesome-icon', FontAwesomeIcon);
-Vue.component('font-awesome-layers', FontAwesomeLayers);
 const socketInstance = io('https://' + window.location.host + '/');
 Vue.use(VueSocketIOExt, socketInstance);
 momentDurationFormatSetup(moment);
@@ -543,7 +550,7 @@ const turndownService = new TurndownService();
 
 export default {
   name: 'App',
-  components: { TiptapVuetify },
+  components: { TipTap },
   methods: {
     addTag: function (val) {
       this.$socket.client.emit('addTag', val);
@@ -1024,18 +1031,6 @@ export default {
       toastMsg: '',
       toastOn: false,
       dbTimer: null,
-      extensions: [
-        History,
-        Link,
-        Underline,
-        Strike,
-        Italic,
-        ListItem,
-        OrderedList,
-        Bold,
-        Paragraph,
-        HardBreak
-      ],
       viewUser: {
         name: 'test',
         unit: 'test',
@@ -1152,22 +1147,3 @@ export default {
   }
 };
 </script>
-
-<style>
-@import url(//fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900);
-#app {
-  font-family: 'Noto Sans TC', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-h1 {
-  font-family: 'Noto Sans TC', sans-serif;
-  font-weight: 900;
-}
-.notAuth {
-  opacity: 0.3;
-}
-</style>

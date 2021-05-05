@@ -15,83 +15,68 @@ const router = new Router({
       path: '/messageMgnt',
       name: '訊息管理',
       component: () =>
-        import(/* webpackChunkName: 'about' */ './views/messageMgnt.vue')
+        import(/* webpackChunkName: 'msgMgnt' */ './views/messageMgnt.vue')
     },
     {
       path: '/videoReview/:KBid',
       name: '審查頁面',
       props: true,
       component: () =>
-        import(/* webpackChunkName: 'about' */ './views/videoReview.vue')
+        import(/* webpackChunkName: 'videoReview' */ './views/videoReview.vue')
     },
     {
       path: '/userDashBoard',
       name: 'DashBoard',
       component: () =>
-        import(/* webpackChunkName: 'about' */ './views/userDashBoard.vue')
+        import(/* webpackChunkName: 'Dashboard' */ './views/userDashBoard.vue')
     },
     {
       path: '/userMgnt',
       name: '使用者管理',
       component: () =>
-        import(/* webpackChunkName: 'about' */ './views/userMgnt.vue')
+        import(/* webpackChunkName: 'userMgnt' */ './views/userMgnt.vue')
     },
     {
       path: '/setting',
       name: '系統設定',
       component: () =>
-        import(/* webpackChunkName: 'about' */ './views/setting.vue')
+        import(/* webpackChunkName: 'setting' */ './views/setting.vue')
     },
     {
       path: '/user',
       name: '使用者資料',
       component: () =>
-        import(/* webpackChunkName: 'about' */ './views/user.vue')
+        import(/* webpackChunkName: 'user' */ './views/user.vue')
     },
     {
       path: '/login',
       name: '登入',
-      // route level code-splitting
-      // this generates a separate chunk (about.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
       component: () =>
-        import(/* webpackChunkName: 'about' */ './views/Login.vue')
+        import(/* webpackChunkName: 'login' */ './views/Login.vue')
     },
     {
       path: '/Info',
       name: '關於本站',
-      // route level code-splitting
-      // this generates a separate chunk (about.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
       component: () =>
-        import(/* webpackChunkName: 'about' */ './views/Info.vue')
+        import(/* webpackChunkName: 'info' */ './views/Info.vue')
     },
     {
       path: '/createKB',
       name: '知識點管理',
-      // route level code-splitting
-      // this generates a separate chunk (about.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
       component: () =>
-        import(/* webpackChunkName: 'about' */ './views/createKB.vue')
+        import(/* webpackChunkName: 'createKB' */ './views/createKB.vue')
     },
     {
       path: '/logout',
       name: '登出',
-      // route level code-splitting
-      // this generates a separate chunk (about.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
       component: () =>
-          import(/* webpackChunkName: 'about' */ './views/Logout.vue')
+          import(/* webpackChunkName: 'logout' */ './views/Logout.vue')
     },
     {
       path: '/Chart',
       name: '統計功能',
-      // route level code-splitting
-      // this generates a separate chunk (about.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
       component: () =>
-          import(/* webpackChunkName: 'about' */ './views/Chart.vue')
+          import(/* webpackChunkName: 'chart' */ './views/Chart.vue')
     }
   ]
 });

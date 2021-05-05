@@ -104,7 +104,6 @@
 </template>
 
 <script>
-import '@fortawesome/fontawesome-free/css/all.css';
 import _ from 'lodash';
 
 export default {
@@ -168,7 +167,7 @@ export default {
       immediate: true,
       handler () {
         let searchItem = _.filter(this.candidatedItem, (item) => {
-          return (new RegExp(this.newTerm)).test(item.name);
+          return (new RegExp(this.newTerm, 'g')).test(item.name);
         });
         let passedsItems = this.multipleD ? this.selectedItems : [this.selectedItems];
         let selectedItem = _.intersectionWith(this.candidatedItem, passedsItems, (cItem, sItem) => {
@@ -193,7 +192,7 @@ export default {
     selectedItems: function () {
       this.$emit('valueUpdated', this.selectedItems);
       let searchItem = _.filter(this.candidatedItem, (item) => {
-        return (new RegExp(this.newTerm)).test(item.name);
+        return (new RegExp(this.newTerm, 'g')).test(item.name);
       });
       let passedsItems = this.multipleD ? this.selectedItems : [this.selectedItems];
       let selectedItem = _.intersectionWith(this.candidatedItem, passedsItems, (cItem, sItem) => {

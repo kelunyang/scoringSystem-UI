@@ -13,15 +13,7 @@
 
 <script>
 // @ is an alias to /src
-import Vue from 'vue';
-import { library } from '@fortawesome/fontawesome-svg-core';
-import { faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import axios from 'axios';
-
-library.add(faSignOutAlt);
-
-Vue.component('font-awesome-icon', FontAwesomeIcon);
 
 export default {
   name: 'logout',

@@ -16,7 +16,7 @@
           >
             <v-icon>fa-times</v-icon>
           </v-btn>
-          <v-toolbar-title>設定知識點編輯階段<span v-if='currentStage._id === ""'>： {{ currentStage.name }}</span></v-toolbar-title>
+          <v-toolbar-title>設定知識點編輯階段<span v-if='currentStage._id === ""'>{{ currentKB.title }}： {{ currentStage.name }}</span></v-toolbar-title>
         </v-toolbar>
         <v-card-actions>
           <v-btn @click='removeStage'>刪除目前的階段</v-btn>
@@ -120,7 +120,7 @@
                   </tbody>
                 </template>
               </v-simple-table>
-              <v-btn class='flex-grow-1' @click='revokeObjectives'>全數撤回本階段審查目標許可</v-btn>
+              <v-btn class='flex-grow-1' @click='revokeObjectives'>全數撤回本階段審查指標許可</v-btn>
               <div class='text-subtitle-2 font-weight-blod'>本階段的PM群組標籤</div>
               <tag-filter
                 :mustSelected='false'
@@ -232,6 +232,7 @@
               label='請新的用戶標籤'
             />
           </div>
+          <div class='red--text text-caption'>請要記得按下下方的「儲存設定值」，不然你輸入的東西都不會存起來啊啊啊啊啊啊啊啊啊啊啊啊!!!!!</div>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -295,7 +296,7 @@
             </v-item-group>
             <v-switch
               v-model="cloneSetting.objectives"
-              label="複製選取的階段的審查目標"
+              label="複製選取的階段的審查指標"
             ></v-switch>
             <v-switch
               v-model="cloneSetting.roles"
@@ -367,13 +368,11 @@
             v-model='currentKB.textbook'
           ></v-text-field>
           <div class='red--text text-caption text-left'>以下兩項為細部說明相關內容，細部說明指的是出現在審查畫面抬頭提供參考用的資料</div>
-          <tiptap-vuetify
+          <Tip-Tap
             v-model="currentKB.desc"
-            :extensions="extensions"
-            max-height="20vh"
-            min-height="10vh"
-            placeholder='細部說明，請不要留白'
-            class='text-left'
+            maxHeight="20vh"
+            minHeight="10vh"
+            hint='細部說明，請不要留白'
           />
           <v-file-input prepend-icon="fa-paperclip" v-model="KBFile" label='輔助說明文件／圖片上傳' :loading="uploadprogress !== 0">
             <template v-slot:progress>
@@ -772,21 +771,16 @@
 <script>
 // @ is an alias to /src
 import Vue from 'vue';
-import { library } from '@fortawesome/fontawesome-svg-core';
-import { faNetworkWired } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import draggable from 'vuedraggable';
 import prettyBytes from 'pretty-bytes';
 import TagFilter from './modules/TagFilter';
-import { TiptapVuetify, Heading, Bold, Italic, Strike, Underline, Paragraph, BulletList, OrderedList, ListItem, Link, Blockquote, HardBreak, History } from 'tiptap-vuetify';
-import 'tiptap-vuetify/dist/main.css';
+import TipTap from './modules/TipTap';
 import { v4 as uuidv4 } from 'uuid';
 import marked from 'marked';
 import _ from 'lodash';
 import moment from 'moment';
 import VueCtkDateTimePicker from 'vue-ctk-date-time-picker';
 import 'vue-ctk-date-time-picker/dist/vue-ctk-date-time-picker.css';
-import '@fortawesome/fontawesome-free/css/all.css';
 
 const renderer = new marked.Renderer();
 const linkRenderer = renderer.link;
@@ -795,9 +789,6 @@ renderer.link = (href, title, text) => {
     return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
 };
 let files = [];
-
-library.add(faNetworkWired);
-Vue.component('font-awesome-icon', FontAwesomeIcon);
 Vue.component('VueCtkDateTimePicker', VueCtkDateTimePicker);
 
 export default {
@@ -805,7 +796,7 @@ export default {
   components: {
     TagFilter,
     draggable,
-    TiptapVuetify
+    TipTap
   },
   watch: {
     currentStageDate: function () {
@@ -881,6 +872,9 @@ export default {
       }
     },
     socketmodUserTags: function (data) {
+      this.selectednewTags = [];
+      this.selectedUsers = [];
+      this.filteruserTag = [];
       this.$emit('toastPop', '為' + data.processed + '/' + data.planned + '個用戶的加上' + data.tags + '個使用者標籤已完成');
     },
     saveuserTags: function () {
@@ -986,13 +980,13 @@ export default {
       };
     },
     socketgetStage: function (data) {
-      this.assignW = true;
       this.objectiveAwaited = '';
       if(data === null || data === undefined) {
         this.resetStage();
       } else {
         this.currentStage = data;
       }
+      this.assignW = true;
       this.stagePopulated = true;
     },
     dateConvert: function (time) {
@@ -1433,26 +1427,7 @@ export default {
         stages: [],
         stepPointer: -1
       },
-      stageStatus: '',
-      extensions: [
-        History,
-        Blockquote,
-        Link,
-        Underline,
-        Strike,
-        Italic,
-        ListItem,
-        BulletList,
-        OrderedList,
-        [Heading, {
-          options: {
-            levels: [1, 2, 3]
-          }
-        }],
-        Bold,
-        Paragraph,
-        HardBreak
-      ],
+      stageStatus: ''
     };
   },
   beforeDestroy () {

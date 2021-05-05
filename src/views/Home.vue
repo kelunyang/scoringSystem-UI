@@ -38,11 +38,6 @@
 </template>
 
 <script>
-import Vue from 'vue';
-import { library } from '@fortawesome/fontawesome-svg-core';
-import { faSnapchatGhost } from '@fortawesome/free-brands-svg-icons';
-import { faPhotoVideo, faBomb, faRobot, faCommentDots, faClipboard, faVideo, faSearch, faSkullCrossbones, faExclamationTriangle, faPencilAlt } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import moment from 'moment';
 import prettyBytes from 'pretty-bytes';
 import marked from 'marked';
@@ -53,8 +48,6 @@ renderer.link = (href, title, text) => {
     const html = linkRenderer.call(renderer, href, title, text);
     return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
 };
-library.add(faSnapchatGhost, faBomb, faRobot, faCommentDots, faPhotoVideo, faClipboard, faVideo, faSearch, faSkullCrossbones, faExclamationTriangle, faPencilAlt);
-Vue.component('font-awesome-icon', FontAwesomeIcon);
 
 export default {
   methods: {

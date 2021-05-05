@@ -237,9 +237,6 @@
 <script>
 // @ is an alias to /src
 import Vue from 'vue';
-import { library } from '@fortawesome/fontawesome-svg-core';
-import { faCog, faBomb, faRobot, faCommentDots } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import TagFilter from './modules/TagFilter';
 import TurndownService from 'turndown';
 import marked from 'marked';
@@ -251,10 +248,6 @@ renderer.link = (href, title, text) => {
     const html = linkRenderer.call(renderer, href, title, text);
     return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
 };
-
-import '@fortawesome/fontawesome-free/css/all.css';
-library.add(faCog, faBomb, faRobot, faCommentDots);
-Vue.component('font-awesome-icon', FontAwesomeIcon);
 
 const turndownService = new TurndownService();
 

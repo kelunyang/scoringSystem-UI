@@ -103,20 +103,10 @@
 
 <script>
 // @ is an alias to /src
-import Vue from 'vue';
-import { library } from '@fortawesome/fontawesome-svg-core';
-import { faUserCog, faLink } from '@fortawesome/free-solid-svg-icons';
-import { faSlackHash, faGoogle, faLine } from '@fortawesome/free-brands-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import { randomColor } from 'randomcolor';
 import moment from 'moment';
 import Password from 'vue-password-strength-meter';
 import random from 'random';
-
-import '@fortawesome/fontawesome-free/css/all.css';
-
-library.add(faUserCog, faSlackHash, faGoogle, faLine, faLink);
-Vue.component('font-awesome-icon', FontAwesomeIcon);
 
 export default {
   name: 'userSetting',
