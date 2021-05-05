@@ -547,7 +547,7 @@
     <v-sheet v-if='dashboardPopulated' class='pa-0 ma-0 d-flex flex-column'>
       <div v-if='progressList.length === 0'>您目前沒有待處理的項目</div>
       <v-text-field v-if='progressList.length > 0' label='搜尋知識點關鍵字' prepend-icon="fa-search" v-model="queryTerm"></v-text-field>
-      <div v-if='convertedList.length > 0' v-show='!showStatstics' class='blue-grey--text darken-1 text-caption'>已篩選出{{ convertedList.length }}個知識點，為節省資源，不會全部展現出來，往下滑會載入更多</div>
+      <div v-show='!showStatstics' class='blue-grey--text darken-1 text-caption'>已篩選出{{ convertedList.length }}個知識點，為節省資源，不會全部展現出來，往下滑會載入更多</div>
       <progress-tile v-for="item in convertedList" :key="item._id" @tags='openTagW' @requestUpload='openUploadW' @viewDetail='openauthDetail' @KBselected='KBupdated' :progressItem='item' />
     </v-sheet>
   </v-sheet>
