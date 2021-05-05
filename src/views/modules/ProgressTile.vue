@@ -29,7 +29,6 @@
                     :rules='[() => !stage.special]'
                     complete-icon='fa-check-circle'
                     error-icon='fa-bomb'
-                    alt-labels
                   >
                     <div v-if='currentStep === 0'>[未啟動]<br/>{{ stage.name }}</div>
                     <div v-if='currentStep > 0' v-show='(index + 1) === currentStep'>[進行中]<br/>{{ stage.name }}</div>

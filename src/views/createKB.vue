@@ -16,7 +16,7 @@
           >
             <v-icon>fa-times</v-icon>
           </v-btn>
-          <v-toolbar-title>設定知識點編輯階段<span v-if='currentStage._id === ""'>{{ currentKB.title }}： {{ currentStage.name }}</span></v-toolbar-title>
+          <v-toolbar-title><span v-if='currentStage._id === ""'>設定知識點編輯階段</span><span v-if='currentStage._id !== ""'>{{ currentKB.title }}： {{ currentStage.name }}</span></v-toolbar-title>
         </v-toolbar>
         <v-card-actions>
           <v-btn @click='removeStage'>刪除目前的階段</v-btn>
@@ -711,7 +711,7 @@
                     本知識點沒有任何階段，點右邊加號圖案去增加階段吧
                   </v-col>
                   <v-col class='flex-grow-1' v-if='KBitem.stages.length > 0'>
-                    <v-stepper v-model="KBitem.stepPointer">
+                    <v-stepper alt-labels v-model="KBitem.stepPointer">
                       <v-stepper-header>
                         <template
                           v-for='(stage, index) in KBitem.stages'
@@ -722,6 +722,7 @@
                             :step='index + 1'
                             editable
                             @click="loadReviewer(KBitem)"
+                            complete-icon='fa-check-circle'
                           >
                             <span v-show='(index + 1) === KBitem.stepPointer'>{{ stage.name }}</span>
                           </v-stepper-step>
