@@ -559,6 +559,68 @@ export default {
     TagFilter
   },
   methods: {
+    renderChart: function() {
+      let steps = [];
+      for (let i = 0; i <= this.statisticSteps; i++) {
+        steps[i] = {
+          name: i,
+          data: [0]
+        };
+      }
+      for (let i = 0; i < this.convertedList.length; i++) {
+        let KB = this.convertedList[i];
+        if(KB.currentStep < steps.length) {
+          steps[KB.currentStep].data[0]++;
+        }
+      }
+      this.chartData = {
+        series: steps,
+        chartOptions: {
+          chart: {
+            type: 'bar',
+            height: 150,
+            stacked: true,
+            stackType: '100%'
+          },
+          plotOptions: {
+            bar: {
+              horizontal: true,
+            },
+          },
+          stroke: {
+            width: 1,
+            colors: ['#fff']
+          },
+          colors: randomColor({
+            luminosity: 'dark',
+            hue: 'random',
+            count: 5,
+            format: 'rgb'
+          }),
+          title: {
+            text: '目前顯示的所有專案的完成度'
+          },
+          xaxis: {
+            categories: ['專案完成度'],
+          },
+          tooltip: {
+            y: {
+              formatter: function (val) {
+                return val + "個知識點"
+              }
+            }
+          },
+          fill: {
+            opacity: 1
+          },
+          legend: {
+            position: 'top',
+            horizontalAlign: 'left',
+            offsetX: 40
+          }
+        }
+      }
+    },
     closeInitW: function() {
       this.initW = false;
       window.localStorage.setItem('dashBoardFirstUse', JSON.stringify(false));
@@ -610,6 +672,7 @@ export default {
       this.$emit('toastPop', 'DashBoard更新完成');
       this.lastCheckTime = moment().unix();
       this.progressList = data;
+      this.renderChart();
       this.dashboardPopulated = true;
       clearTimeout(this.queryTimer);
       this.queryTimer = setTimeout(() => {
@@ -777,6 +840,9 @@ export default {
     maxStep: function () {
       this.statisticSteps = this.maxStep;
     },
+    statisticSteps: function () {
+      this.renderChart();
+    },
     dashBoardFirstUse: function () {
       if(this.localLoaded) {
         window.localStorage.setItem('dashBoardFirstUse', JSON.stringify(this.dashBoardFirstUse));
@@ -824,6 +890,7 @@ export default {
         return item.stages.length;
       });
       let orderedSteps = _.orderBy(steps, ['desc']);
+      console.dir(orderedSteps);
       return orderedSteps.length > 0 ? orderedSteps[0] : 5;
     },
     currentUser: function () {
@@ -938,22 +1005,19 @@ export default {
       });
       return color;
     },
-    chartData: function () {
-      let steps = [];
-      for (let i = 0; i <= this.statisticSteps; i++) {
-        steps[i] = {
-          name: i,
-          data: [0]
-        };
-      }
-      for (let i = 0; i < this.convertedList.length; i++) {
-        let KB = this.convertedList[i];
-        if(KB.currentStep < steps.length) {
-          steps[KB.currentStep].data[0]++;
-        }
-      }
-      return {
-        series: steps,
+    filterColor: function () {
+      return this.selectedFilterTags.length > 0 || this.queryTerm !== '' || this.queryHistory === true ? '#B71C1C' : '#00B0FF';
+    }
+  },
+  data () {
+    return {
+      chartData: {
+        series: [
+          {
+            name: '0',
+            data: [0]
+          }
+        ],
         chartOptions: {
           chart: {
             type: 'bar',
@@ -991,7 +1055,6 @@ export default {
           },
           fill: {
             opacity: 1
-          
           },
           legend: {
             position: 'top',
@@ -999,16 +1062,7 @@ export default {
             offsetX: 40
           }
         }
-      }
-    },
-    filterColor: function () {
-      return this.selectedFilterTags.length > 0 || this.queryTerm !== '' || this.queryHistory === true ? '#B71C1C' : '#00B0FF';
-    }
-  },
-  props: {
-  },
-  data () {
-    return {
+      },
       statisticSteps: 1,
       initStatstics: false,
       initW: false,
