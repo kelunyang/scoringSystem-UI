@@ -672,7 +672,104 @@ export default {
       this.$emit('toastPop', 'DashBoard更新完成');
       this.lastCheckTime = moment().unix();
       this.progressList = data;
-      this.renderChart();
+      let now = moment().unix();
+      let list = [];
+      if(oriobj.selectedFilterTags.length > 0) {
+        for (let i = 0; i < oriobj.selectedFilterTags.length; i++) {
+          let tag = oriobj.selectedFilterTags[i];
+          list.push(_.filter(this.progressList, (item) => {
+            return _.includes(item.tag, tag);
+          }));
+        }
+        list = _.flatten(list);
+      } else {
+        list = this.progressList;
+      }
+      if(this.queryTerm !== '') {
+        list = _.filter(list, (item) => {
+          return (new RegExp(oriobj.queryTerm, 'g')).test(item.title + item.desc);
+        });
+      }
+      for (let i = 0; i< list.length; i++) {
+        let KB = list[i];
+        KB.attention = 0;
+        KB.selected = false;
+        KB.currentStep = (_.countBy(KB.stages, {
+          current: false
+        })) === KB.stages.length ? 0 : (_.findIndex(KB.stages, {
+          current: true
+        })) + 1 ;
+        for (let k = 0; k < KB.stages.length; k++) {
+          let stage = KB.stages[k];
+          stage.special = false;
+          if(stage.current) {
+            if(stage.dueTick < moment().unix()) {
+              stage.special = true;
+            }
+            KB.attention = moment().unix() - stage.dueTick;
+          }
+        }
+        if(KB.currentStep > 0) {
+          KB.isPM = (_.intersectionWith(KB.stages[KB.currentStep - 1].pmTags, this.currentUser.tags, (cTag, uTag) => {
+            return cTag === uTag._id;
+          })).length > 0;
+          KB.isVendor = (_.intersectionWith(KB.stages[KB.currentStep - 1].vendorTags, this.currentUser.tags, (cTag, uTag) => {
+            return cTag === uTag._id;
+          })).length > 0;
+          KB.isFinal = (_.intersectionWith(KB.stages[KB.currentStep - 1].finalTags, this.currentUser.tags, (cTag, uTag) => {
+            return cTag === uTag._id;
+          })).length > 0;
+          KB.isWriter = (_.intersectionWith(KB.stages[KB.currentStep - 1].writerTags, this.currentUser.tags, (cTag, uTag) => {
+            return cTag === uTag._id;
+          })).length > 0;
+          KB.isReviewer = (_.intersectionWith(KB.stages[KB.currentStep - 1].reviewerTags, this.currentUser.tags, (cTag, uTag) => {
+            return cTag === uTag._id;
+          })).length > 0;
+        }
+        KB.dueTick = 0;
+        let found = _.find(this.selectedpmKBs, (item) => {
+          return KB._id === item;
+        });
+        if (found !== undefined) {
+          KB.selected = true;
+        }
+        KB.remainTick = KB.currentStep > 0 ? KB.stages[KB.currentStep - 1].dueTick - now: Number.MAX_SAFE_INTEGER ;
+      }
+      if(list.length > 0) {
+        if(!this.queryHistory) {
+          let result = [];
+          for (let i = 0; i < this.currentUser.tags.length; i++) {
+            let tag = this.currentUser.tags[i];
+            result.push(_.filter(list, (item) => {
+              if(item.currentStep === 0) {
+                return false;
+              } else {
+                return _.includes(_.flatten([
+                        item.stages[item.currentStep - 1].pmTags,
+                        item.stages[item.currentStep - 1].reviewerTags,
+                        item.stages[item.currentStep - 1].vendorTags,
+                        item.stages[item.currentStep - 1].writerTags,
+                        item.stages[item.currentStep - 1].finalTags
+                      ]), tag._id);
+              }
+            }));
+          }
+          list = _.flatten(result);
+        }
+        list.sort((a, b) => {
+          let aTime = a.attention > 0 ? aTime * 100000 : Math.abs(aTime);
+          let bTime = b.attention > 0 ? bTime * 100000 : Math.abs(bTime);
+          return aTime - bTime;
+        });
+      }
+      this.convertedList = _.orderBy(list, ['remainTick'], ['asc']);
+      let steps = _.map(this.convertedList, (item) => {
+        return item.stages.length;
+      });
+      let orderedSteps = _.orderBy(steps, ['desc']);
+      console.dir(orderedSteps);
+      this.maxStep = orderedSteps.length > 0 ? orderedSteps[0] : 5;
+      this.statisticSteps = this.maxStep;
       this.dashboardPopulated = true;
       clearTimeout(this.queryTimer);
       this.queryTimer = setTimeout(() => {
@@ -837,9 +934,6 @@ export default {
     }
   },
   watch: {
-    maxStep: function () {
-      this.statisticSteps = this.maxStep;
-    },
     statisticSteps: function () {
       this.renderChart();
     },
@@ -885,14 +979,6 @@ export default {
     }
   },
   computed: {
-    maxStep: function () {
-      let steps = _.map(this.convertedList, (item) => {
-        return item.stages.length;
-      });
-      let orderedSteps = _.orderBy(steps, ['desc']);
-      console.dir(orderedSteps);
-      return orderedSteps.length > 0 ? orderedSteps[0] : 5;
-    },
     currentUser: function () {
       return this.$store.state.currentUser;
     },
@@ -901,101 +987,6 @@ export default {
     },
     siteSettings: function () {
       return this.$store.state.siteSettings;
-    },
-    convertedList: function () {
-      let now = moment().unix();
-      let list = [];
-      let oriobj = this;
-      if(oriobj.selectedFilterTags.length > 0) {
-        let oriobj = this;
-        for (let i = 0; i < oriobj.selectedFilterTags.length; i++) {
-          let tag = oriobj.selectedFilterTags[i];
-          list.push(_.filter(this.progressList, (item) => {
-            return _.includes(item.tag, tag);
-          }));
-        }
-        list = _.flatten(list);
-      } else {
-        list = this.progressList;
-      }
-      if(this.queryTerm !== '') {
-        list = _.filter(list, (item) => {
-          return (new RegExp(oriobj.queryTerm, 'g')).test(item.title + item.desc);
-        });
-      }
-      for (let i = 0; i< list.length; i++) {
-        let KB = list[i];
-        KB.attention = 0;
-        KB.selected = false;
-        KB.currentStep = (_.countBy(KB.stages, {
-          current: false
-        })) === KB.stages.length ? 0 : (_.findIndex(KB.stages, {
-          current: true
-        })) + 1 ;
-        for (let k = 0; k < KB.stages.length; k++) {
-          let stage = KB.stages[k];
-          stage.special = false;
-          if(stage.current) {
-            if(stage.dueTick < moment().unix()) {
-              stage.special = true;
-            }
-            KB.attention = moment().unix() - stage.dueTick;
-          }
-        }
-        if(KB.currentStep > 0) {
-          KB.isPM = (_.intersectionWith(KB.stages[KB.currentStep - 1].pmTags, this.currentUser.tags, (cTag, uTag) => {
-            return cTag === uTag._id;
-          })).length > 0;
-          KB.isVendor = (_.intersectionWith(KB.stages[KB.currentStep - 1].vendorTags, this.currentUser.tags, (cTag, uTag) => {
-            return cTag === uTag._id;
-          })).length > 0;
-          KB.isFinal = (_.intersectionWith(KB.stages[KB.currentStep - 1].finalTags, this.currentUser.tags, (cTag, uTag) => {
-            return cTag === uTag._id;
-          })).length > 0;
-          KB.isWriter = (_.intersectionWith(KB.stages[KB.currentStep - 1].writerTags, this.currentUser.tags, (cTag, uTag) => {
-            return cTag === uTag._id;
-          })).length > 0;
-          KB.isReviewer = (_.intersectionWith(KB.stages[KB.currentStep - 1].reviewerTags, this.currentUser.tags, (cTag, uTag) => {
-            return cTag === uTag._id;
-          })).length > 0;
-        }
-        KB.dueTick = 0;
-        let found = _.find(this.selectedpmKBs, (item) => {
-          return KB._id === item;
-        });
-        if (found !== undefined) {
-          KB.selected = true;
-        }
-        KB.remainTick = KB.currentStep > 0 ? KB.stages[KB.currentStep - 1].dueTick - now: Number.MAX_SAFE_INTEGER ;
-      }
-      if(list.length > 0) {
-        if(!this.queryHistory) {
-          let result = [];
-          for (let i = 0; i < this.currentUser.tags.length; i++) {
-            let tag = this.currentUser.tags[i];
-            result.push(_.filter(list, (item) => {
-              if(item.currentStep === 0) {
-                return false;
-              } else {
-                return _.includes(_.flatten([
-                        item.stages[item.currentStep - 1].pmTags,
-                        item.stages[item.currentStep - 1].reviewerTags,
-                        item.stages[item.currentStep - 1].vendorTags,
-                        item.stages[item.currentStep - 1].writerTags,
-                        item.stages[item.currentStep - 1].finalTags
-                      ]), tag._id);
-              }
-            }));
-          }
-          list = _.flatten(result);
-        }
-        list.sort((a, b) => {
-          let aTime = a.attention > 0 ? aTime * 100000 : Math.abs(aTime);
-          let bTime = b.attention > 0 ? bTime * 100000 : Math.abs(bTime);
-          return aTime - bTime;
-        });
-      }
-      return _.orderBy(list, ['remainTick'], ['asc']);
     },
     randomColors: function () {
       let color = randomColor({
@@ -1011,6 +1002,8 @@ export default {
   },
   data () {
     return {
+      maxStep: 5,
+      convertedList: [],
       chartData: {
         series: [
           {
