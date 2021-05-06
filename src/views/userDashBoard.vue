@@ -258,7 +258,7 @@
                   :color="tagColor(0)"
                   label
                   v-for='stage in participant.pmStages'
-                  :key='stage._id'
+                  :key='"parp"+stage._id'
                 >
                   {{ stage.KBtitle }} | {{ stage.name }}
                 </v-chip>
@@ -271,7 +271,7 @@
                   :color="tagColor(1)"
                   label
                   v-for='stage in participant.reviewerStages'
-                  :key='stage._id'
+                  :key='"parr"+stage._id'
                 >
                   {{ stage.KBtitle }} | {{ stage.name }}
                 </v-chip>
@@ -284,7 +284,7 @@
                   :color="tagColor(2)"
                   label
                   v-for='stage in participant.vendorStages'
-                  :key='stage._id'
+                  :key='"parv"+stage._id'
                 >
                   {{ stage.KBtitle }} | {{ stage.name }}
                 </v-chip>
@@ -297,7 +297,7 @@
                   :color="tagColor(3)"
                   label
                   v-for='stage in participant.writerStages'
-                  :key='stage._id'
+                  :key='"parw"+stage._id'
                 >
                   {{ stage.KBtitle }} | {{ stage.name }}
                 </v-chip>
@@ -505,7 +505,7 @@
         <template v-slot:default>
           <thead>
             <tr>
-              <th class='text-center' v-for='step in chartData.series' :key='"step" + step.name'>
+              <th class='text-center' v-for='step in chartData.series' :key='"stepth" + step.name'>
                 <span v-if='step.name === 0'>尚未啟動</span>
                 <span v-else>第{{ step.name }}階段</span>
               </th>
@@ -516,7 +516,7 @@
           </thead>
           <tbody>
             <tr>
-              <td class='text-center' v-for='step in chartData.series' :key='"step" + step.name'>{{ step.data[0] }}</td>
+              <td class='text-center' v-for='step in chartData.series' :key='"steptd" + step.name'>{{ step.data[0] }}</td>
               <td>{{ convertedList.length }}</td>
             </tr>
           </tbody>
