@@ -568,119 +568,7 @@ export default {
     TagFilter
   },
   methods: {
-    renderChart: function() {
-      let steps = [];
-      for (let i = 0; i <= this.statisticSteps; i++) {
-        steps[i] = {
-          name: i,
-          data: [0]
-        };
-      }
-      for (let i = 0; i < this.convertedList.length; i++) {
-        let KB = this.convertedList[i];
-        if(KB.currentStep < steps.length) {
-          steps[KB.currentStep].data[0]++;
-        }
-      }
-      this.chartData = {
-        series: steps,
-        chartOptions: {
-          chart: {
-            type: 'bar',
-            height: 150,
-            stacked: true,
-            stackType: '100%'
-          },
-          plotOptions: {
-            bar: {
-              horizontal: true,
-            },
-          },
-          stroke: {
-            width: 1,
-            colors: ['#fff']
-          },
-          colors: randomColor({
-            luminosity: 'dark',
-            hue: 'random',
-            count: 5,
-            format: 'rgb'
-          }),
-          title: {
-            text: '目前顯示的所有專案的完成度'
-          },
-          xaxis: {
-            categories: ['專案完成度'],
-          },
-          tooltip: {
-            y: {
-              formatter: function (val) {
-                return val + "個知識點"
-              }
-            }
-          },
-          fill: {
-            opacity: 1
-          },
-          legend: {
-            position: 'top',
-            horizontalAlign: 'left',
-            offsetX: 40
-          }
-        }
-      }
-    },
-    closeInitW: function() {
-      this.initW = false;
-      window.localStorage.setItem('dashBoardFirstUse', JSON.stringify(false));
-    },
-    updateTags: function() {
-      this.$emit('updateTags');
-    },
-    saveKBTag: function () {
-      this.$emit('toastPop', '新增標籤中...');
-      this.$socket.client.emit('setKBTag', this.currentKB);
-    },
-    updateKBTag: function (val) {
-      this.currentKB.tag = val;
-    },
-    plusTag: function (val) {
-      this.$emit('addTag', val);
-    },
-    openTagW: function (item) {
-      this.currentKB = item;
-      this.tagW = true;
-    },
-    openauthDetail: function (item) {
-      this.currentKB = item;
-      this.authDetailW = true;
-    },
-    participantStatstics: function () {
-      this.$socket.client.emit('participantStatstics', this.selectedpmKBs);
-    },
-    KBupdated:  function (data) {
-      let found = _.find(this.selectedpmKBs, (KB) => {
-        return KB === data._id;
-      });
-      if(found !== undefined) {
-        let newpmKB = _.filter(this.selectedpmKBs, (item) => {
-          return item !== data._id;
-        });
-        this.selectedpmKBs = newpmKB;
-      } else {
-        this.selectedpmKBs.push(data._id);
-      }
-    },
-    openUploadW: function (data) {
-      this.currentKB = data;
-      this.$socket.client.emit('getKBVersions', data._id);
-    },
-    socketlistDashBoard: function (data) {
-      let oriobj = this;
-      this.$emit('timerOn', false);
-      this.$emit('toastPop', 'DashBoard更新完成');
-      this.lastCheckTime = moment().unix();
-      this.progressList = data;
+    generateList: function() {
       let now = moment().unix();
       let list = [];
       if(oriobj.selectedFilterTags.length > 0) {
@@ -778,6 +666,118 @@ export default {
       let orderedSteps = _.orderBy(steps, ['desc']);
       this.maxStep = orderedSteps.length > 0 ? orderedSteps[0] : 5;
       this.statisticSteps = this.maxStep;
+    },
+    renderChart: function() {
+      let steps = [];
+      for (let i = 0; i <= this.statisticSteps; i++) {
+        steps[i] = {
+          name: i,
+          data: [0]
+        };
+      }
+      for (let i = 0; i < this.convertedList.length; i++) {
+        let KB = this.convertedList[i];
+        if(KB.currentStep < steps.length) {
+          steps[KB.currentStep].data[0]++;
+        }
+      }
+      this.chartData = {
+        series: steps,
+        chartOptions: {
+          chart: {
+            type: 'bar',
+            height: 150,
+            stacked: true,
+            stackType: '100%'
+          },
+          plotOptions: {
+            bar: {
+              horizontal: true,
+            },
+          },
+          stroke: {
+            width: 1,
+            colors: ['#fff']
+          },
+          colors: randomColor({
+            luminosity: 'dark',
+            hue: 'random',
+            count: 5,
+            format: 'rgb'
+          }),
+          xaxis: {
+            categories: ['專案完成度'],
+          },
+          tooltip: {
+            y: {
+              formatter: function (val) {
+                return val + "個知識點"
+              }
+            }
+          },
+          fill: {
+            opacity: 1
+          },
+          legend: {
+            position: 'top',
+            horizontalAlign: 'left',
+            offsetX: 40
+          }
+        }
+      }
+    },
+    closeInitW: function() {
+      this.initW = false;
+      window.localStorage.setItem('dashBoardFirstUse', JSON.stringify(false));
+    },
+    updateTags: function() {
+      this.$emit('updateTags');
+    },
+    saveKBTag: function () {
+      this.$emit('toastPop', '新增標籤中...');
+      this.$socket.client.emit('setKBTag', this.currentKB);
+    },
+    updateKBTag: function (val) {
+      this.currentKB.tag = val;
+    },
+    plusTag: function (val) {
+      this.$emit('addTag', val);
+    },
+    openTagW: function (item) {
+      this.currentKB = item;
+      this.tagW = true;
+    },
+    openauthDetail: function (item) {
+      this.currentKB = item;
+      this.authDetailW = true;
+    },
+    participantStatstics: function () {
+      this.$socket.client.emit('participantStatstics', this.selectedpmKBs);
+    },
+    KBupdated:  function (data) {
+      let found = _.find(this.selectedpmKBs, (KB) => {
+        return KB === data._id;
+      });
+      if(found !== undefined) {
+        let newpmKB = _.filter(this.selectedpmKBs, (item) => {
+          return item !== data._id;
+        });
+        this.selectedpmKBs = newpmKB;
+      } else {
+        this.selectedpmKBs.push(data._id);
+      }
+    },
+    openUploadW: function (data) {
+      this.currentKB = data;
+      this.$socket.client.emit('getKBVersions', data._id);
+    },
+    socketlistDashBoard: function (data) {
+      let oriobj = this;
+      this.$emit('timerOn', false);
+      this.$emit('toastPop', 'DashBoard更新完成');
+      this.lastCheckTime = moment().unix();
+      this.progressList = data;
+      this.generateList();
       this.dashboardPopulated = true;
       clearTimeout(this.queryTimer);
       this.queryTimer = setTimeout(() => {
@@ -942,6 +942,14 @@ export default {
     }
   },
   watch: {
+    queryTerm: function () {
+      this.generateList();
+      this.renderChart();
+    },
+    selectedFilterTags: function () {
+      this.generateList();
+      this.renderChart();
+    },
     statisticSteps: function () {
       this.renderChart();
     },
@@ -1041,9 +1049,6 @@ export default {
             count: 5,
             format: 'rgb'
           }),
-          title: {
-            text: '目前顯示的所有專案的完成度'
-          },
           xaxis: {
             categories: ['專案完成度'],
           },
