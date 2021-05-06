@@ -176,7 +176,7 @@
                 <tbody>
                   <tr
                     v-for="version in currentVersions"
-                    :key="version._id"
+                    :key="'ver'+version._id"
                   >
                     <td class="text-left">
                       {{ dateConvert(version.tick) }}
@@ -247,7 +247,7 @@
             你不具備你勾選的知識點的行政管理權，回傳的知識點數量為0
           </div>
           <div v-if='participantsDB.statistics.length > 0'>
-            <div class='text-left' v-for='participant in participantsDB.statistics' :key='participant._id'>
+            <div class='text-left' v-for='participant in participantsDB.statistics' :key='"uid"+participant._id'>
               <div class='text-h6 indigo darken-4 font-weight-black white--text'>{{participant.name}} @ {{participant.unit}}</div>
               <v-divider></v-divider>
               <div class='text-subtitle-1 indigo--text darken-4 font-weight-medium'>參與PM工作（{{ participant.pmStages.length }}次）</div>
@@ -310,7 +310,7 @@
                   :color="tagColor(4)"
                   label
                   v-for='stage in participant.finalStages'
-                  :key='stage._id'
+                  :key='"parf"+stage._id'
                 >
                   {{ stage.KBtitle }} | {{ stage.name }}
                 </v-chip>
@@ -539,7 +539,7 @@
         }"
         min-height="100"
         transition="fade-transition"
-        v-for="item in convertedList" :key="item._id"
+        v-for="item in convertedList" :key="'KB'+item._id"
       >
         <progress-tile @tags='openTagW' @requestUpload='openUploadW' @viewDetail='openauthDetail' @KBselected='KBupdated' :progressItem='item' />
       </v-lazy>
