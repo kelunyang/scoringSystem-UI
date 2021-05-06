@@ -51,7 +51,7 @@
         </v-container>
         <v-text-field prepend-icon='fa-key' type='password' label='你的新密碼' hint="如果你要設定密碼的話，請輸入您的新密碼" v-model='password' :class='firstRun'></v-text-field>
         <password v-model="password" :strength-meter-only="true"/>
-        <v-text-field prepend-icon='fa-user-alt' label='用戶名稱' hint="事涉核銷，請務必輸入中文完整姓名" v-model='currentUser.name'></v-text-field>
+        <v-text-field prepend-icon='fa-user-alt' label='用戶名稱' hint="事涉核銷，請務必輸入中文完整姓名" v-model='currentUser.name' :class='firstRun'></v-text-field>
         <v-select
             prepend-icon='fa-transgender-alt'
             v-model='currentUser.types'
@@ -61,8 +61,10 @@
             label='性別'
         ></v-select>
         <v-text-field prepend-icon='fa-building' label='用戶單位' hint="請確實完整填寫，格示範例：臺北市立明德國中、新北市立海山高中" v-model='currentUser.unit'></v-text-field>
-        <v-icon>fa-link</v-icon>
-        <span class="text-subtitle-2 font-weight-bold">社交媒體帳號綁定</span><br />
+        <div class='d-flex flex-row'>
+          <v-icon>fa-link</v-icon>
+          <span class="text-subtitle-2 font-weight-bold">社交媒體帳號綁定</span><br />
+        </div>
         <span class="text-body-1 font-weight-bold" v-if='currentUser.lineDate === 0 || currentUser.lineDate === undefined'>
           請授權我們的機器人能用LINE Notify通知您專案進度
         </span>

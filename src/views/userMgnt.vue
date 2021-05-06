@@ -232,28 +232,6 @@
           </v-card-text>
         </v-card>
       </v-dialog>
-      <v-dialog v-model="tagFilterW" persistent>
-        <v-card>
-          <v-card-title class="headline">設定標籤過濾</v-card-title>
-          <v-card-text>
-            <tag-filter
-              @updateTags='updateTags'
-              :mustSelected='false'
-              :single='false'
-              :selectedItem='selectedFilterTags'
-              @valueUpdated='filterTagUpdated'
-              :candidatedItem='savedTags'
-              :createable='false'
-              label='請輸入您想篩選的使用者標籤'
-            />
-          </v-card-text>
-          <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="brown darken-4" text @click="selectedFilterTags = ''">清除過濾標籤</v-btn>
-          <v-btn color="green darken-1" text @click="tagFilterW = false">回到檢視畫面</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
       <v-dialog v-model="tagUserW" persistent>
           <v-card>
               <v-card-title class="headline">設定用戶所屬標籤</v-card-title>
@@ -304,13 +282,13 @@
       <v-speed-dial style='margin-bottom: 80px' v-model="functionBtn" fixed bottom right direction="left" :open-on-hover="true" transition="slide-x-reverse-transition">
           <template v-slot:activator>
             <v-btn
-                v-model="functionBtn"
-                color="#006064"
-                dark
-                fab
+              v-model="functionBtn"
+              color="#006064"
+              dark
+              fab
             >
-                <v-icon v-if="functionBtn">fa-chevron-left</v-icon>
-                <v-icon v-else>fa-tools</v-icon>
+              <v-icon v-if="functionBtn">fa-chevron-left</v-icon>
+              <v-icon v-else>fa-tools</v-icon>
             </v-btn>
           </template>
           <v-tooltip bottom>
@@ -373,55 +351,44 @@
             <span>新增使用者</span>
           </v-tooltip>
       </v-speed-dial>
-      <v-speed-dial v-model="filterBtn" fixed bottom right direction="left" :open-on-hover="true" transition="slide-x-reverse-transition">
-          <template v-slot:activator>
-            <v-btn
-                v-model="filterBtn"
-                :color="filterColor"
-                dark
+      <v-fab-transition>
+        <v-tooltip bottom>
+          <template v-slot:activator="{ on, attrs }">
+              <v-btn
                 fab
-            >
-                <v-icon v-if="filterBtn">fa-chevron-left</v-icon>
-                <v-icon v-else>fa-filter</v-icon>
-            </v-btn>
+                dark
+                bottom
+                right
+                fixed
+                color="indigo darken-4"
+                @click.stop='robotFilter = !robotFilter'
+                v-bind="attrs" v-on="on"
+              >
+                <v-icon>fa-robot</v-icon>
+              </v-btn>
           </template>
-          <v-tooltip bottom>
-            <template v-slot:activator="{ on, attrs }">
-                <v-btn
-                    fab
-                    dark
-                    small
-                    color="indigo darken-4"
-                    @click.stop='robotFilter = !robotFilter'
-                    v-bind="attrs" v-on="on"
-                >
-                    <v-icon>fa-robot</v-icon>
-                </v-btn>
-            </template>
-            <span>{{ robotConvert(robotFilter) }}</span>
-          </v-tooltip>
-          <v-tooltip bottom>
-            <template v-slot:activator="{ on, attrs }">
-                <v-btn
-                    fab
-                    dark
-                    small
-                    color="green"
-                    @click.stop='tagFilterW = true'
-                    v-bind="attrs" v-on="on"
-                >
-                    <v-icon>fab fa-slack-hash</v-icon>
-                </v-btn>
-            </template>
-            <span>設定標籤過濾</span>
-          </v-tooltip>
-      </v-speed-dial>
+          <span>{{ robotConvert(robotFilter) }}</span>
+        </v-tooltip>
+      </v-fab-transition>
       <div class='d-flex flex-row'>
         <v-text-field class='flex-grow-1' label='搜尋關鍵字' prepend-icon='fa-search' v-model='queryTerm' hint='系統會針對用戶的Email、帳號名稱、服務單位進行關鍵字搜尋（可使用正規表達式）'></v-text-field>
         <v-btn color='indigo darken-4' class='white--text ma-1' @click="termQuery">搜尋</v-btn>
         <v-btn color="brown darken-4" class='white--text ma-1' @click="userfilteredList = userList">清除</v-btn>
       </div>
-      <div class='text-caption red--text'>如果要用標籤過濾請點下方漏斗呼叫#</div>
+      <div class='d-flex flex-row'>
+        <tag-filter
+          class='flex-grow-1'
+          @updateTags='updateTags'
+          :mustSelected='false'
+          :single='false'
+          :selectedItem='selectedFilterTags'
+          @valueUpdated='filterTagUpdated'
+          :candidatedItem='savedTags'
+          :createable='false'
+          label='請輸入您想篩選的使用者標籤'
+        />
+        <v-btn color="brown darken-4" class='white--text flex-shrink-1' @click="selectedFilterTags = ''">清除過濾標籤</v-btn>
+      </div>
       <div class='blue-grey--text darken-1 text-caption'>已篩選出{{ userfilteredList.length }}個用戶，為節省資源，不會全部展現出來，往下滑會載入更多</div>
       <v-lazy
         :options="{
@@ -779,7 +746,6 @@ export default {
         tagUserW: false,
         robotFilter: true,
         functionBtn: false,
-        tagFilterW: false,
         filterBtn: false,
         newEmail: '',
         expiredDate: 0,

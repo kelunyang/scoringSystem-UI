@@ -711,7 +711,7 @@
                     本知識點沒有任何階段，點右邊加號圖案去增加階段吧
                   </v-col>
                   <v-col class='flex-grow-1' v-if='KBitem.stages.length > 0'>
-                    <v-stepper alt-labels v-model="KBitem.stepPointer">
+                    <v-stepper v-model="KBitem.stepPointer">
                       <v-stepper-header>
                         <template
                           v-for='(stage, index) in KBitem.stages'
@@ -723,6 +723,7 @@
                             editable
                             @click="loadReviewer(KBitem)"
                             complete-icon='fa-check-circle'
+                            edit-icon='fa-pencil-alt'
                           >
                             <span v-show='(index + 1) === KBitem.stepPointer'>{{ stage.name }}</span>
                           </v-stepper-step>

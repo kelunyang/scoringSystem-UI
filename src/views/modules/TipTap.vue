@@ -57,14 +57,15 @@
       </v-btn>
     </div>
     <editor-content class='text-left black--text text-body-1' style='overflow-y: scroll' :style='{ maxHeight: maxHeight, minHeight: minHeight }' :editor="editor" />
-    <div class='red--text text-caption text-left' v-show='showHint'>{{ hint }}</div>
-    <div class='red--text text-caption text-left' v-if='value === ""' v-show='!showHint'>文字框內容為空，請點選按鈕區正下方第一行的位置，即可開始輸入</div>
+    <div class='red--text text-caption text-left' v-show='showHint'>{{ hint }}（外層如出現黑框線屬於正常，儲存時不會有影響，只是提示您目前正在編輯該段落而已）</div>
   </div>
 </template>
 
 <script>
 import { Editor, EditorContent } from '@tiptap/vue-2'
 import { defaultExtensions } from '@tiptap/starter-kit'
+const EMPTYCONTENT = '請點擊此開始輸入內容';
+
 export default {
   components: {
     EditorContent,
@@ -87,20 +88,22 @@ export default {
   watch: {
     value(value) {
       // HTML
+      value = value === '' || value === '<p></p>' ? EMPTYCONTENT : value;
       const isSame = this.editor.getHTML() === value
       // JSON
       // const isSame = this.editor.getJSON().toString() === value.toString()
       if (isSame) {
         return
       }
-      this.editor.commands.setContent(this.value, false)
+      this.editor.commands.setContent(value, false)
     },
   },
   mounted() {
     let oriobj = this;
+    let value = this.value === '' ? EMPTYCONTENT : this.value;
     this.editor = new Editor({
       extensions: defaultExtensions(),
-      content: this.value,
+      content: value,
       onUpdate: () => {
         // HTML
         this.$emit('input', this.editor.getHTML())
@@ -109,6 +112,9 @@ export default {
       },
       onFocus() {
         oriobj.showHint = true;
+        if(oriobj.value === EMPTYCONTENT) {
+          oriobj.value = '';
+        }
       },
       onBlur() {
         oriobj.showHint = false;

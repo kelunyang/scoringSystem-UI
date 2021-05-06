@@ -505,20 +505,9 @@
         <template v-slot:default>
           <thead>
             <tr>
-              <th class="text-center">
-                第一步或沒開始
-              </th>
-              <th class="text-center">
-                完成度不到一半
-              </th>
-              <th class="text-center">
-                完成度大約一半
-              </th>
-              <th class="text-center">
-                接近完成的專案
-              </th>
-              <th class="text-center">
-                已經完成的專案
+              <th class='text-center' v-for='step in chartData.series' :key='"step" + step.name'>
+                <span v-if='step.name === 0'>尚未啟動</span>
+                <span v-else>第{{ step.name }}階段</span>
               </th>
               <th class="text-center">
                 總計
@@ -527,12 +516,8 @@
           </thead>
           <tbody>
             <tr>
-              <td>{{ chartData.atBegining }}</td>
-              <td>{{ chartData.aboveHalfway }}</td>
-              <td>{{ chartData.aboutHalfyway }}</td>
-              <td>{{ chartData.almostDone }}</td>
-              <td>{{ chartData.alreadyDone }}</td>
-              <td>{{ chartData.atBegining + chartData.almostDone + chartData.aboutHalfyway + chartData.aboveHalfway + chartData.alreadyDone }}</td>
+              <td class='text-center' v-for='step in chartData.series' :key='"step" + step.name'>{{ step.data[0] }}</td>
+              <td>{{ convertedList.length }}</td>
             </tr>
           </tbody>
         </template>
@@ -954,47 +939,19 @@ export default {
       return color;
     },
     chartData: function () {
-      let atBegining = new Set();
-      let aboveHalfway = new Set();
-      let aboutHalfyway = new Set();
-      let almostDone = new Set();
-      let alreadyDone = new Set();
+      let steps = [];
+      for (let i = 0; i <= this.statisticSteps; i++) {
+        steps[i] = {
+          name: i,
+          data: [0]
+        };
+      }
       for (let i = 0; i < this.convertedList.length; i++) {
         let KB = this.convertedList[i];
-        if(KB.currentStep <= 1) { atBegining.add(KB._id); continue; }
-        if(_.inRange(KB.currentStep, 1.001, Math.floor(KB.stages.length / 2) + 0.001)) { aboveHalfway.add(KB._id); continue; }
-        if(_.inRange(KB.currentStep, Math.floor(KB.stages.length / 2), Math.ceil(KB.stages.length / 2) + 0.001)) { aboutHalfyway.add(KB._id); continue; }
-        if(_.inRange(KB.currentStep, Math.ceil(KB.stages.length / 2), KB.stages.length)) { almostDone.add(KB._id); continue; }
-        if(KB.currentStep === KB.stages.length) { alreadyDone.add(KB._id); continue; }
+        steps[KB.currentStep].data[0]++;
       }
       return {
-        atBegining: atBegining.size,
-        aboveHalfway: aboveHalfway.size,
-        aboutHalfyway: aboutHalfyway.size,
-        almostDone: almostDone.size,
-        alreadyDone: alreadyDone.size,
-        series: [
-          {
-            name: '第一步或沒開始',
-            data: [atBegining.size]
-          },
-          {
-            name: '完成度不到一半',
-            data: [aboveHalfway.size]
-          },
-          {
-            name: '完成度大約一半',
-            data: [aboutHalfyway.size]
-          },
-          {
-            name: '接近完成的專案',
-            data: [almostDone.size]
-          },
-          {
-            name: '已經完成的專案',
-            data: [alreadyDone.size]
-          }
-        ],
+        series: steps,
         chartOptions: {
           chart: {
             type: 'bar',
