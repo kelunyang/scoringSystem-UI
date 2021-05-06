@@ -16,7 +16,7 @@
           <v-stepper-header>
               <template v-for='(stage, index) in currentItem.stages'>
                 <v-stepper-step
-                  :key='stage._id'
+                  :key='"pt"+stage._id'
                   :step='index + 1'
                   :complete='index + 1 < currentStep'
                   :rules='[() => !stage.special]'
