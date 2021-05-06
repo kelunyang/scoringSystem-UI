@@ -571,6 +571,7 @@ export default {
     generateList: function() {
       let now = moment().unix();
       let list = [];
+      let oriobj = this;
       if(oriobj.selectedFilterTags.length > 0) {
         for (let i = 0; i < oriobj.selectedFilterTags.length; i++) {
           let tag = oriobj.selectedFilterTags[i];
@@ -942,6 +943,10 @@ export default {
     }
   },
   watch: {
+    queryHistory: function () {
+      this.generateList();
+      this.renderChart();
+    },
     queryTerm: function () {
       this.generateList();
       this.renderChart();
