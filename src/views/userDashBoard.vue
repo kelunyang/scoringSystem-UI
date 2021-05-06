@@ -533,7 +533,16 @@
       <div v-if='progressList.length === 0'>您目前沒有待處理的項目</div>
       <v-text-field v-if='progressList.length > 0' label='搜尋知識點關鍵字' prepend-icon="fa-search" v-model="queryTerm"></v-text-field>
       <div v-show='!showStatstics' class='blue-grey--text darken-1 text-caption'>已篩選出{{ convertedList.length }}個知識點，為節省資源，不會全部展現出來，往下滑會載入更多</div>
-      <progress-tile v-for="item in convertedList" :key="item._id" @tags='openTagW' @requestUpload='openUploadW' @viewDetail='openauthDetail' @KBselected='KBupdated' :progressItem='item' />
+      <v-lazy
+        :options="{
+          threshold: 0.5
+        }"
+        min-height="100"
+        transition="fade-transition"
+        v-for="item in convertedList" :key="item._id"
+      >
+        <progress-tile @tags='openTagW' @requestUpload='openUploadW' @viewDetail='openauthDetail' @KBselected='KBupdated' :progressItem='item' />
+      </v-lazy>
     </v-sheet>
   </v-sheet>
 </template>
@@ -767,7 +776,6 @@ export default {
         return item.stages.length;
       });
       let orderedSteps = _.orderBy(steps, ['desc']);
-      console.dir(orderedSteps);
       this.maxStep = orderedSteps.length > 0 ? orderedSteps[0] : 5;
       this.statisticSteps = this.maxStep;
       this.dashboardPopulated = true;
