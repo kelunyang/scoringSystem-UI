@@ -933,16 +933,24 @@
           目前沒有任何Issue
         </div>
         <v-sheet class='d-flex flex-column align-start' v-if='filteredListW' v-show='issueListPopulated'>
-          <issue-list
+          <v-lazy
+            :options="{
+              threshold: 0.5
+            }"
+            min-height="100"
+            transition="fade-transition"
+            style='width: 100%'
             v-for='issue in filteredIssues'
             :key='issue._id'
-            :issue='issue'
-            :compareCommit='compareCommit'
-            :compareUser='compareUser'
-            :currentVersion='currentVersion'
-            @view='getIssue'
           >
-          </issue-list>
+            <issue-list
+              :issue='issue'
+              :compareCommit='compareCommit'
+              :compareUser='compareUser'
+              :currentVersion='currentVersion'
+              @view='getIssue'
+            />
+          </v-lazy>
         </v-sheet>
         <v-card ref='issueW' class='issueW' v-show='issueW'>
           <v-card-title>
@@ -1069,30 +1077,46 @@
                 回到列表
               </v-btn>
             </div>
-            <issue-view
-              :issue='issuesInView.main'
-              :compareCommit='compareCommit'
-              :compareUser='compareUser'
-              :currentStage="currentStage"
-              :enableDiff='diffDetect'
-              @edit='editIssue'
-              @sendDiff='addDiff'
-              @download='downloadFile'
-              @remove='removeIssue'
-            />
-            <issue-view
+            <v-lazy
+              :options="{
+                threshold: 0.5
+              }"
+              min-height="100"
+              transition="fade-transition"
+            >
+              <issue-view
+                :issue='issuesInView.main'
+                :compareCommit='compareCommit'
+                :compareUser='compareUser'
+                :currentStage="currentStage"
+                :enableDiff='diffDetect'
+                @edit='editIssue'
+                @sendDiff='addDiff'
+                @download='downloadFile'
+                @remove='removeIssue'
+              />
+            </v-lazy>
+            <v-lazy
+              :options="{
+                threshold: 0.5
+              }"
+              min-height="100"
+              transition="fade-transition"
               v-for="issue in issuesInView.collections"
               :key="issue._id"
-              :issue='issue'
-              :enableDiff='diffDetect'
-              :compareCommit='compareCommit'
-              :compareUser='compareUser'
-              :currentStage="currentStage"
-              @sendDiff='addDiff'
-              @edit='editIssue'
-              @download='downloadFile'
-              @remove='removeIssue'
-            />
+            >
+              <issue-view
+                :issue='issue'
+                :enableDiff='diffDetect'
+                :compareCommit='compareCommit'
+                :compareUser='compareUser'
+                :currentStage="currentStage"
+                @sendDiff='addDiff'
+                @edit='editIssue'
+                @download='downloadFile'
+                @remove='removeIssue'
+              />
+            </v-lazy>
           </div>
         </v-sheet>
       </v-col>
