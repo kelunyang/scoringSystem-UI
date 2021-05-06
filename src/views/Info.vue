@@ -732,15 +732,12 @@ export default {
     this.$socket.client.on('feedbackFileUploadError', this.socketfeedbackFileUploadError);
     this.$socket.client.on('feedbackFileDeleteError', this.socketfeedbackfileDeleteError);
     this.$socket.client.on('requestfeedbackSlice', this.socketrequestfeedbackSlice);
-    let oriobj = this;
-    Vue.nextTick(() => {
-      oriobj.$socket.client.emit('getsiteAdminUsers', [
-        'settingTags'
-      ]);
-      oriobj.$socket.client.emit('getfeedbackList');
-      oriobj.$socket.client.emit('getGithubBackendCommit');
-      oriobj.$socket.client.emit('getGithubFrontendCommit');
-    });
+    this.$socket.client.emit('getsiteAdminUsers', [
+      'settingTags'
+    ]);
+    this.$socket.client.emit('getfeedbackList');
+    this.$socket.client.emit('getGithubBackendCommit');
+    this.$socket.client.emit('getGithubFrontendCommit');
   }
 };
 </script>

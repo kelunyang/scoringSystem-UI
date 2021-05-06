@@ -64,7 +64,7 @@
 <script>
 import { Editor, EditorContent } from '@tiptap/vue-2'
 import { defaultExtensions } from '@tiptap/starter-kit'
-const EMPTYCONTENT = '請點擊此開始輸入內容';
+import Placeholder from '@tiptap/extension-placeholder'
 
 export default {
   components: {
@@ -82,13 +82,13 @@ export default {
   data() {
     return {
       editor: null,
-      showHint: false
+      showHint: false,
+      placeholder: ''
     }
   },
   watch: {
     value(value) {
       // HTML
-      value = value === '' || value === '<p></p>' ? EMPTYCONTENT : value;
       const isSame = this.editor.getHTML() === value
       // JSON
       // const isSame = this.editor.getJSON().toString() === value.toString()
@@ -100,10 +100,12 @@ export default {
   },
   mounted() {
     let oriobj = this;
-    let value = this.value === '' ? EMPTYCONTENT : this.value;
     this.editor = new Editor({
-      extensions: defaultExtensions(),
-      content: value,
+      extensions: [
+        ...defaultExtensions(),
+        Placeholder,
+      ],
+      content: this.value,
       onUpdate: () => {
         // HTML
         this.$emit('input', this.editor.getHTML())
@@ -112,9 +114,6 @@ export default {
       },
       onFocus() {
         oriobj.showHint = true;
-        if(oriobj.value === EMPTYCONTENT) {
-          oriobj.value = '';
-        }
       },
       onBlur() {
         oriobj.showHint = false;
@@ -126,3 +125,31 @@ export default {
   },
 }
 </script>
+<style lang="scss" scoped>
+::v-deep {
+  /* Basic editor styles */
+  .ProseMirror {
+    > * + * {
+      margin-top: 0.75em;
+    }
+  }
+
+  /* Placeholder (at the top) */
+  .ProseMirror p.is-editor-empty:first-child::before {
+    content: '請點擊此開始輸入內容';
+    float: left;
+    color: #ced4da;
+    pointer-events: none;
+    height: 0;
+  }
+
+  /* Placeholder (on every new line) */
+  /*.ProseMirror p.is-empty::before {
+    content: attr(data-placeholder);
+    float: left;
+    color: #ced4da;
+    pointer-events: none;
+    height: 0;
+  }*/
+}
+</style>

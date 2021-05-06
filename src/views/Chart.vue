@@ -398,7 +398,7 @@
         <span>{{ tagConverter(querytypeTag) }}</span>
       </span>
     的目前總{{ queryType }}累計結果： {{ sumValue }} ／ 目前查詢的知識點共有：{{ rankings.length }} 個</div>
-    <apexchart v-if='statisticsPopulated' width="100%" type="line" :options="chartData.chartOptions" :series="chartData.series"></apexchart>
+    <apexchart v-if='statisticsPopulated' height="400" type="line" :options="chartData.chartOptions" :series="chartData.series"></apexchart>
     <v-simple-table v-if='statisticsPopulated'>
       <template v-slot:default>
         <thead>

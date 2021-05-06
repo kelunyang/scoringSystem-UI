@@ -948,7 +948,9 @@ export default {
       }
       for (let i = 0; i < this.convertedList.length; i++) {
         let KB = this.convertedList[i];
-        steps[KB.currentStep].data[0]++;
+        if(KB.currentStep < steps.length) {
+          steps[KB.currentStep].data[0]++;
+        }
       }
       return {
         series: steps,
