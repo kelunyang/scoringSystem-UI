@@ -1372,7 +1372,7 @@ export default {
     },
     scrollEvent: function () {
       let top = (this.$refs.previewArea.getBoundingClientRect().top - 80);
-      if(top < 10) {
+      if(top < 0) {
         this.pinMode = true;
       } else {
         this.pinMode = false;
@@ -1595,9 +1595,6 @@ export default {
       }
     },
     socketaddIssue: function (data) {
-      if(this.currentPlayer) {
-        this.currentPlayer.pause();
-      }
       this.issue._id = data._id;
       this.issue.position = 0;
       this.issue.title = '';
@@ -1607,6 +1604,7 @@ export default {
       this.issueW = true;
       this.issueListW = false;
       this.filteredListW = false;
+      this.fabIssue = false;
     },
     socketeditIssue: function (data) {
       this.issue._id = data._id;
@@ -1625,9 +1623,17 @@ export default {
       this.$socket.client.emit('removeIssue', issue._id);
     },
     addIssue: function (parent) {
+      let pause = 0;
       if(this.currentPlayer) {
-        this.$emit('toastPop', '發送Issue中，播放器已暫停');
         this.currentPlayer.pause();
+        pause++;
+      }
+      if(this.previousPlayer) {
+        this.previousPlayer.pause();
+        pause++;
+      }
+      if(pause > 0) {
+        this.$emit('toastPop', '發送Issue中，播放器已暫停');
       }
       let parentIssue = !('_id' in parent) ? undefined : parent._id;
       let sendIssue = false;
@@ -1931,6 +1937,7 @@ export default {
         let DOM = null;
         let img = new Image();
         let isMedia = false;
+        let isPDF = false;
         let canvasHeight = 0;
         let canvasOffsetTop = 0;
         let canvasWidth = 0;
@@ -1942,6 +1949,7 @@ export default {
             } else if(oriobj.cType === 'pdf') {
               DOM = oriobj.$refs.currentPDF;
               isMedia = true;
+              isPDF = true;
             } else {
               DOM = oriobj.$refs.currentZip.$el;
             }
@@ -1952,6 +1960,7 @@ export default {
             } else if(oriobj.pType === 'pdf') {
               DOM = oriobj.$refs.previousPDF;
               isMedia = true;
+              isPDF = true;
             } else {
               DOM = oriobj.$refs.previousZip.$el;
             }
@@ -1970,6 +1979,10 @@ export default {
             canvasHeight = DOM.clientHeight > window.innerHeight ? window.innerHeight : DOM.clientHeight;
             canvasOffsetTop = DOM.getBoundingClientRect().top < 0 ? DOM.getBoundingClientRect().top : 0;
             img.src = await htmlToImage.toPng(DOM);
+          }
+          if(isPDF) {
+            canvasHeight = DOM.clientHeight > window.innerHeight ? window.innerHeight : DOM.clientHeight;
+            canvasOffsetTop = oriobj.$refs.viewArea.scrollTop > 0 ? oriobj.$refs.viewArea.scrollTop : 0;
           }
           oriobj.paintWidth = canvasWidth;
           oriobj.paintHeight = canvasHeight;

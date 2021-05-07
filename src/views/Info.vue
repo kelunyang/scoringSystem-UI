@@ -6,13 +6,14 @@
         max-width="50vw"
       >
         <v-card>
-          <v-card-title class="headline d-flex flex-row justify-start" style='border-bottom: 2px solid #333'>
-            {{ feedbacksInView.main.title }}
-          </v-card-title>
+          <v-toolbar
+            color="primary"
+            dark
+          >檢視用戶回饋</v-toolbar>
           <v-card-text>
-            <v-container>
-              <v-row dense>
-                <v-col class='d-flex flex-row justify-end'>
+            <v-sheet>
+              <div class='d-flex flex-row flex-grow-1'>
+                <div class='d-flex flex-row justify-end flex-shrink-1'>
                   <v-menu
                     offset-y
                     attach
@@ -60,10 +61,8 @@
                   <v-btn icon @click='removeFeedback(feedbacksInView.main)' v-if='adminConvert()'>
                     <v-icon>fa-trash</v-icon>
                   </v-btn>
-                </v-col>
-              </v-row>
-              <v-row dense>
-                <v-col class='d-flex flex-row justify-end'>
+                </div>
+                <div>
                   <v-chip
                     v-for='type in feedbacksInView.main.type'
                     :key="type + feedbacksInView.main._id"
@@ -71,42 +70,43 @@
                   >
                     {{ type }}
                   </v-chip>
-                </v-col>
-              </v-row>
-              <v-row dense>
-                <v-col class='d-flex flex-column'>
-                  <v-lazy
-                    :options="{
-                      threshold: 0.5
-                    }"
-                    min-height="100"
-                    transition="fade-transition"
-                    style='width: 100%'
-                  >
-                    <issue-view
-                      :issue='feedbacksInView.main'
-                      @edit='editIssue'
-                      @download='downloadFile'
-                    />
-                  </v-lazy>
-                  <v-lazy
-                    :options="{
-                      threshold: 0.5
-                    }"
-                    min-height="100"
-                    transition="fade-transition"
-                    style='width: 100%'
-                    v-for="feedback in feedbacksInView.collections"
-                    :key="feedback._id"
-                  >
-                    <issue-view
-                      :issue='feedback'
-                      @download='downloadFile'
-                    />
-                  </v-lazy>
-                </v-col>
-              </v-row>
-            </v-container>
+                </div>
+              </div>
+              <div class='text-body-1'>
+                {{ feedbacksInView.main.title }}
+              </div>
+              <div class='d-flex flex-column'>
+                <v-lazy
+                  :options="{
+                    threshold: 0.5
+                  }"
+                  min-height="100"
+                  transition="fade-transition"
+                  style='width: 100%'
+                >
+                  <issue-view
+                    :issue='feedbacksInView.main'
+                    @edit='editIssue'
+                    @download='downloadFile'
+                  />
+                </v-lazy>
+                <v-lazy
+                  :options="{
+                    threshold: 0.5
+                  }"
+                  min-height="100"
+                  transition="fade-transition"
+                  style='width: 100%'
+                  v-for="feedback in feedbacksInView.collections"
+                  :key="feedback._id"
+                >
+                  <issue-view
+                    :issue='feedback'
+                    @download='downloadFile'
+                  />
+                </v-lazy>
+              </div>
+            </v-sheet>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>

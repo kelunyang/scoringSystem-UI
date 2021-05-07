@@ -497,6 +497,16 @@
         <v-btn color='indigo darken-4' class='white--text ma-1' @click="generateList">搜尋</v-btn>
         <v-btn color="brown darken-4" class='white--text ma-1' @click="clearFilterTag">清除</v-btn>
       </div>
+      <div class='text-body-2'>最近查詢的標籤（查詢紀錄與知識點編輯器共用，點擊後載入）</div>
+      <div class='d-flex flex-row flex-wrap ma-1'>
+        <v-chip
+          v-for='ch in queriedChapters'
+          :key="ch" @click='selectedFilterTags.push(ch)'
+          class='ma-1'
+        >
+          {{ tagQuery(ch) }}
+        </v-chip>
+      </div>
       <v-slider
         label='需要統計的階段數量'
         hint="請注意，如果你要統計的專案有6個階段，你只填了5個，這裡真的不會幫你算到第6階段"
@@ -592,9 +602,15 @@ export default {
       if(oriobj.selectedFilterTags.length > 0) {
         for (let i = 0; i < oriobj.selectedFilterTags.length; i++) {
           let tag = oriobj.selectedFilterTags[i];
-          list.push(_.filter(this.progressList, (item) => {
+          let found = _.filter(this.progressList, (item) => {
             return _.includes(item.tag, tag);
-          }));
+          });
+          if(found.length > 0) {
+            oriobj.queriedChapters.push(oriobj.selectedKBTag);
+            oriobj.queriedChapters = _.uniq(oriobj.queriedChapters);
+            localStorage.setItem('queriedChapters', JSON.stringify(oriobj.queriedChapters));
+            list.push(found);
+          }
         }
         list = _.flatten(list);
       } else {
@@ -920,6 +936,12 @@ export default {
     },
     downloadFile: function (file) {
       this.$emit('downloadFile', file);
+    },
+    tagQuery: function(tag) {
+      let tagItem = _.find(this.savedTags, (item) => {
+        return item._id === tag
+      });
+      return tagItem === undefined ? '' : tagItem.name;
     }
   },
   watch: {
@@ -1004,6 +1026,7 @@ export default {
   },
   data () {
     return {
+      queriedChapters: [],
       initialized: false,
       maxStep: 5,
       convertedList: [],
@@ -1142,6 +1165,10 @@ export default {
     this.$socket.client.on('KBVersionUploadDone', this.soketKBVersionUploadDone);
     this.$socket.client.on('getlatestVersions', this.soketgetlatestVersions);
     this.$socket.client.on('setKBTag', this.soketsetKBTag);
+    let queriedChapters = window.localStorage.getItem('queriedChapters');
+    if(queriedChapters) {
+      this.queriedChapters = JSON.parse(queriedChapters);
+    }
   }
 };
 </script>
