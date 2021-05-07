@@ -678,8 +678,9 @@ export default {
         });
       }
       this.convertedList = [];
+      let convertedList = _.orderBy(list, ['remainTick'], ['asc']);
       setTimeout(() => {
-        oriobj.convertedList = _.orderBy(list, ['remainTick'], ['asc']);
+        oriobj.convertedList = convertedList;
         let steps = _.map(oriobj.convertedList, (item) => {
           return item.stages.length;
         });
