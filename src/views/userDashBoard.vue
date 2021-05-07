@@ -664,7 +664,10 @@ export default {
       let steps = _.map(this.convertedList, (item) => {
         return item.stages.length;
       });
-      let orderedSteps = _.orderBy(steps, ['desc']);
+      let orderedSteps = steps.sort((a, b) => {
+        return b - a;
+      });
+      console.dir(orderedSteps);
       this.maxStep = orderedSteps.length > 0 ? orderedSteps[0] : 5;
       this.statisticSteps = this.maxStep;
     },
