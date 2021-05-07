@@ -949,25 +949,33 @@ export default {
   watch: {
     queryHistory: function () {
       if(this.initialized) {
+        this.initialized = false;
         this.generateList();
         this.renderChart();
+        this.initialized = true;
       }
     },
     queryTerm: function () {
       if(this.initialized) {
+        this.initialized = false;
         this.generateList();
         this.renderChart();
+        this.initialized = true;
       }
     },
     selectedFilterTags: function () {
       if(this.initialized) {
+        this.initialized = false;
         this.generateList();
         this.renderChart();
+        this.initialized = true;
       }
     },
     statisticSteps: function () {
       if(this.initialized) {
+        this.initialized = false;
         this.renderChart();
+        this.initialized = true;
       }
     },
     dashBoardFirstUse: function () {
