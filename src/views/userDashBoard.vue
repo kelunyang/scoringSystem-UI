@@ -667,8 +667,8 @@ export default {
       let orderedSteps = steps.sort((a, b) => {
         return b - a;
       });
-      console.dir(orderedSteps);
       this.maxStep = orderedSteps.length > 0 ? orderedSteps[0] : 5;
+      this.initialized = true;
       this.statisticSteps = this.maxStep;
     },
     renderChart: function() {
@@ -785,6 +785,7 @@ export default {
       this.dashboardPopulated = true;
       clearTimeout(this.queryTimer);
       this.queryTimer = setTimeout(() => {
+        this.initialized = false;
         oriobj.$emit('timerOn', true);
         oriobj.$emit('toastPop', 'DashBoard更新中');
         oriobj.$socket.client.emit('listDashBoard');
@@ -947,19 +948,27 @@ export default {
   },
   watch: {
     queryHistory: function () {
-      this.generateList();
-      this.renderChart();
+      if(this.initialized) {
+        this.generateList();
+        this.renderChart();
+      }
     },
     queryTerm: function () {
-      this.generateList();
-      this.renderChart();
+      if(this.initialized) {
+        this.generateList();
+        this.renderChart();
+      }
     },
     selectedFilterTags: function () {
-      this.generateList();
-      this.renderChart();
+      if(this.initialized) {
+        this.generateList();
+        this.renderChart();
+      }
     },
     statisticSteps: function () {
-      this.renderChart();
+      if(this.initialized) {
+        this.renderChart();
+      }
     },
     dashBoardFirstUse: function () {
       if(this.localLoaded) {
@@ -1026,6 +1035,7 @@ export default {
   },
   data () {
     return {
+      initialized: false,
       maxStep: 5,
       convertedList: [],
       chartData: {
