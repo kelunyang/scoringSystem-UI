@@ -586,7 +586,6 @@ export default {
       this.generateList();
     },
     generateList: function() {
-      this.convertedList = [];
       let now = moment().unix();
       let list = [];
       let oriobj = this;
@@ -678,16 +677,19 @@ export default {
           return aTime - bTime;
         });
       }
-      this.convertedList = _.orderBy(list, ['remainTick'], ['asc']);
-      let steps = _.map(this.convertedList, (item) => {
-        return item.stages.length;
-      });
-      let orderedSteps = steps.sort((a, b) => {
-        return b - a;
-      });
-      this.maxStep = orderedSteps.length > 0 ? orderedSteps[0] : 5;
-      this.initialized = true;
-      this.statisticSteps = this.maxStep;
+      this.convertedList = [];
+      setTimeout(() => {
+        oriobj.convertedList = _.orderBy(list, ['remainTick'], ['asc']);
+        let steps = _.map(oriobj.convertedList, (item) => {
+          return item.stages.length;
+        });
+        let orderedSteps = steps.sort((a, b) => {
+          return b - a;
+        });
+        oriobj.maxStep = orderedSteps.length > 0 ? orderedSteps[0] : 5;
+        oriobj.initialized = true;
+        oriobj.statisticSteps = oriobj.maxStep;
+      }, 1000);
     },
     renderChart: function() {
       let steps = [];
@@ -926,6 +928,13 @@ export default {
       if(this.initialized) {
         this.initialized = false;
         this.generateList();
+        this.renderChart();
+        this.initialized = true;
+      }
+    },
+    statisticSteps: function () {
+      if(this.initialized) {
+        this.initialized = false;
         this.renderChart();
         this.initialized = true;
       }
