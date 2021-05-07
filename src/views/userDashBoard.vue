@@ -930,13 +930,6 @@ export default {
         this.initialized = true;
       }
     },
-    statisticSteps: function () {
-      if(this.initialized) {
-        this.initialized = false;
-        this.renderChart();
-        this.initialized = true;
-      }
-    },
     dashBoardFirstUse: function () {
       if(this.localLoaded) {
         window.localStorage.setItem('dashBoardFirstUse', JSON.stringify(this.dashBoardFirstUse));
