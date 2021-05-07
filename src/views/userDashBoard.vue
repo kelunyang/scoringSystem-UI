@@ -482,16 +482,21 @@
       </v-tooltip>
     </v-fab-transition>
     <div v-show='showStatstics'>
-      <tag-filter
-        @updateTags='updateTags'
-        :mustSelected='false'
-        :single='false'
-        :selectedItem='selectedFilterTags'
-        @valueUpdated='updateFilterTag'
-        :candidatedItem='savedTags'
-        :createable='false'
-        label='請輸入過濾用的標籤（如：國中、理化）'
-      />
+      <div class='d-flex flex-row'>
+        <tag-filter
+          class='flex-grow-1'
+          @updateTags='updateTags'
+          :mustSelected='false'
+          :single='false'
+          :selectedItem='selectedFilterTags'
+          @valueUpdated='updateFilterTag'
+          :candidatedItem='savedTags'
+          :createable='false'
+          label='請輸入過濾用的標籤（如：國中、理化）'
+        />
+        <v-btn color='indigo darken-4' class='white--text ma-1' @click="generateList">搜尋</v-btn>
+        <v-btn color="brown darken-4" class='white--text ma-1' @click="clearFilterTag">清除</v-btn>
+      </div>
       <v-slider
         label='需要統計的階段數量'
         hint="請注意，如果你要統計的專案有6個階段，你只填了5個，這裡真的不會幫你算到第6階段"
@@ -531,7 +536,11 @@
     ></v-skeleton-loader>
     <v-sheet v-if='dashboardPopulated' class='pa-0 ma-0 d-flex flex-column'>
       <div v-if='progressList.length === 0'>您目前沒有待處理的項目</div>
-      <v-text-field v-if='progressList.length > 0' label='搜尋知識點關鍵字' prepend-icon="fa-search" v-model="queryTerm"></v-text-field>
+      <div class='d-flex flex-row' v-if='progressList.length > 0'>
+        <v-text-field class='flex-grow-1' label='搜尋知識點關鍵字' prepend-icon="fa-search" v-model="queryTerm"></v-text-field>
+        <v-btn color='indigo darken-4' class='white--text ma-1' @click="generateList">搜尋</v-btn>
+        <v-btn color="brown darken-4" class='white--text ma-1' @click="clearQueryTerm">清除</v-btn>
+      </div>
       <div v-show='!showStatstics' class='blue-grey--text darken-1 text-caption'>已篩選出{{ convertedList.length }}個知識點，為節省資源，不會全部展現出來，往下滑會載入更多</div>
       <v-lazy
         :options="{
@@ -568,6 +577,14 @@ export default {
     TagFilter
   },
   methods: {
+    clearQueryTerm: function() {
+      this.queryTerm = '';
+      this.generateList();
+    },
+    clearFilterTag: function() {
+      this.selectedFilterTags = '';
+      this.generateList();
+    },
     generateList: function() {
       let now = moment().unix();
       let list = [];
@@ -948,22 +965,6 @@ export default {
   },
   watch: {
     queryHistory: function () {
-      if(this.initialized) {
-        this.initialized = false;
-        this.generateList();
-        this.renderChart();
-        this.initialized = true;
-      }
-    },
-    queryTerm: function () {
-      if(this.initialized) {
-        this.initialized = false;
-        this.generateList();
-        this.renderChart();
-        this.initialized = true;
-      }
-    },
-    selectedFilterTags: function () {
       if(this.initialized) {
         this.initialized = false;
         this.generateList();
