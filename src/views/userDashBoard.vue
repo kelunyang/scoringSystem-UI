@@ -505,12 +505,12 @@
         v-model="statisticSteps"
         thumb-label
       ></v-slider>
-      <apexchart width="100%" type="bar" :options="chartData.chartOptions" :series="chartData.series"></apexchart>
+      <apexchart width="100%" height="150" type="bar" :options="chartOptions" :series="chartSeries"></apexchart>
       <v-simple-table>
         <template v-slot:default>
           <thead>
             <tr>
-              <th class='text-center' v-for='(step,n) in chartData.series' :key='"stepth" + n'>
+              <th class='text-center' v-for='(step,n) in chartSeries' :key='"stepth" + n'>
                 <span v-if='step.name === 0'>尚未啟動</span>
                 <span v-else>第{{ step.name }}階段</span>
               </th>
@@ -521,7 +521,7 @@
           </thead>
           <tbody>
             <tr>
-              <td class='text-center' v-for='(step,n) in chartData.series' :key='"steptd" + n'>{{ step.data[0] }}</td>
+              <td class='text-center' v-for='(step,n) in chartSeries' :key='"steptd" + n'>{{ step.data[0] }}</td>
               <td>{{ convertedList.length }}</td>
             </tr>
           </tbody>
@@ -586,6 +586,7 @@ export default {
       this.generateList();
     },
     generateList: function() {
+      this.convertedList = [];
       let now = moment().unix();
       let list = [];
       let oriobj = this;
@@ -702,50 +703,7 @@ export default {
           steps[KB.currentStep].data[0]++;
         }
       }
-      this.chartData = {
-        series: steps,
-        chartOptions: {
-          chart: {
-            type: 'bar',
-            height: 150,
-            stacked: true,
-            stackType: '100%'
-          },
-          plotOptions: {
-            bar: {
-              horizontal: true,
-            },
-          },
-          stroke: {
-            width: 1,
-            colors: ['#fff']
-          },
-          colors: randomColor({
-            luminosity: 'dark',
-            hue: this.$store.state.siteColor,
-            count: 5,
-            format: 'rgb'
-          }),
-          xaxis: {
-            categories: ['專案完成度'],
-          },
-          tooltip: {
-            y: {
-              formatter: function (val) {
-                return val + "個知識點"
-              }
-            }
-          },
-          fill: {
-            opacity: 1
-          },
-          legend: {
-            position: 'top',
-            horizontalAlign: 'left',
-            offsetX: 40
-          }
-        }
-      }
+      this.chartSeries = steps;
     },
     closeInitW: function() {
       this.initW = false;
@@ -1048,53 +1006,51 @@ export default {
       initialized: false,
       maxStep: 5,
       convertedList: [],
-      chartData: {
-        series: [
-          {
-            name: '0',
-            data: [0]
-          }
-        ],
-        chartOptions: {
-          chart: {
-            type: 'bar',
-            height: 150,
-            stacked: true,
-            stackType: '100%'
+      chartSeries: [
+        {
+          name: '0',
+          data: [0]
+        }
+      ],
+      chartOptions: {
+        chart: {
+          type: 'bar',
+          height: 150,
+          stacked: true,
+          stackType: '100%'
+        },
+        plotOptions: {
+          bar: {
+            horizontal: true,
           },
-          plotOptions: {
-            bar: {
-              horizontal: true,
-            },
-          },
-          stroke: {
-            width: 1,
-            colors: ['#fff']
-          },
-          colors: randomColor({
-            luminosity: 'dark',
-            hue: this.$store.state.siteColor,
-            count: 5,
-            format: 'rgb'
-          }),
-          xaxis: {
-            categories: ['專案完成度'],
-          },
-          tooltip: {
-            y: {
-              formatter: function (val) {
-                return val + "個知識點"
-              }
+        },
+        stroke: {
+          width: 1,
+          colors: ['#fff']
+        },
+        colors: randomColor({
+          luminosity: 'dark',
+          hue: this.$store.state.siteColor,
+          count: 20,
+          format: 'rgb'
+        }),
+        xaxis: {
+          categories: ['專案完成度'],
+        },
+        tooltip: {
+          y: {
+            formatter: function (val) {
+              return val + "個知識點"
             }
-          },
-          fill: {
-            opacity: 1
-          },
-          legend: {
-            position: 'top',
-            horizontalAlign: 'left',
-            offsetX: 40
           }
+        },
+        fill: {
+          opacity: 1
+        },
+        legend: {
+          position: 'top',
+          horizontalAlign: 'left',
+          offsetX: 40
         }
       },
       statisticSteps: 1,
