@@ -358,7 +358,7 @@
         </div>
       </v-list>
     </v-navigation-drawer>
-    <v-app-bar elevate-on-scroll fixed app :color='randomColor' dark>
+    <v-app-bar elevate-on-scroll fixed app :color='siteColor' dark>
       <v-app-bar-nav-icon @click='miniVariant = !miniVariant'>
         <v-icon>fa-bars</v-icon>
       </v-app-bar-nav-icon>
@@ -673,8 +673,8 @@ export default {
     currentUser: function () {
       return this.$store.state.currentUser;
     },
-    randomColor: function () {
-      return this.$store.state.randomColor;
+    siteColor: function () {
+      return this.$store.state.siteColor;
     },
     siteSettings: function () {
       return this.$store.state.siteSettings;
@@ -812,7 +812,6 @@ export default {
     }
   },
   created () {
-    this.$store.commit('updateSiteColor');
     if(!this.preventR) {
       let nav = performance.getEntriesByType("navigation");
       if(nav === undefined || nav == null || nav.length === 0) {

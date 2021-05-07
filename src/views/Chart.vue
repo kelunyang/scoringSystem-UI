@@ -800,7 +800,8 @@ export default {
           colors: randomColor({
             luminosity: 'dark',
             count: 2,
-            format: 'rgb'
+            format: 'rgb',
+            hue: this.$store.state.siteColor
           }),
           dataLabels: {
             enabled: true,

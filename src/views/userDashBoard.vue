@@ -705,7 +705,7 @@ export default {
           },
           colors: randomColor({
             luminosity: 'dark',
-            hue: 'random',
+            hue: this.$store.state.siteColor,
             count: 5,
             format: 'rgb'
           }),
@@ -1025,7 +1025,8 @@ export default {
       let color = randomColor({
           luminosity: 'dark',
           count: 5,
-          format: 'rgb'
+          format: 'rgb',
+          hue: this.$store.state.siteColor
       });
       return color;
     },
@@ -1063,7 +1064,7 @@ export default {
           },
           colors: randomColor({
             luminosity: 'dark',
-            hue: 'random',
+            hue: this.$store.state.siteColor,
             count: 5,
             format: 'rgb'
           }),

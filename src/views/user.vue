@@ -148,7 +148,8 @@ export default {
         let color = randomColor({
             luminosity: 'dark',
             count: this.currentUser.tags.length,
-            format: 'rgb'
+            format: 'rgb',
+            hue: this.$store.state.siteColor
         });
         return color;
     },

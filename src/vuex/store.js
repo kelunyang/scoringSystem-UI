@@ -1,7 +1,6 @@
 import moment from 'moment';
 import Vue from 'vue';
 import Vuex, {Store} from "vuex";
-import { randomColor } from 'randomcolor';
 import _ from 'lodash';
 import VueGtag from "vue-gtag";
 
@@ -36,16 +35,9 @@ const store = new Store({
       changeLog: '**test**'
     },
     savedTags: [],
-    randomColor: '#199494'
+    siteColor: '#15858A'
   },
   mutations: {
-    updateSiteColor(state) {
-      let color = randomColor({
-          luminosity: 'dark',
-          format: 'hex'
-      });
-      state.randomColor = color;
-    },
     updateSavedTags(state, tags) {
       state.savedTags = _.orderBy(tags, ['name'], ['asc']);
     },
