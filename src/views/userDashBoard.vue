@@ -505,7 +505,7 @@
         <template v-slot:default>
           <thead>
             <tr>
-              <th class='text-center' v-for='step in chartData.series' :key='"stepth" + step.name'>
+              <th class='text-center' v-for='(step,n) in chartData.series' :key='"stepth" + n'>
                 <span v-if='step.name === 0'>尚未啟動</span>
                 <span v-else>第{{ step.name }}階段</span>
               </th>
@@ -516,7 +516,7 @@
           </thead>
           <tbody>
             <tr>
-              <td class='text-center' v-for='step in chartData.series' :key='"steptd" + step.name'>{{ step.data[0] }}</td>
+              <td class='text-center' v-for='(step,n) in chartData.series' :key='"steptd" + n'>{{ step.data[0] }}</td>
               <td>{{ convertedList.length }}</td>
             </tr>
           </tbody>

@@ -134,7 +134,7 @@
           <v-timeline dense reverse>
             <v-timeline-item
               v-for="event in events"
-              :key="event._id"
+              :key="'event'+event._id"
               fill-dot
             >
               <template v-slot:icon>

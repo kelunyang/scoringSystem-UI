@@ -75,17 +75,35 @@
               </v-row>
               <v-row dense>
                 <v-col class='d-flex flex-column'>
-                  <issue-view
-                    :issue='feedbacksInView.main'
-                    @edit='editIssue'
-                    @download='downloadFile'
-                  />
-                  <issue-view
+                  <v-lazy
+                    :options="{
+                      threshold: 0.5
+                    }"
+                    min-height="100"
+                    transition="fade-transition"
+                    style='width: 100%'
+                  >
+                    <issue-view
+                      :issue='feedbacksInView.main'
+                      @edit='editIssue'
+                      @download='downloadFile'
+                    />
+                  </v-lazy>
+                  <v-lazy
+                    :options="{
+                      threshold: 0.5
+                    }"
+                    min-height="100"
+                    transition="fade-transition"
+                    style='width: 100%'
                     v-for="feedback in feedbacksInView.collections"
                     :key="feedback._id"
-                    :issue='feedback'
-                    @download='downloadFile'
-                  />
+                  >
+                    <issue-view
+                      :issue='feedback'
+                      @download='downloadFile'
+                    />
+                  </v-lazy>
                 </v-col>
               </v-row>
             </v-container>

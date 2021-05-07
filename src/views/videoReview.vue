@@ -336,10 +336,27 @@
             </template>
             <span>清空繪圖區</span>
           </v-tooltip>
-          <v-btn
-            v-bind="attrs" v-on="on"
-            @click="citetoIssue"
-          >我畫好了，送出！</v-btn>
+          <v-menu offset-y>
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                v-bind="attrs"
+                v-on="on"
+              >
+                我畫好了，送出！
+              </v-btn>
+            </template>
+            <v-sheet class='d-flex flex-column pa-1'>
+              <div class='text-h6'>確認送出手繪標記？</div>
+              <v-btn
+                @click="citetoIssue"
+                color='red accent-4'
+                class='white--text ma-1'
+              >
+                確認送出！
+              </v-btn>
+              <div class='text-caption red--text'>如果你只是誤觸，請隨意點擊其他地方即會關閉本對話框，如果你發圖後想預覽，點選Issue附件區的檔案名稱即可</div>
+            </v-sheet>
+          </v-menu>
         </v-card-actions>
         <v-card-text class='text-left'>
           <paintable
@@ -1669,7 +1686,7 @@ export default {
       return time === 0 ? '尚未設定' : moment.unix(time).format('YYYY/MM/DD HH:mm:ss');
     },
     HTMLConverter: function (msg) {
-      msg = msg === null || msg == undefined ? '**test**' : msg;
+      msg = msg === null || msg == undefined ? '**用戶未輸入任何內容**' : msg;
       return marked(msg, { renderer });
     },
     filenameConvert: function (file) {
@@ -1682,7 +1699,7 @@ export default {
       return prettyBytes(size);
     },
     deleteIssueFile: function (file) {
-      this.$socket.client.emit('deleteIssueFile', {
+      this.$socket.client.emit('deleteissueFile', {
         fileID: file._id,
         issueID: this.issue._id
       });
@@ -2068,7 +2085,7 @@ export default {
       return {
         main: {
           title: '',
-          body: '**test**',
+          body: '**用戶未輸入任何內容**',
           user: {
             types: 'bottts',
             name: 'test',
@@ -2082,7 +2099,7 @@ export default {
         collections: [
             {
             title: '',
-            body: '**test**',
+            body: '**用戶未輸入任何內容**',
             user:
             {
               types: 'bottts',

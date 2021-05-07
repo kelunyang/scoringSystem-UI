@@ -44,10 +44,12 @@
       </v-btn>
     </v-row>
     <v-row class='pa-0 ma-0'>
-      <v-col cols='2' class='pa-0 ma-0'>
+      <v-col cols='2' class='pa-0 ma-0 d-flex flex-column justify-center align-self-center align-center'>
         <v-avatar>
           <img :src='"https://avatars.dicebear.com/api/" + issue.user.types + "/" + encodeURIComponent(issue.user.name + "@" + issue.user.unit) + ".svg"' />
         </v-avatar>
+        <div class='text-caption'>{{ issue.user.name }}</div>
+        <div class='text-caption'>{{ issue.user.unit }}</div>
       </v-col>
       <v-col cols="10" class='text-left ma-0 pa-1'>
         <div class='text-caption'>{{ dateConvert(issue.tick) }}</div>
@@ -147,7 +149,7 @@ export default {
       return str;
     },
     HTMLConverter: function (msg) {
-      msg = msg === null || msg == undefined ? '**test**' : msg;
+      msg = msg === null || msg == undefined ? '**用戶未輸入任何內容**' : msg;
       return marked(msg, { renderer });
     },
     editIssue: function (issue) {

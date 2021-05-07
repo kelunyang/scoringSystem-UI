@@ -31,6 +31,7 @@
         <span>{{ githubConvert(data.item) }}</span>
       </template>
     </v-select>
+    <div class='text-caption red--text'>如果你發現預設沒有選到東西，那代表你太久沒來這裡選一下新版本的commit（記得要先做git pull）</div>
     <v-select
       :items='backendCommits'
       label='系統後端版本'
@@ -45,10 +46,11 @@
         <span>{{ githubConvert(data.item) }}</span>
       </template>
     </v-select>
+    <div class='text-caption red--text'>如果你發現預設沒有選到東西，那代表你太久沒來這裡選一下新版本的commit（記得要先做git pull）</div>
     <v-text-field label='檔案儲存位置' v-model='storageLocation' hint='請注意，這裡是檔案儲存位置指的是NFS主機上的位置，不知道別亂調，最後不用加上/'></v-text-field>
     <v-text-field label='Github Personal Token' v-model='githubKey' hint='請注意，這是GitHub產生的Personal Token'></v-text-field>
-    <v-text-field label='前端Github Repo Address' v-model='frontendRepo' hint='請注意，這是前端專案在GitHub的位置'></v-text-field>
-    <v-text-field label='後端Github Repo Address' v-model='backendRepo' hint='請注意，這是後端專案在GitHub的位置'></v-text-field>
+    <v-text-field label='前端Github Repo位置' v-model='frontendRepo' hint='請注意，這是前端專案在GitHub的位置'></v-text-field>
+    <v-text-field label='後端Github Repo位置' v-model='backendRepo' hint='請注意，這是後端專案在GitHub的位置'></v-text-field>
     <div class='text-h5 text-center pt-5 font-weight-black'>權限設定</div>
     <v-divider inset></v-divider>
     <div class='text-subtitle-2 font-weight-blod'>用戶連線中定時更新時間</div>

@@ -49,6 +49,7 @@
             </v-col>
           </v-row>
         </v-container>
+        <v-btn color="red darken-4" class='white--text' @click="saveUser">儲存修改（本按鈕於畫面上下方各有一顆，任何修改請務必儲存）</v-btn>
         <v-text-field prepend-icon='fa-key' type='password' label='你的新密碼' hint="如果你要設定密碼的話，請輸入您的新密碼" v-model='password' :class='firstRun'></v-text-field>
         <password v-model="password" :strength-meter-only="true"/>
         <v-text-field prepend-icon='fa-user-alt' label='用戶名稱' hint="事涉核銷，請務必輸入中文完整姓名" v-model='currentUser.name' :class='firstRun'></v-text-field>
@@ -85,7 +86,7 @@
         <div class='d-flex flex-row flex-wrap'>
           <v-chip v-for='(item, k) in currentUser.tags' :key='k' class='ma-2' :color='tagColor(k)' label text-color='white'>{{ item.name }}</v-chip>
         </div>
-        <v-btn color="red darken-4" class='white--text' @click="saveUser">儲存修改</v-btn>
+        <v-btn color="red darken-4" class='white--text' @click="saveUser">儲存修改（本按鈕於畫面上下方各有一顆，任何修改請務必儲存）</v-btn>
       </v-col>
     </v-row>
   </v-main>
