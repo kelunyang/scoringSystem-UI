@@ -679,18 +679,16 @@ export default {
       }
       this.convertedList = [];
       let convertedList = _.orderBy(list, ['remainTick'], ['asc']);
-      setTimeout(() => {
-        oriobj.convertedList = convertedList;
-        let steps = _.map(oriobj.convertedList, (item) => {
-          return item.stages.length;
-        });
-        let orderedSteps = steps.sort((a, b) => {
-          return b - a;
-        });
-        oriobj.maxStep = orderedSteps.length > 0 ? orderedSteps[0] : 5;
-        oriobj.initialized = true;
-        oriobj.statisticSteps = oriobj.maxStep;
-      }, 1000);
+      this.convertedList = convertedList;
+      let steps = _.map(this.convertedList, (item) => {
+        return item.stages.length;
+      });
+      let orderedSteps = steps.sort((a, b) => {
+        return b - a;
+      });
+      this.maxStep = orderedSteps.length > 0 ? orderedSteps[0] : 5;
+      this.initialized = true;
+      this.statisticSteps = this.maxStep;
     },
     renderChart: function() {
       let steps = [];
