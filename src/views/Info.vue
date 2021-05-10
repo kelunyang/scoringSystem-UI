@@ -129,8 +129,8 @@
             編輯用戶回饋
           </v-card-title>
           <v-card-text class='text-left'>
-            <v-select :items='wishFeatures' label='指定功能' multiple v-model='feedback.type' v-if='feedback.parent === undefined'></v-select>
-            <v-text-field v-model='feedback.title' v-if='feedback.parent === undefined'/>
+            <v-select outlined :items='wishFeatures' label='指定功能' multiple v-model='feedback.type' v-if='feedback.parent === undefined'></v-select>
+            <v-text-field v-model='feedback.title' v-if='feedback.parent === undefined' outlined clearable dense/>
             <Tip-Tap
               v-model="feedback.body"
               maxHeight="20vh"
@@ -183,6 +183,7 @@
               label="LINE訊息"
               v-model="LINEbody"
               hint="請不要留白"
+              outlined clearable counter dense
             ></v-textarea>
           </v-card-text>
           <v-card-actions>
@@ -363,7 +364,7 @@ import marked from 'marked';
 import { v4 as uuidv4 } from 'uuid';
 import TipTap from './modules/TipTap';
 import prettyBytes from 'pretty-bytes';
-import _ from 'lodash';
+import _find from 'lodash/find';
 import IssueView from './modules/IssueView.vue';
 
 const renderer = new marked.Renderer();
@@ -480,19 +481,19 @@ export default {
     },
     adminConvert: function () {
       let oriobj = this;
-      return _.find(this.userList, (user) => {
+      return _find(this.userList, (user) => {
         return user._id === oriobj.currentUser._id;
       }) !== undefined;
     },
     ownerConvert: function (feedback) {
       let oriobj = this;
-      return _.find(feedback.users, (user) => {
+      return _find(feedback.users, (user) => {
         return user._id === oriobj.currentUser._id;
       }) !== undefined;
     },
     editConvert: function (feedback) {
       let oriobj = this;
-      return _.find(feedback.users, (user) => {
+      return _find(feedback.users, (user) => {
         return user._id === oriobj.currentUser._id
       }) !== undefined;
     },
@@ -535,13 +536,13 @@ export default {
     },
     agreeConvert: function () {
       let oriobj = this;
-      return _.find(this.feedbacksInView.main.users, (user) => {
+      return _find(this.feedbacksInView.main.users, (user) => {
         return user._id === oriobj.currentUser._id;
       }) !== undefined ? 'fa-star' : 'far fa-star';
     },
     ratingConvert: function (status) {
       let oriobj = this;
-      return _.find(this.feedbacksInView.main.rating, (user) => {
+      return _find(this.feedbacksInView.main.rating, (user) => {
         return user._id === oriobj.currentUser._id
       }) !== undefined ? status ? true : false : status ? false : this.feedbacksInView.main.rating.length === 0;
     },
@@ -581,7 +582,7 @@ export default {
       this.frontendCommits = data;
     },
     getCommit: function (commits, id) {
-      let commit = _.find(commits, (commit) => {
+      let commit = _find(commits, (commit) => {
         return commit.id === id;
       });
       if(commit !== undefined) {

@@ -54,12 +54,12 @@
                 label="進入冷靜期（用戶不准發新的Issue，只可以回復既有的）"
               ></v-switch>
               <div class='text-subtitle-2 font-weight-blod'>本階段名稱</div>
-              <v-text-field hint='請輸入本階段名稱' v-model='currentStage.name'/>
+              <v-text-field hint='請輸入本階段名稱' outlined clearable dense v-model='currentStage.name'/>
               <div class='text-subtitle-2 font-weight-blod'>編輯階段死線</div>
               <VueCtkDateTimePicker v-model="currentStageDate" label='請選擇日期死線' locale='zh-tw' format='YYYY-MM-DD HH:mm:ss' class='ma-2' />
               <div class='text-subtitle-2 font-weight-blod'>編輯階段目標</div>
               <div class='d-flex flex-row'>
-                <v-text-field solo label="請輸入你想要加入的目標名稱" hint='輸入完之後請按右側加號增加目標，請務必最後再編輯目標，否則你輸入的用戶標籤都不會存檔（目標和標籤是分開存檔的）' v-model='objectiveAwaited'/>
+                <v-text-field outlined clearable dense label="請輸入你想要加入的目標名稱" hint='輸入完之後請按右側加號增加目標，請務必最後再編輯目標，否則你輸入的用戶標籤都不會存檔（目標和標籤是分開存檔的）' v-model='objectiveAwaited'/>
                 <v-btn
                   icon
                   outlined
@@ -191,7 +191,7 @@
           dark
         >快速建立用戶標籤</v-toolbar>
         <v-card-text class='pa-0 d-flex flex-column'>
-          <v-alert type='info'>本功能提供快速建立參與知識點各階段的用戶小群組，請注意，現階段沒有開放刪除標籤的規劃（避免權限表操作異常），打字不要打錯字，真的要修改請找管理員直接從資料庫修改</v-alert>
+          <v-alert type='info' icon='fa-info-circle' class='text-left'>本功能提供快速建立參與知識點各階段的用戶小群組，請注意，現階段沒有開放刪除標籤的規劃（避免權限表操作異常），打字不要打錯字，真的要修改請找管理員直接從資料庫修改</v-alert>
           <div class='black--text d-flex flex-column pa-3 text-left'>
             <div class='text-h6'>請選擇你要框選的用戶所在的用戶標籤</div>
             <div class='text-caption grey--text darken-3'>可以不選，那你就會在下一個選單裡要從全部的用戶去篩選名單，基於多數用戶在帳號開設時已經被納入如「110年寫手群」這類的大標籤群組，建議你先在這裡選好，方便過濾</div>
@@ -252,7 +252,7 @@
           dark
         >選擇性複製知識點</v-toolbar>
         <v-card-text class='pa-0 d-flex flex-column'>
-          <v-alert type='info'>請注意，所有的複製都是用「累加」的模式，不會複寫知識點原本的階段與權限設定</v-alert>
+          <v-alert type='info' icon='fa-info-circle' class='text-left'>請注意，所有的複製都是用「累加」的模式，不會複寫知識點原本的階段與權限設定</v-alert>
           <div class='red--text text-center'>
             你目前選擇的知識點： {{ currentKB.name }} 
           </div>
@@ -362,10 +362,12 @@
           <v-text-field
             label="知識點標題"
             v-model='currentKB.title'
+            outlined clearable dense
           ></v-text-field>
           <v-text-field
             label="對應課綱學習表現或是課本內容"
             v-model='currentKB.textbook'
+            outlined clearable dense
           ></v-text-field>
           <div class='red--text text-caption text-left'>以下兩項為細部說明相關內容，細部說明指的是出現在審查畫面抬頭提供參考用的資料</div>
           <Tip-Tap
@@ -416,6 +418,7 @@
           <v-text-field
             label="大分類標題"
             v-model='currentChapter.title'
+            outlined clearable dense
           ></v-text-field>
         </v-card-text>
         <v-card-actions>
@@ -430,7 +433,7 @@
           <v-toolbar-title>選擇科目標籤</v-toolbar-title>
         </v-toolbar>
         <v-card-text class='ma-0 pa-0'>
-          <v-alert type='info'>請選擇您要編輯的科目標籤（如：109年國中數學科），如果您需要新增，直接輸入即可</v-alert>
+          <v-alert type='info' icon='fa-info-circle' class='text-left'>請選擇您要編輯的科目標籤（如：109年國中數學科），如果您需要新增，直接輸入即可</v-alert>
           <tag-filter
             :mustSelected='true'
             @updateTags='updateTags'
@@ -779,7 +782,11 @@ import TagFilter from './modules/TagFilter';
 import TipTap from './modules/TipTap';
 import { v4 as uuidv4 } from 'uuid';
 import marked from 'marked';
-import _ from 'lodash';
+import _map from 'lodash/map';
+import _find from 'lodash/find';
+import _uniq from 'lodash/uniq';
+import _findIndex from 'lodash/findIndex';
+import _flatten from 'lodash/flatten';
 import moment from 'moment';
 import VueCtkDateTimePicker from 'vue-ctk-date-time-picker';
 import 'vue-ctk-date-time-picker/dist/vue-ctk-date-time-picker.css';
@@ -882,7 +889,7 @@ export default {
     saveuserTags: function () {
       this.$emit('toastPop', '設定用戶的使用者標籤中...');
       this.$socket.client.emit('modUserTags', {
-          users: _.map(this.selectedUsers, (item) => {
+          users: _map(this.selectedUsers, (item) => {
             return {
               _id: item
             }
@@ -898,7 +905,7 @@ export default {
       this.selectedUsers = val;
     },
     socketgetUsers: function (data) {
-      this.savedUsers = _.map(data, (item) => {
+      this.savedUsers = _map(data, (item) => {
         return {
           _id: item._id,
           name: item.name+"@"+item.unit+" ("+item.email+")"
@@ -910,7 +917,7 @@ export default {
       this.getUsers();
     },
     tagQuery: function(tag) {
-      let tagItem = _.find(this.savedTags, (item) => {
+      let tagItem = _find(this.savedTags, (item) => {
         return item._id === tag
       });
       return tagItem === undefined ? '' : tagItem.name;
@@ -1089,7 +1096,7 @@ export default {
     },
     socketgetChapters: function (data) {
       this.queriedChapters.push(this.selectedKBTag);
-      this.queriedChapters = _.uniq(this.queriedChapters);
+      this.queriedChapters = _uniq(this.queriedChapters);
       localStorage.setItem('queriedChapters', JSON.stringify(this.queriedChapters));
       this.$emit('toastPop', '取得章節中');
       let KBs = [];
@@ -1103,7 +1110,7 @@ export default {
           KB.stages.sort((a,b) => {
             return a.sort - b.sort;
           });
-          let stepPointer = _.findIndex(KB.stages, { current: true });
+          let stepPointer = _findIndex(KB.stages, { current: true });
           KB.stepPointer = stepPointer === -1 ? -1 : stepPointer + 1;
         }
         chapter.KBs.sort((a,b) => {
@@ -1115,8 +1122,8 @@ export default {
       })
       this.DB = data;
       if(this.currentKB._id !== '') {
-        let flattenKBs = _.flatten(KBs);
-        let currentKB = _.find(flattenKBs, (KB) => {
+        let flattenKBs = _flatten(KBs);
+        let currentKB = _find(flattenKBs, (KB) => {
           return KB._id === this.currentKB._id;
         });
         if(currentKB === undefined) {

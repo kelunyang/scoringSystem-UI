@@ -139,7 +139,7 @@
           </v-btn>
         </v-card-actions>
         <v-card-text>
-          <v-alert type="success">
+          <v-alert type="info" icon='fa-info-circle' class='text-left'>
             請注意，在這台電腦的聊天紀錄只會保存在這台電腦上，而且不保證對方會收到
           </v-alert>
           <Tip-Tap
@@ -532,8 +532,11 @@ import momentDurationFormatSetup from 'moment-duration-format';
 import TipTap from './views/modules/TipTap';
 import TurndownService from 'turndown';
 import { v4 as uuidv4 } from 'uuid';
-import _ from 'lodash';
+import _intersectionWith from 'lodash/intersectionWith';
+import _dropRight from 'lodash/dropRight';
+import _filter from 'lodash/filter';
 import '@fortawesome/fontawesome-free/css/all.css';
+let leaveTick = 0;
 
 const renderer = new marked.Renderer();
 const linkRenderer = renderer.link;
@@ -575,7 +578,7 @@ export default {
     },
     gotoPreviousPage: function () {
       window.location.replace('https://' + window.location.host + '/#' + this.previousPage.location);
-      this.history = _.dropRight(this.history, 2);
+      this.history = _dropRight(this.history, 2);
     },
     timerOn: function (status) {
       this.indeterminate = status;
@@ -715,7 +718,7 @@ export default {
     socketUsersList: function () {
       let oriobj = this;
       let count = 0;
-      let filtered = _.filter(this.socketUsers, (user) => {
+      let filtered = _filter(this.socketUsers, (user) => {
         return user._id !== oriobj.currentUser._id;
       });
       for(let i = 0; i < filtered.length; i++) {
@@ -812,6 +815,18 @@ export default {
     }
   },
   created () {
+    let oriobj = this;
+    document.addEventListener("visibilitychange", function() {
+      if (document.visibilityState === 'visible') {
+        oriobj.sendToast({
+          message: "你離開了" + moment.duration((moment().unix() - leaveTick), 'second').format('mm分ss秒SS') + "！正在確認您的登入是否還有效中...（無效的話您會被自動登出）",
+          time:3000
+        });
+        oriobj.$socket.client.emit('getCurrentUser');
+      } else {
+        leaveTick = moment().unix();
+      }
+    });
     if(!this.preventR) {
       let nav = performance.getEntriesByType("navigation");
       if(nav === undefined || nav == null || nav.length === 0) {
@@ -819,7 +834,7 @@ export default {
       } else {
         if (nav[0].type === 'reload' || nav[0].type === 1) {
           this.sendToast({
-            message: "偵測到網頁重新整理！網頁立刻重建同步連線",
+            message: "偵測到網頁重新整理！重建同步連線中...",
             time:5000
           });
           this.$socket.client.emit('userAlived');
@@ -834,7 +849,6 @@ export default {
       this.chatDB = {};
       localStorage.setItem('chatDB', JSON.stringify(this.chatDB));
     }
-    let oriobj = this;
     this.$socket.client.on('addTag', (data) => {
       if(!data) {
         oriobj.sendToast({
@@ -997,7 +1011,7 @@ export default {
           if(authRange.length === 0) {
             item.vis = true;
           } else {
-            item.vis = (_.intersectionWith(authRange, oriobj.currentUser.tags, (aTag, cTag) => {
+            item.vis = (_intersectionWith(authRange, oriobj.currentUser.tags, (aTag, cTag) => {
                             return aTag === cTag._id;
                         })).length > 0
           }

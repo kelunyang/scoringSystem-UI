@@ -11,8 +11,8 @@
             Email修改： {{ editingUser.name }}
           </v-card-title>
           <v-card-text>
-            <v-alert type="alert" icon="fa-exclamation-circle" class='ma-0'>請注意，使用者登入時是依據Email登入，因此Email不可重複</v-alert>
-            <v-text-field prepend-icon='fa-at' label='用戶Email' v-model='editingUser.email'></v-text-field>
+            <v-alert type="alert" icon='fa-exclamation-triangle' class='text-left'>請注意，使用者登入時是依據Email登入，因此Email不可重複</v-alert>
+            <v-text-field outlined clearable dense prepend-icon='fa-at' label='用戶Email' v-model='editingUser.email'></v-text-field>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
@@ -83,7 +83,7 @@
             </v-btn>
           </v-toolbar>
           <v-card-text class='pa-0 ma-0'>
-            <v-alert type="info" icon="fa-exclamation-circle" class='ma-0'>
+            <v-alert type="info" icon='fa-info-circle' class='text-left'>
               如果你打算變更用戶的密碼，請用補發密碼功能，這裡是用來修改用戶資訊用的
             </v-alert>
             <v-container class='pa-5'>
@@ -94,8 +94,8 @@
                   </v-avatar>
                   <div class="text-body-2 font-weight-bold">帳號創建於： {{ dateConvert(editingUser.createDate) }} </div>
                   <div class="text-body-2 font-weight-bold">帳號修改於： {{ dateConvert(editingUser.modDate) }} </div>
-                  <v-text-field prepend-icon='fa-user-alt' label='用戶名稱' v-model='editingUser.name'></v-text-field>
-                  <v-text-field prepend-icon='fa-building' label='用戶單位' v-model='editingUser.unit'></v-text-field>
+                  <v-text-field outlined clearable dense prepend-icon='fa-user-alt' label='用戶名稱' v-model='editingUser.name'></v-text-field>
+                  <v-text-field outlined clearable dense prepend-icon='fa-building' label='用戶單位' v-model='editingUser.unit'></v-text-field>
                   <v-select
                     prepend-icon='fa-transgender-alt'
                     v-model='editingUser.types'
@@ -103,6 +103,7 @@
                     item-text='title'
                     item-value='value'
                     label='用戶性別'
+                    outlined
                   ></v-select>
                   <span class='text-subtitle-1 font-weight-bold'>使用者標籤：</span><br/>
                   <tag-filter
@@ -140,7 +141,7 @@
             </v-btn>
           </v-toolbar>
           <v-card-text class='ma-0 pa-0'>
-            <v-alert type="info" icon="fa-exclamation-circle">
+            <v-alert type="info" icon='fa-info-circle' class='text-left'>
                 請注意，刪除使用者可能導致某些標籤下沒有成員，影響資料編輯，若發生如此情形，請記得日後手動添加成員到指定標籤
             </v-alert>
             <v-container class='pa-5'>
@@ -186,7 +187,7 @@
             </v-btn>
           </v-toolbar>
           <v-card-text class='ma-0 pa-0'>
-            <v-alert type="info" icon="fa-exclamation-circle">
+            <v-alert type="info" icon='fa-info-circle' class='text-left'>
               由於本系統的用戶都是廠商、各校老師，因此新增用戶功能採用邀請制，這裡只能設定你要建立幾個User，系統會在下面出現邀請碼，你可以自己把邀請碼寄給使用者，讓他們填完自己的相關資料，你唯一能修改的只有用戶的標籤
             </v-alert>
             <v-container class='pa-5'>
@@ -204,7 +205,7 @@
                     label='請輸入使用者歸屬的標籤'
                   />
                   <v-textarea
-                    solo
+                    outlined clearable
                     v-model='newEmail'
                     label='請貼上用戶的Email'
                   ></v-textarea>
@@ -236,7 +237,7 @@
           <v-card>
               <v-card-title class="headline">設定用戶所屬標籤</v-card-title>
               <v-card-text>
-                  <v-alert type="alert" icon="fa-exclamation-triangle" class='ma-0'>請注意選取你要複寫或是新增用戶標籤到使用者的帳號中，然後，記得按右下方的儲存設定，才會把變更存起來</v-alert>
+                  <v-alert type="alert" icon='fa-exclamation-triangle' class='text-left'>請注意選取你要複寫或是新增用戶標籤到使用者的帳號中，然後，記得按右下方的儲存設定，才會把變更存起來</v-alert>
                   <v-switch
                     v-model="moduserTagMode"
                     label="啟動複寫模式（預設值是新增）"
@@ -371,7 +372,7 @@
         </v-tooltip>
       </v-fab-transition>
       <div class='d-flex flex-row'>
-        <v-text-field class='flex-grow-1' label='搜尋關鍵字' prepend-icon='fa-search' v-model='queryTerm' hint='系統會針對用戶的Email、帳號名稱、服務單位進行關鍵字搜尋（可使用正規表達式）'></v-text-field>
+        <v-text-field outlined clearable dense class='flex-grow-1' label='搜尋關鍵字' prepend-icon='fa-search' v-model='queryTerm' hint='系統會針對用戶的Email、帳號名稱、服務單位進行關鍵字搜尋（可使用正規表達式）'></v-text-field>
         <v-btn color='indigo darken-4' class='white--text ma-1' @click="termQuery">搜尋</v-btn>
         <v-btn color="brown darken-4" class='white--text ma-1' @click="userfilteredList = userList">清除</v-btn>
       </div>
@@ -453,7 +454,12 @@
 import moment from 'moment';
 import TagFilter from './modules/TagFilter';
 import validator from 'validator';
-import _ from 'lodash';
+import _filter from 'lodash/filter';
+import _includes from 'lodash/includes';
+import _flatten from 'lodash/flatten';
+import _uniq from 'lodash/uniq';
+import _find from 'lodash/find';
+import _map from 'lodash/map';
 
 export default {
     name: 'userMgnt',
@@ -518,11 +524,11 @@ export default {
           let filteredList = [];
           for (let i = 0; i < this.selectedFilterTags.length; i++) {
             let searchTag = this.selectedFilterTags[i];
-            filteredList.push(_.filter(this.userList, (u) => {
-              return _.includes(u.tags, searchTag);
+            filteredList.push(_filter(this.userList, (u) => {
+              return _includes(u.tags, searchTag);
             }));
           }
-          this.userfilteredList = _.flatten(filteredList);
+          this.userfilteredList = _flatten(filteredList);
         } else {
           this.userfilteredList = this.userList;
         }
@@ -536,10 +542,10 @@ export default {
             });
           });
           oriobj.tagList = [];
-          let flatTag = _.uniq(_.flatten(tags));
+          let flatTag = _uniq(_flatten(tags));
           for(let i = 0; i < flatTag.length; i++) {
             let tag = flatTag[i];
-            let tagObj = _.find(oriobj.savedTags, { _id: tag });
+            let tagObj = _find(oriobj.savedTags, { _id: tag });
             oriobj.tagList.push({
               id: tagObj._id,
               name: tagObj.name,
@@ -626,7 +632,7 @@ export default {
         let oriobj = this;
         for (let i = 0; i < data.length; i++) {
           let item = data[i];
-          let tagObj = _.find(oriobj.tagList, { id: item._id });
+          let tagObj = _find(oriobj.tagList, { id: item._id });
           tagObj.count = item.count.length;
         }
       },
@@ -654,7 +660,7 @@ export default {
         };
       },
       checkTagUsers: function () {
-        this.$socket.client.emit('checkTagUsers', _.map(this.tagList, (item) => {
+        this.$socket.client.emit('checkTagUsers', _map(this.tagList, (item) => {
           return item.id;
         }));
       },

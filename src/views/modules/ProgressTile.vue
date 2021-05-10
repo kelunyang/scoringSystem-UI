@@ -7,7 +7,7 @@
     </v-row>
     <v-row v-if="events.length > 0" no-gutters>
       <v-col class='text-right d-flex justify-end text-caption pa-1'>
-        <v-icon small>fa-bullhorn</v-icon>{{ announcedEvent.desc }}[{{ announcedEvent.user.name }} @ {{ dateConvert(announcedEvent.tick) }}]
+        <v-icon small>fas fa-paw</v-icon>{{ announcedEvent.desc }}[{{ announcedEvent.user.name }} @ {{ dateConvert(announcedEvent.tick) }}]
       </v-col>
     </v-row>
     <v-row no-gutters>
@@ -27,9 +27,9 @@
                   <div v-if='currentStep > 0' v-show='(index + 1) === currentStep'>[進行中]<br/>{{ stage.name }}</div>
                   <div v-if='currentStep > 0' v-show='(index + 1) < currentStep'>[已完成]<br/>{{ stage.name }}</div>
                   <div v-if='currentStep > 0' v-show='(index + 1) > currentStep'>[尚未發生]<br/>{{ stage.name }}</div>
-                  <small>起：{{ dateConvert(stage.dueTick) }}</small>
-                  <small v-if='stage.passTick === 0'>至：{{ dateConvert(stage.dueTick) }}</small><br/>
-                  <small v-if='stage.passTick > 0'>至：{{ dateConvert(stage.passTick) }}</small>
+                  <small>起：{{ dateConvert(stage.startTick) }}</small>
+                  <small v-if='!("passtick" in stage)'>至：{{ dateConvert(stage.dueTick) }}</small>
+                  <small v-if='"passtick" in stage'>至：{{ dateConvert(stage.passTick) }}</small>
                 </v-stepper-step>
                 <v-divider
                   :key='"divider" + stage._id'
@@ -89,7 +89,7 @@
               <v-icon>fa-ellipsis-v</v-icon>
             </v-btn>
           </template>
-          <span>查看最近發生的10則事件</span>
+          <span>查看最近發生的3則事件</span>
         </v-tooltip>
       </v-col>
     </v-row>
@@ -165,7 +165,9 @@
 
 <script>
 import moment from 'moment';
-import _ from 'lodash';
+import _slice from 'lodash/slice';
+import _head from 'lodash/head';
+import _inRange from 'lodash/inRange';
 import momentDurationFormatSetup from 'moment-duration-format';
 
 momentDurationFormatSetup(moment);
@@ -177,7 +179,7 @@ export default {
     },
     methods: {
       rangeConvert: function (value, start, end) {
-        return _.inRange(value, start - 0.001, end + 0.001);
+        return _inRange(value, start - 0.001, end + 0.001);
       },
       dateConvert: function (time) {
         return moment.unix(time).format('YYYY/MM/DD HH:mm:ss');
@@ -208,9 +210,9 @@ export default {
       events.sort((a, b) => {
         return b.tick - a.tick;
       });
-      this.events = _.slice(events, 0, 3);
+      this.events = _slice(events, 0, 3);
       if(events.length > 0) {
-        this.announcedEvent = events[0];
+        this.announcedEvent = _head(events);
       }
     },
     data () {

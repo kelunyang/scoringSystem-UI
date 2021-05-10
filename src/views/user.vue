@@ -2,6 +2,7 @@
   <v-main class='pa-0'>
     <v-alert
       type="error"
+      icon="fa-skull" class='text-left'
       v-show='currentUser.firstRun === true'
     >
       第一次登入嗎？請記得填入你的密碼（已閃紅），並且務必綁定LINE notify喔！
@@ -50,18 +51,21 @@
           </v-row>
         </v-container>
         <v-btn color="red darken-4" class='white--text' @click="saveUser">儲存修改（本按鈕於畫面上下方各有一顆，任何修改請務必儲存）</v-btn>
-        <v-text-field prepend-icon='fa-key' type='password' label='你的新密碼' hint="如果你要設定密碼的話，請輸入您的新密碼" v-model='password' :class='firstRun'></v-text-field>
-        <password v-model="password" :strength-meter-only="true"/>
-        <v-text-field prepend-icon='fa-user-alt' label='用戶名稱' hint="事涉核銷，請務必輸入中文完整姓名" v-model='currentUser.name' :class='firstRun'></v-text-field>
+        <div class='d-flex flex-row'>
+          <v-text-field class='flex-grow-1' outlined clearable dense prepend-icon='fa-key' type='password' label='你的新密碼' hint="如果你要設定密碼的話，請輸入您的新密碼" v-model='password' :class='firstRun'></v-text-field>
+          <div>{{ passwordStrength }}</div>
+        </div>
+        <v-text-field outlined clearable dense prepend-icon='fa-user-alt' label='您的真實姓名' hint="事涉核銷，請務必輸入中文完整姓名" v-model='currentUser.name' :class='firstRun'></v-text-field>
         <v-select
-            prepend-icon='fa-transgender-alt'
-            v-model='currentUser.types'
-            :items='types'
-            item-text='title'
-            item-value='value'
-            label='性別'
+          prepend-icon='fa-transgender-alt'
+          v-model='currentUser.types'
+          :items='types'
+          item-text='title'
+          item-value='value'
+          label='性別'
+          outlined
         ></v-select>
-        <v-text-field prepend-icon='fa-building' label='用戶單位' hint="請確實完整填寫，格示範例：臺北市立明德國中、新北市立海山高中" v-model='currentUser.unit'></v-text-field>
+        <v-text-field outlined clearable dense prepend-icon='fa-building' label='您的真實服務單位' hint="請確實完整填寫，格示範例：臺北市立明德國中、新北市立海山高中" v-model='currentUser.unit'></v-text-field>
         <div class='d-flex flex-row'>
           <v-icon>fa-link</v-icon>
           <span class="text-subtitle-2 font-weight-bold">社交媒體帳號綁定</span><br />
@@ -108,7 +112,7 @@
 // @ is an alias to /src
 import { randomColor } from 'randomcolor';
 import moment from 'moment';
-import Password from 'vue-password-strength-meter';
+import { passwordStrength } from 'check-password-strength'
 import random from 'random';
 
 export default {
@@ -128,10 +132,23 @@ export default {
     this.$socket.client.on('setCurrentUser', this.socketsetCurrentUser);
     this.$socket.client.emit('getRobotSetting');
   },
-  components: {
-      Password
-  },
   computed: {
+    passwordStrength: function () {
+      let passwordeval = passwordStrength(this.password).value;
+      if(passwordeval === 'Too weak') {
+        return '密碼強度極低，建議更換'
+      }
+      if(passwordeval === 'Weak') {
+        return '密碼強度低，建議更換'
+      }
+      if(passwordeval === 'Medium') {
+        return '密碼強度尚可'
+      }
+      if(passwordeval === 'Strong') {
+        return '密碼強度極高'
+      }
+      return '密碼強度檢測中'
+    },
     currentUser: function () {
       return this.$store.state.currentUser;
     },

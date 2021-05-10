@@ -1,7 +1,7 @@
 <template>
   <section>
-      <v-alert v-model='logoutFail' color='error'><v-icon>fa-skull</v-icon>登入失敗</v-alert>
-      <v-alert v-model='logoutSuccess' color='success'><v-icon>fa-grin-wink</v-icon>登入成功！三秒之後跳轉首頁</v-alert>
+      <v-alert v-model='logoutFail' type='error' icon="fa-skull" class='text-left'><v-icon>fa-skull</v-icon>登入失敗</v-alert>
+      <v-alert v-model='logoutSuccess' type='success' icon="fa-grin-wink" class='text-left'><v-icon>fa-grin-wink</v-icon>登入成功！三秒之後跳轉首頁</v-alert>
       <h1 class='loginIcon'><v-icon>fa-sign-out-alt</v-icon>登出頁面</h1>
       {{ logoutText }}
   </section>

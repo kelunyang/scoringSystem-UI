@@ -16,8 +16,9 @@
     </v-fab-transition>
     <div class='text-h5 text-center pt-5 font-weight-black'>全域設定設定</div>
     <v-divider inset></v-divider>
-    <v-text-field label='網站網址' v-model='siteLocation'></v-text-field>
+    <v-text-field label='網站網址' outlined clearable dense v-model='siteLocation'></v-text-field>
     <v-select
+      outlined
       :items='frontendCommits'
       label='系統前端版本'
       v-model='versionFrontend'
@@ -33,6 +34,7 @@
     </v-select>
     <div class='text-caption red--text'>如果你發現預設沒有選到東西，那代表你太久沒來這裡選一下新版本的commit（記得要先做git pull）</div>
     <v-select
+      outlined
       :items='backendCommits'
       label='系統後端版本'
       v-model='versionBackend'
@@ -47,10 +49,10 @@
       </template>
     </v-select>
     <div class='text-caption red--text'>如果你發現預設沒有選到東西，那代表你太久沒來這裡選一下新版本的commit（記得要先做git pull）</div>
-    <v-text-field label='檔案儲存位置' v-model='storageLocation' hint='請注意，這裡是檔案儲存位置指的是NFS主機上的位置，不知道別亂調，最後不用加上/'></v-text-field>
-    <v-text-field label='Github Personal Token' v-model='githubKey' hint='請注意，這是GitHub產生的Personal Token'></v-text-field>
-    <v-text-field label='前端Github Repo位置' v-model='frontendRepo' hint='請注意，這是前端專案在GitHub的位置'></v-text-field>
-    <v-text-field label='後端Github Repo位置' v-model='backendRepo' hint='請注意，這是後端專案在GitHub的位置'></v-text-field>
+    <v-text-field outlined clearable dense label='檔案儲存位置' v-model='storageLocation' hint='請注意，這裡是檔案儲存位置指的是NFS主機上的位置，不知道別亂調，最後不用加上/'></v-text-field>
+    <v-text-field outlined clearable dense label='Github Personal Token' v-model='githubKey' hint='請注意，這是GitHub產生的Personal Token'></v-text-field>
+    <v-text-field outlined clearable dense label='前端Github Repo位置' v-model='frontendRepo' hint='請注意，這是前端專案在GitHub的位置'></v-text-field>
+    <v-text-field outlined clearable dense label='後端Github Repo位置' v-model='backendRepo' hint='請注意，這是後端專案在GitHub的位置'></v-text-field>
     <div class='text-h5 text-center pt-5 font-weight-black'>權限設定</div>
     <v-divider inset></v-divider>
     <div class='text-subtitle-2 font-weight-blod'>用戶連線中定時更新時間</div>
@@ -166,13 +168,13 @@
       :createable='false'
       label='請輸入紀錄機器人代表帳號'
     />
-    <v-text-field label='EMail帳號' v-model='mailAccount' hint='請注意，這是在Google/Outlook.com裡建立的應用程式帳號'></v-text-field>
-    <v-text-field label='EMail密碼' v-model='mailPassword' hint='請注意，這是在Google/Outlook.com裡建立的應用程式密碼'></v-text-field>
-    <v-text-field label='EMail主機' v-model='mailSMTP' hint='請貼上你的主機的SMTP位置'></v-text-field>
-    <v-text-field label='EMail Port' v-model='mailPort' hint='請貼上你的主機的SMTP port'></v-text-field>
+    <v-text-field outlined clearable dense label='EMail帳號' v-model='mailAccount' hint='請注意，這是在Google/Outlook.com裡建立的應用程式帳號'></v-text-field>
+    <v-text-field outlined clearable dense label='EMail密碼' v-model='mailPassword' hint='請注意，這是在Google/Outlook.com裡建立的應用程式密碼'></v-text-field>
+    <v-text-field outlined clearable dense label='EMail主機' v-model='mailSMTP' hint='請貼上你的主機的SMTP位置'></v-text-field>
+    <v-text-field outlined clearable dense label='EMail Port' v-model='mailPort' hint='請貼上你的主機的SMTP port'></v-text-field>
     <v-switch v-model="mailSSL" label="SMTP是否有SSL"></v-switch>
-    <v-text-field label='LINE Notify client id' v-model='LINENotifyKey' hint='請注意，這是在LINE notify裡建立取得的client key'></v-text-field>
-    <v-text-field label='LINE Notify secret key' v-model='LINESecretKey' hint='請注意，這是在LINE notify裡取得的secret'></v-text-field>
+    <v-text-field outlined clearable dense label='LINE Notify client id' v-model='LINENotifyKey' hint='請注意，這是在LINE notify裡建立取得的client key'></v-text-field>
+    <v-text-field outlined clearable dense label='LINE Notify secret key' v-model='LINESecretKey' hint='請注意，這是在LINE notify裡取得的secret'></v-text-field>
     <v-slider
       label='定期通報時間（小時）'
       min='0'
@@ -195,7 +197,7 @@
       thumb-label
     ></v-slider>
     <div>機器人最後一次掃描時間： {{ dateConvert(LastPatrol) }}</div>
-    <v-text-field label='備份檔案位置' v-model='backupLocation' hint='請注意，這裡的位置是NFS主機上的位置，不知道別亂調，最後不用加上/，另外，檔案備份是直接複寫舊備份檔，沒有版本問題'></v-text-field>
+    <v-text-field outlined clearable dense label='備份檔案位置' v-model='backupLocation' hint='請注意，這裡的位置是NFS主機上的位置，不知道別亂調，最後不用加上/，另外，檔案備份是直接複寫舊備份檔，沒有版本問題'></v-text-field>
     <v-slider
       label='檔案備份頻率（天）'
       min='1'
@@ -204,7 +206,7 @@
       thumb-label
     ></v-slider>
     <div>機器人最後一次備份時間： {{ dateConvert(LastBackup) }}</div>
-    <v-text-field label='資料庫備份檔案位置' v-model='dbbackupLocation' hint='請注意，這裡的位置是NFS主機上的位置，不知道別亂調，最後不用加上/'></v-text-field>
+    <v-text-field outlined clearable dense label='資料庫備份檔案位置' v-model='dbbackupLocation' hint='請注意，這裡的位置是NFS主機上的位置，不知道別亂調，最後不用加上/'></v-text-field>
     <v-slider
       label='資料庫檔案備份頻率（天）'
       min='1'
@@ -228,6 +230,7 @@
       label="啟動v2Ray穿牆"
     ></v-switch>
     <v-textarea
+      outlined clearable counter dense
       label="回傳紀錄"
       v-model="shellReport"
     ></v-textarea>

@@ -1,12 +1,12 @@
 <template>
   <v-main ref='mainBlock' class='pa-0' style="width: 100% !important;">
-    <v-alert type="error" v-if="statistics.unfinishObj === 0">
+    <v-alert type="success" icon="fa-grin-wink" class='text-left' v-if="statistics.unfinishObj === 0">
       本階段審查指標已全部完成，請回到DashBoard，可進入下一個階段（如果你在下一個階段還有權力的話）
     </v-alert>
-    <v-alert type="error" v-if="!currentStage.current">
+    <v-alert type="error" icon="fa-skull" class='text-left' v-if="!currentStage.current">
       本階段已經是歷史了，離開吧！
     </v-alert>
-    <v-alert type="info" v-if="currentStage.coolDown">
+    <v-alert type="info" icon='fa-info-circle' class='text-left' v-if="currentStage.coolDown">
       本階段進入冷靜期，你只能回復既有Issue，不能開新的Issue！
     </v-alert>
     <v-dialog v-model='diffW' fullscreen hide-overlay transition='dialog-bottom-transition'>
@@ -48,7 +48,7 @@
           <v-toolbar-title>修改審查功能的畫面預設值</v-toolbar-title>
         </v-toolbar>
         <v-card-text class='d-flex flex-column pa-0'>
-          <v-alert type='info'>在這裡的設定只會保存在這台機器上，意思是你換一台電腦就看不到了</v-alert>
+          <v-alert type='info' icon='fa-info-circle' class='text-left'>在這裡的設定只會保存在這台機器上，意思是你換一台電腦就看不到了</v-alert>
           <div class='d-flex flex-column pa-3 black--text'>
             <div class='text-h6'>隱藏右下角的Issue過濾器</div>
             <v-switch
@@ -109,6 +109,7 @@
             persistent-hint
             return-object
             single-line
+            outlined
           >
             <template slot="selection" slot-scope="data">
               <span class='text-caption'>{{ dateConvert(data.item.tick) }}版</span>
@@ -157,7 +158,7 @@
           <v-toolbar-title>{{ currentKB.title }} 目前進度概況</v-toolbar-title>
         </v-toolbar>
         <v-card-text class='pa-0 black--text'>
-          <v-alert type='info'>這個對話框關閉之後，你可以在審查畫面右上角點一下i按鈕開啟</v-alert>
+          <v-alert type='info' icon='fa-info-circle' class='text-left'>這個對話框關閉之後，你可以在審查畫面右上角點一下i按鈕開啟</v-alert>
           <div v-if='currentKB.currentStep === 0'>專案目前沒啟動，你是怎麼到這裡的？</div>
           <div v-if='currentKB.currentStep > 0' class='pa-3'>
             <div class='text-body-1'>目前進度（階段 {{ currentKB.currentStep }} / {{ currentKB.stages.length }}）</div>
@@ -519,7 +520,7 @@
           <template v-slot:default="{ value }">
             <span>本階段審查指標完成度：{{ Math.ceil(value) }}%</span>
             <span v-if='statistics.unfinishObj > 0'>
-              <span v-if='statistics.unfinishObj - statistics.finishObj <= 1'>（再通過一個你就不能回頭啦！）</span>
+              <span v-show='currentStage.isPM || currentStage.isReviewer' v-if='statistics.unfinishObj - statistics.finishObj <= 1'>（再通過一個你就不能回頭啦！）</span>
               <span v-else>（階段死線： {{ dateConvert(currentStage.dueTick) }}）</span>
             </span>
           </template>
@@ -941,6 +942,7 @@
           v-show='!issueListPopulated'
         ></v-skeleton-loader>
         <v-text-field
+          outlined clearable dense
           label="輸入關鍵字篩選Issue標題"
           v-model="issuekeywordFilter"
           hint='只篩選Issue標題，支援正規表達式'
@@ -974,7 +976,7 @@
             編輯Issue
           </v-card-title>
           <v-card-text class='text-left'>
-            <v-text-field label="Issue標題" v-model='issue.title' v-if='issue.parent === undefined'/>
+            <v-text-field outlined clearable dense label="Issue標題" v-model='issue.title' v-if='issue.parent === undefined'/>
             <Tip-Tap
               v-model="issue.body"
               maxHeight="40vh"
@@ -1089,9 +1091,9 @@
               <v-btn
                 class='black--text ma-1'
                 color='grey lighten-1'
-                @click='issueListW = false; filteredListW = true;'
+                @click='backtoIssueList'
               >
-                回到列表
+                回到列表（上一層）
               </v-btn>
             </div>
             <v-lazy
@@ -1267,7 +1269,16 @@ import Vue from 'vue';
 import moment from 'moment';
 import momentDurationFormatSetup from 'moment-duration-format';
 import videojs from 'video.js';
-import _ from 'lodash';
+import _uniqWith from 'lodash/uniqWith';
+import _find from 'lodash/find';
+import _filter from 'lodash/filter';
+import _sortBy from 'lodash/sortBy';
+import _head from 'lodash/head';
+import _intersectionWith from 'lodash/intersectionWith';
+import _orderBy from 'lodash/orderBy';
+import _inRange from 'lodash/inRange';
+import _countBy from 'lodash/countBy';
+import _findIndex from 'lodash/findIndex';
 import 'video.js/dist/video-js.css';
 import marked from 'marked';
 import { v4 as uuidv4 } from 'uuid';
@@ -1302,10 +1313,16 @@ export default {
   name: 'videoReview',
   components: { TipTap, IssueView, IssueList },
   methods: {
+    backtoIssueList: function () {
+      this.$emit('toastPop', '更新已讀取Issue清單');
+      this.$socket.client.emit('getReadedIssue');
+      this.issueListW = false;
+      this.filteredListW = true;
+    },
     addDiff: function (issue) {
       let tempDiff = this.diffIssues;
       tempDiff.push(issue);
-      this.diffIssues = _.uniqWith(tempDiff, (aIssue, bIssue) => {
+      this.diffIssues = _uniqWith(tempDiff, (aIssue, bIssue) => {
         return aIssue._id === bIssue._id;
       });
       this.$emit('toastPop', "對比Issue清單已有" + this.diffIssues.length + '/2 條Issue，選到2條Issue時，會自動開啟Issue對比');
@@ -1404,9 +1421,7 @@ export default {
       this.$refs.paintable.clearCanvas();
     },
     fileiconConvert: function (name) {
-      console.log(name);
       let type = mime.lookup(name);
-      console.log(type);
       if(type.indexOf("image") > -1) {
         return "fas fa-file-image";
       }
@@ -1554,11 +1569,11 @@ export default {
       let oriobj = this;
       this.$emit('timerOn', false);
       this.$emit('toastPop', 'Issue列表更新完成');
-      let item = _.find(this.loadingItems, { icon: 'fa-comments' });
+      let item = _find(this.loadingItems, { icon: 'fa-comments' });
       item.loaded = true;
       this.issueListPopulated = true;
       this.issueList = data;
-      let loaded = _.find(this.loadingItems, { loaded: false });
+      let loaded = _find(this.loadingItems, { loaded: false });
       if(loaded === undefined) {
         this.loadW = false;
         if(this.firstRun) {
@@ -1576,7 +1591,7 @@ export default {
       this.$emit('timerOn', false);
       this.$emit('toastPop', '已讀取Issue更新完成');
       this.readedIssueList = data;
-      let item = _.find(this.loadingItems, { icon: 'fa-envelope-open-text' });
+      let item = _find(this.loadingItems, { icon: 'fa-envelope-open-text' });
       item.loaded = true;
       this.$emit('timerOn', true);
       this.$emit('toastPop', '更新Issue列表');
@@ -1830,13 +1845,13 @@ export default {
         this.$emit('timerOn', false);
         this.$emit('toastPop', '知識點更新完成');
         this.currentKB = data;
-        this.currentKB.currentStep = (_.countBy(this.currentKB.stages, {
+        this.currentKB.currentStep = (_countBy(this.currentKB.stages, {
           current: false
-        })) === this.currentKB.stages.length ? 0 : (_.findIndex(this.currentKB.stages, {
+        })) === this.currentKB.stages.length ? 0 : (_findIndex(this.currentKB.stages, {
           current: true
         })) + 1 ;
         let currentStage = this.currentKB.currentStep === 0 ? this.currentKB.stages[this.currentKB.currentStep] : this.currentKB.stages[this.currentKB.currentStep - 1];
-        let item = _.find(this.loadingItems, { icon: 'fa-photo-video' });
+        let item = _find(this.loadingItems, { icon: 'fa-photo-video' });
         item.loaded = true;
         this.$emit('viewIn', {
           text: '影片審查-' + data.title,
@@ -1857,7 +1872,7 @@ export default {
       if(data.length === 0) {
         this.tipW = true;
       }
-      let item = _.find(this.loadingItems, { icon: 'fa-code-branch' });
+      let item = _find(this.loadingItems, { icon: 'fa-code-branch' });
       item.loaded = true;
       this.$emit('timerOn', true);
       this.$emit('toastPop', '更新已讀取Issue清單');
@@ -1922,7 +1937,7 @@ export default {
         this.currentStageData = data;
         this.$emit('timerOn', false);
         this.$emit('toastPop', '當前階段更新完成');
-        let item = _.find(this.loadingItems, { icon: 'fa-stopwatch' });
+        let item = _find(this.loadingItems, { icon: 'fa-stopwatch' });
         item.loaded = true;
         this.$emit('timerOn', true);
         this.$emit('toastPop', '更新知識點版本');
@@ -2074,7 +2089,7 @@ export default {
       return false;
     },
     unReadedCount: function () {
-      let unreadeds = _.filter(this.filteredIssues, (issue) => {
+      let unreadeds = _filter(this.filteredIssues, (issue) => {
         return !issue.readed;
       })
       return unreadeds.length;
@@ -2084,13 +2099,13 @@ export default {
     },
     issuesInView: function () {
       let oriobj = this;
-      let mainThread = _.find(this.issueList, (issue) => {
+      let mainThread = _find(this.issueList, (issue) => {
                         return issue._id === oriobj.issuePointer;
                       });
       if(mainThread !== undefined) {
         return {
           main: mainThread,
-          collections: _.sortBy(_.filter(this.issueList, (issue) => {
+          collections: _sortBy(_filter(this.issueList, (issue) => {
                         return issue.parent === oriobj.issuePointer;
                       }), ['tick'])
         };
@@ -2129,16 +2144,16 @@ export default {
     },
     statistics: function () {
       return {
-        closedIssue: (_.filter(this.issueList, (item) => {
+        closedIssue: (_filter(this.issueList, (item) => {
                       return item.status
                     })).length,
-        openIssue: _.filter(this.issueList, (item) => {
+        openIssue: _filter(this.issueList, (item) => {
                       return !item.status
                     }).length,
-        finishObj: _.filter(this.currentStage.objectives, (item) => {
+        finishObj: _filter(this.currentStage.objectives, (item) => {
                       return ('signUser' in item)
                     }).length,
-        unfinishObj: _.filter(this.currentStage.objectives, (item) => {
+        unfinishObj: _filter(this.currentStage.objectives, (item) => {
                       return !('signUser' in item)
                     }).length,
       }
@@ -2156,22 +2171,22 @@ export default {
       let oriobj = this;
       let obj = this.selectedObjective;
       let readedIssueList = this.readedIssueList;
-      let filterList = _.filter(this.issueList, (issue) => {
+      let filterList = _filter(this.issueList, (issue) => {
         return !('parent' in issue) || issue.parent === undefined;
       });
       if(this.issuekeywordFilter !== '') {
-        filterList = _.filter(filterList, (issue) => {
+        filterList = _filter(filterList, (issue) => {
           return new RegExp(oriobj.issuekeywordFilter, 'g').test(issue.title);
         });
       }
       if(obj !== undefined) {
-        filterList = _.filter(filterList, (issue) => {
+        filterList = _filter(filterList, (issue) => {
           return issue.objective === obj;
         });
       } else {
         if(this.compareCommit.tick > 0) {
           if(this.issueFilter.commit) {
-            filterList = _.filter(filterList, (issue) => {
+            filterList = _filter(filterList, (issue) => {
               if('_id' in issue.version) {
                 return issue.version._id === oriobj.compareCommit._id;
               } else {
@@ -2180,13 +2195,13 @@ export default {
             });
           }
         }
-        filterList = _.filter(filterList, (issue) => {
+        filterList = _filter(filterList, (issue) => {
           if(!('parent' in issue) || issue.parent === undefined) {
             if(oriobj.issueFilter.flag) {
               if(issue.position === 0) { return true; }
             }
             if(oriobj.issueFilter.time) {
-              return _.inRange(issue.position, Math.floor(oriobj.currentData.position) - 0.01, Math.ceil(oriobj.currentData.position) + 0.01);
+              return _inRange(issue.position, Math.floor(oriobj.currentData.position) - 0.01, Math.ceil(oriobj.currentData.position) + 0.01);
             } else {
               return true;
             }
@@ -2194,7 +2209,7 @@ export default {
           return false;
         });
         if(!this.issueFilter.closed) {
-          filterList = _.filter(filterList, (issue) => {
+          filterList = _filter(filterList, (issue) => {
             return !issue.status;
           });
         }
@@ -2204,7 +2219,7 @@ export default {
       }
       for(let i=0; i<readedIssueList.length; i++) {
         let readedIssue = readedIssueList[i];
-        let foundIssue = _.find(filterList, (issue) => {
+        let foundIssue = _find(filterList, (issue) => {
           return issue._id === readedIssue.issue;
         });
         if(foundIssue) {
@@ -2216,7 +2231,7 @@ export default {
         if(!issue.readed) {
           if('parent' in issue) {
             if(issue.parent !== undefined) {
-              let mainThread = _.find(filterList, (issue) => {
+              let mainThread = _find(filterList, (issue) => {
                 return issue._id === issue.parent;
               });
               if(mainThread) {
@@ -2226,7 +2241,7 @@ export default {
           }
         }
       }
-      return _.orderBy(filterList, ['star', 'tick', 'readed', 'position', 'status', 'version.tick'], ['desc', 'desc', 'desc', 'asc', 'desc', 'desc']);
+      return _orderBy(filterList, ['star', 'tick', 'readed', 'position', 'status', 'version.tick'], ['desc', 'desc', 'desc', 'asc', 'desc', 'desc']);
     },
     currentPosD: function () {
       return this.timeConvert(this.currentData.position);
@@ -2236,7 +2251,7 @@ export default {
     },
     currentVersion: function () {
       if(this.currentVersions.length > 0) {
-        return _.head(this.currentVersions);
+        return _head(this.currentVersions);
       } else {
         return {
           _id: '',
@@ -2286,19 +2301,19 @@ export default {
     },
     currentStage: function () {
       if(this.currentUser._id !== '') {
-        let isPM = (_.intersectionWith(this.currentStageData.pmTags, this.currentUser.tags, (cTag, uTag) => {
+        let isPM = (_intersectionWith(this.currentStageData.pmTags, this.currentUser.tags, (cTag, uTag) => {
           return cTag === uTag._id;
         })).length > 0;
-        let isWriter = (_.intersectionWith(this.currentStageData.writerTags, this.currentUser.tags, (cTag, uTag) => {
+        let isWriter = (_intersectionWith(this.currentStageData.writerTags, this.currentUser.tags, (cTag, uTag) => {
           return cTag === uTag._id;
         })).length > 0;
-        let isVendor = (_.intersectionWith(this.currentStageData.vendorTags, this.currentUser.tags, (cTag, uTag) => {
+        let isVendor = (_intersectionWith(this.currentStageData.vendorTags, this.currentUser.tags, (cTag, uTag) => {
           return cTag === uTag._id;
         })).length > 0;
-        let isFinal = (_.intersectionWith(this.currentStageData.finalTags, this.currentUser.tags, (cTag, uTag) => {
+        let isFinal = (_intersectionWith(this.currentStageData.finalTags, this.currentUser.tags, (cTag, uTag) => {
           return cTag === uTag._id;
         })).length > 0;
-        let isReviewer = (_.intersectionWith(this.currentStageData.reviewerTags, this.currentUser.tags, (cTag, uTag) => {
+        let isReviewer = (_intersectionWith(this.currentStageData.reviewerTags, this.currentUser.tags, (cTag, uTag) => {
           return cTag === uTag._id;
         })).length > 0;
         return {
@@ -2609,16 +2624,16 @@ export default {
       return this.versionLog;
     },
     issueList: function () {
-      let parents = _.filter(this.issueList, (item) => {
+      let parents = _filter(this.issueList, (item) => {
         return item.parent === undefined;
       });
       for(let i=0; i<parents.length; i++) {
         let parent = parents[i];
-        let children = _.sortBy(_.filter(this.issueList, (item) => {
+        let children = _sortBy(_filter(this.issueList, (item) => {
           if(!('parent' in item) || item.parent === undefined) { return false; }
           return item.parent === parent._id;
         }), ['tick']);
-        let latestTick = children.length === 0 ? parent.tick : (_.head(children)).tick;
+        let latestTick = children.length === 0 ? parent.tick : (_head(children)).tick;
         parent.latestTick = latestTick;
         for(let k=0; k<children.length; k++) {
           let child = children[k];

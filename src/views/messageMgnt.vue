@@ -20,7 +20,7 @@
             </v-toolbar-items>
           </v-toolbar>
           <v-card-text class='ma-0 pa-0'>
-            <v-alert type="info" icon="fa-exclamation-circle">
+            <v-alert type="info" icon='fa-info-circle' class='text-left'>
               請注意，首頁只會顯示各類型公告各一則
             </v-alert>
             <v-container>
@@ -32,13 +32,13 @@
                   ></v-switch>
                   <v-select
                     :items="messageType"
-                    solo
+                    outlined
                     label="請選擇訊息類型"
                     item-text='text'
                     item-value="value"
                     v-model='message.type'
                   ></v-select>
-                  <v-text-field label='公告標題' v-model='message.title'></v-text-field>
+                  <v-text-field outlined clearable dense label='公告標題' v-model='message.title'></v-text-field>
                   <Tip-Tap
                     v-model="message.body"
                     minHeight="10vh"
@@ -78,7 +78,7 @@
             <v-toolbar-title>LINE訊息紀錄</v-toolbar-title>
           </v-toolbar>
           <v-card-text class='pa-0 ma-0'>
-            <v-alert type="info" icon="fa-exclamation-circle">
+            <v-alert type="info" icon='fa-info-circle' class='text-left'>
               這裡只是保存歷史訊息供你回味，你無法刪除，也無法修改，發生過了就是發生過了
             </v-alert>
             <v-skeleton-loader
@@ -142,7 +142,7 @@
             <v-toolbar-title>全域廣播紀錄</v-toolbar-title>
           </v-toolbar>
           <v-card-text class='pa-0 ma-0'>
-            <v-alert type="info" icon="fa-exclamation-circle">
+            <v-alert type="info" icon='fa-info-circle' class='text-left'>
               這裡只是保存歷史訊息供你回味，你無法刪除，也無法修改，發生過了就是發生過了
             </v-alert>
             <v-skeleton-loader
@@ -173,7 +173,7 @@
           <div class='text-h5 text-center pt-5 font-weight-black'>全域廣播</div>
           <v-divider inset></v-divider>
           <div class='red--text text-caption'>提示：全域廣播只有目前正在使用的人會看到</div>
-          <v-text-field label='公告標題' v-model='broadcastTitle'></v-text-field>
+          <v-text-field outlined clearable dense label='公告標題' v-model='broadcastTitle'></v-text-field>
           <Tip-Tap
             v-model="broadcastBody"
             minHeight="10vh"
@@ -197,6 +197,7 @@
             v-model="LINEbody"
             class='text-left'
             placeholder='請不要留白'
+            outlined clearable counter dense
           ></v-textarea>
           <v-btn @click='sendLINEnotify' class='ma-3'>
             發出LINE通知

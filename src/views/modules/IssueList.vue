@@ -2,66 +2,93 @@
   <v-main class='issueItem mt-1 mb-0 ml-0 mr-0 pa-1'>
     <v-row class='ma-0 pt-1 pb-1 pl-0 pr-0'>
       <v-col class='ma-0 pa-0 d-flex flex-row justify-end'>
-        <div v-if='currentIssue.star' class='red accent-4 text-caption white--text pa-1 mr-1'>
-          <v-icon small dense color="white">fas fa-star</v-icon>
-          重點標記Issue
-        </div>
-        <div v-if='currentIssue.status' class='indigo darken-4 text-caption white--text pa-1 mr-1'>
-          <v-icon small dense color="white">fas fa-comment-slash</v-icon>
-          Issue已關閉
-        </div>
-        <div v-if='!currentIssue.status' class='light-blue darken-4 text-caption white--text pa-1 mr-1'>
-          <v-icon small dense color="white">far fa-comment</v-icon>
-          Issue討論中
-        </div>
+        <v-chip
+          v-if='compareUser.tick > 0'
+          color="red darken-4"
+          class="text-caption pa-1 mr-1"
+          label
+          outlined
+          text-color="red darken-4"
+        >
+          <v-icon left>
+            fa-user-clock
+          </v-icon>
+          晚於上次登入
+        </v-chip>
+        <v-chip
+          v-if='compareCommit.tick > 0'
+          color="red darken-4"
+          class="text-caption pa-1 mr-1"
+          label
+          outlined
+          text-color="red darken-4"
+        >
+          <v-icon left>
+            fas fa-history
+          </v-icon>
+          晚於指定版本
+        </v-chip>
+        <v-chip
+          v-if='!currentIssue.readed'
+          color='red darken-4'
+          class="text-caption pa-1 mr-1"
+          label
+          outlined
+          text-color="red darken-4"
+        >
+          <v-icon left>
+            fas fa-envelope-open-text
+          </v-icon>
+          未讀
+        </v-chip>
+        <v-chip
+          v-if='currentIssue.star'
+          color='red accent-4'
+          class="text-caption pa-1 mr-1"
+          label
+          outlined
+          text-color="red accent-4"
+        >
+          <v-icon left>
+            fas fa-star
+          </v-icon>
+          重點標記
+        </v-chip>
+        <v-chip
+          v-if='currentIssue.status'
+          color='indigo darken-4'
+          class="text-caption pa-1 mr-1"
+          label
+          outlined
+          text-color="indigo darken-4"
+        >
+          <v-icon left>
+            fas fa-comment-slash
+          </v-icon>
+          已關閉
+        </v-chip>
+        <v-chip
+          v-if='!currentIssue.status'
+          color='light-blue darken-4'
+          class="text-caption pa-1 mr-1"
+          label
+          outlined
+          text-color="light-blue darken-4"
+        >
+          <v-icon left>
+            fas fa-comment
+          </v-icon>
+          討論中
+        </v-chip>
       </v-col>
     </v-row>
     <v-row class='d-flex ma-0 pa-0'>
-      <v-col class='d-flex flex-column ma-0 pa-0 flex-grow-0 flex-shrink-1 align-self-center' style='width: 60px'>
+      <v-col class='pa-0 ma-0 d-flex flex-column justify-center align-self-center align-center flex-shrink-1 flex-grow-0' style='min-width: 100px'>
         <v-avatar>
           <img :src='"https://avatars.dicebear.com/api/" + currentIssue.user.types + "/" + encodeURIComponent(currentIssue.user.name + "@" + currentIssue.user.unit) + ".svg"' />
         </v-avatar>
-        <div class='d-flex flex-row'>
-          <div v-if='!currentIssue.readed'>
-            <v-tooltip top>
-              <template v-slot:activator="{ on, attrs }">
-                  <v-icon
-                  dense
-                  color="red accent-4"
-                  small
-                  v-bind="attrs" v-on="on"
-                  >fa-envelope-open-text</v-icon>
-              </template>
-              <span>尚未讀取的Issue</span>
-            </v-tooltip>
-          </div>
-          <div v-if='compareCommit.tick > 0'>
-            <v-tooltip top v-if='compareCommit.tick < currentIssue.tick'>
-              <template v-slot:activator="{ on, attrs }">
-                  <v-icon
-                  dense
-                  color="red accent-4"
-                  small
-                  v-bind="attrs" v-on="on"
-                  >fa-history</v-icon>
-              </template>
-              <span>本Issue晚於您指定的版本後發布</span>
-            </v-tooltip>
-          </div>
-          <div v-if='compareUser.tick > 0'>
-            <v-tooltip top v-if='compareUser.tick < currentIssue.tick'>
-              <template v-slot:activator="{ on, attrs }">
-                  <v-icon
-                  dense
-                  small
-                  color="red accent-4"
-                  v-bind="attrs" v-on="on"
-                  >fa-user-clock</v-icon>
-              </template>
-              <span>本Issue晚於您上次登入後發布</span>
-            </v-tooltip>
-          </div>
-        </div>
+        <div class='text-caption'>{{ currentIssue.user.name }}</div>
+        <div class='text-caption'>{{ currentIssue.user.unit }}</div>
       </v-col>
       <v-col class='d-flex flex-column ma-0 pa-0 flex-grow-1 flex-shrink-0 text-left'>
         <div class='text-h6'>{{ currentIssue.title }}</div>

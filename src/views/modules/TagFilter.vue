@@ -6,7 +6,7 @@
         placeholder="輸入完成後，請按右側的雲朵圖案儲存標籤"
         v-model='newTagAwaited'
         class='flex-grow-1'
-        solo
+        outlined clearable dense
       ></v-text-field>
     <v-tooltip bottom>
       <template v-slot:activator="{ on, attrs }">
@@ -28,11 +28,11 @@
       v-model="selectedItems"
       :items="filteredItems"
       chips
-      clearable
+      clearable dense
       :label="label"
       :multiple='multipleD'
       prepend-icon="fab fa-slack-hash"
-      solo
+      outlined
       :search-input.sync="newTerm"
       item-text='name'
       item-value='_id'
@@ -104,7 +104,10 @@
 </template>
 
 <script>
-import _ from 'lodash';
+import _find from 'lodash/find';
+import _filter from 'lodash/filter';
+import _intersectionWith from 'lodash/intersectionWith';
+import _unionWith from 'lodash/unionWith';
 
 export default {
   name: 'TagFilter',
@@ -118,7 +121,7 @@ export default {
   },
   methods: {
     textConvert: function (item) {
-      let found = _.find(this.candidatedItem, (element) => {
+      let found = _find(this.candidatedItem, (element) => {
         return element._id === item._id;
       });
       return found === undefined ? '' : found.name;
@@ -127,7 +130,7 @@ export default {
       if (this.multipleD) {
         if (this.mustSelected) {
           if (this.selectedItems.length > 1) {
-            let found = _.find(this.candidatedItem, (element) => {
+            let found = _find(this.candidatedItem, (element) => {
               return element._id === item._id;
             });
             if (found !== undefined) {
@@ -137,7 +140,7 @@ export default {
             }
           }
         } else {
-          let found = _.find(this.candidatedItem, (element) => {
+          let found = _find(this.candidatedItem, (element) => {
             return element._id === item._id;
           });
           if (found !== undefined) {
@@ -166,14 +169,14 @@ export default {
     candidatedItem: {
       immediate: true,
       handler () {
-        let searchItem = _.filter(this.candidatedItem, (item) => {
+        let searchItem = _filter(this.candidatedItem, (item) => {
           return (new RegExp(this.newTerm, 'g')).test(item.name);
         });
         let passedsItems = this.multipleD ? this.selectedItems : [this.selectedItems];
-        let selectedItem = _.intersectionWith(this.candidatedItem, passedsItems, (cItem, sItem) => {
+        let selectedItem = _intersectionWith(this.candidatedItem, passedsItems, (cItem, sItem) => {
           return cItem._id === sItem;
         });
-        this.filteredItems = _.unionWith(searchItem, selectedItem, (qItem, sItem) => {
+        this.filteredItems = _unionWith(searchItem, selectedItem, (qItem, sItem) => {
           return qItem._id === sItem._id;
         });
         this.loading = false;
@@ -181,7 +184,7 @@ export default {
     },
     newTerm: function () {
       if(this.newTerm !== '') {
-        let selected = _.filter(this.selectedItems, (item) => {
+        let selected = _filter(this.selectedItems, (item) => {
           return this.newTerm === item.name;
         });
         if(selected.length === 0) {
@@ -191,14 +194,14 @@ export default {
     },
     selectedItems: function () {
       this.$emit('valueUpdated', this.selectedItems);
-      let searchItem = _.filter(this.candidatedItem, (item) => {
+      let searchItem = _filter(this.candidatedItem, (item) => {
         return (new RegExp(this.newTerm, 'g')).test(item.name);
       });
       let passedsItems = this.multipleD ? this.selectedItems : [this.selectedItems];
-      let selectedItem = _.intersectionWith(this.candidatedItem, passedsItems, (cItem, sItem) => {
+      let selectedItem = _intersectionWith(this.candidatedItem, passedsItems, (cItem, sItem) => {
         return cItem._id === sItem;
       });
-      this.filteredItems = _.unionWith(searchItem, selectedItem, (qItem, sItem) => {
+      this.filteredItems = _unionWith(searchItem, selectedItem, (qItem, sItem) => {
         return qItem._id === sItem._id;
       });
     },

@@ -1,11 +1,11 @@
 import moment from 'moment';
 import Vue from 'vue';
 import Vuex, {Store} from "vuex";
-import _ from 'lodash';
+import _orderBy from 'lodash/orderBy';
 import VueGtag from "vue-gtag";
 
 Vue.config.productionTip = false;
-Vue.config.devtools = false;
+Vue.config.devtools = true;
 
 Vue.use(Vuex);
 Vue.use(VueGtag, {
@@ -39,7 +39,7 @@ const store = new Store({
   },
   mutations: {
     updateSavedTags(state, tags) {
-      state.savedTags = _.orderBy(tags, ['name'], ['asc']);
+      state.savedTags = _orderBy(tags, ['name'], ['asc']);
     },
     updateGlobalSetting(state, settings) {
       state.siteSettings = settings;

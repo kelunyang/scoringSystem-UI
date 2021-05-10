@@ -1,6 +1,6 @@
 <template>
   <v-sheet class='d-flex flex-column'>
-    <v-alert type="info">歡迎進入影片審查系統，在此提醒您，請務必使用Google Chrome／Firefox／Microsoft Edge等瀏覽器審查，千萬不要用Internet Explorer，可以的話，也請盡量不要以手機操作（雖然可以相容，但本站並非為手機設計）</v-alert>
+    <v-alert type="info" icon='fa-info-circle' class='text-left'>歡迎進入影片審查系統，在此提醒您，請務必使用Google Chrome／Firefox／Microsoft Edge等瀏覽器審查，千萬不要用Internet Explorer，可以的話，也請盡量不要以手機操作（雖然可以相容，但本站並非為手機設計）</v-alert>
     <div class='d-flex flex-column flex-grow-1' v-if='currentUser._id === ""'>
       <v-btn class='flex-grow-1 indigo darken-4 white--text ma-3 text-subtitle-2 font-weight-bold' link href="#/Login" >按此登入系統</v-btn>
     </div>
