@@ -51,9 +51,9 @@
           </v-row>
         </v-container>
         <v-btn color="red darken-4" class='white--text' @click="saveUser">儲存修改（本按鈕於畫面上下方各有一顆，任何修改請務必儲存）</v-btn>
-        <div class='d-flex flex-row'>
+        <div class='d-flex flex-row mt-3'>
           <v-text-field class='flex-grow-1' outlined clearable dense prepend-icon='fa-key' type='password' label='你的新密碼' hint="如果你要設定密碼的話，請輸入您的新密碼" v-model='password' :class='firstRun'></v-text-field>
-          <div>{{ passwordStrength }}</div>
+          <div class='mr-1'>{{ passwordStrength }}</div>
         </div>
         <v-text-field outlined clearable dense prepend-icon='fa-user-alt' label='您的真實姓名' hint="事涉核銷，請務必輸入中文完整姓名" v-model='currentUser.name' :class='firstRun'></v-text-field>
         <v-select
@@ -134,20 +134,22 @@ export default {
   },
   computed: {
     passwordStrength: function () {
-      let passwordeval = passwordStrength(this.password).value;
-      if(passwordeval === 'Too weak') {
-        return '密碼強度極低，建議更換'
+      if(this.password !== '') {
+        let passwordeval = passwordStrength(this.password).value;
+        if(passwordeval === 'Too weak') {
+          return '密碼強度極低，建議更換'
+        }
+        if(passwordeval === 'Weak') {
+          return '密碼強度低，建議更換'
+        }
+        if(passwordeval === 'Medium') {
+          return '密碼強度尚可'
+        }
+        if(passwordeval === 'Strong') {
+          return '密碼強度極高'
+        }
       }
-      if(passwordeval === 'Weak') {
-        return '密碼強度低，建議更換'
-      }
-      if(passwordeval === 'Medium') {
-        return '密碼強度尚可'
-      }
-      if(passwordeval === 'Strong') {
-        return '密碼強度極高'
-      }
-      return '密碼強度檢測中'
+      return '';
     },
     currentUser: function () {
       return this.$store.state.currentUser;

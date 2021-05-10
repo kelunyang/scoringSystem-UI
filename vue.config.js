@@ -42,8 +42,8 @@ module.exports = {
         minRatio: 0.8,
       }
     },
-    /*webpackBundleAnalyzer: {
+    webpackBundleAnalyzer: {
       openAnalyzer: false
-    }*/
+    }
   }
 }
