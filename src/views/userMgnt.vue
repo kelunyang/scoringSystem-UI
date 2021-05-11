@@ -11,7 +11,7 @@
             Email修改： {{ editingUser.name }}
           </v-card-title>
           <v-card-text>
-            <v-alert type="alert" icon='fa-exclamation-triangle' class='text-left'>請注意，使用者登入時是依據Email登入，因此Email不可重複</v-alert>
+            <v-alert outlined type="alert" icon='fa-exclamation-triangle' class='text-left'>請注意，使用者登入時是依據Email登入，因此Email不可重複</v-alert>
             <v-text-field outlined clearable dense prepend-icon='fa-at' label='用戶Email' v-model='editingUser.email'></v-text-field>
           </v-card-text>
           <v-card-actions>
@@ -83,7 +83,7 @@
             </v-btn>
           </v-toolbar>
           <v-card-text class='pa-0 ma-0'>
-            <v-alert type="info" icon='fa-info-circle' class='text-left'>
+            <v-alert outlined type="info" icon='fa-info-circle' class='text-left'>
               如果你打算變更用戶的密碼，請用補發密碼功能，這裡是用來修改用戶資訊用的
             </v-alert>
             <v-container class='pa-5'>
@@ -141,7 +141,7 @@
             </v-btn>
           </v-toolbar>
           <v-card-text class='ma-0 pa-0'>
-            <v-alert type="info" icon='fa-info-circle' class='text-left'>
+            <v-alert outlined type="info" icon='fa-info-circle' class='text-left'>
                 請注意，刪除使用者可能導致某些標籤下沒有成員，影響資料編輯，若發生如此情形，請記得日後手動添加成員到指定標籤
             </v-alert>
             <v-container class='pa-5'>
@@ -187,7 +187,7 @@
             </v-btn>
           </v-toolbar>
           <v-card-text class='ma-0 pa-0'>
-            <v-alert type="info" icon='fa-info-circle' class='text-left'>
+            <v-alert outlined type="info" icon='fa-info-circle' class='text-left'>
               由於本系統的用戶都是廠商、各校老師，因此新增用戶功能採用邀請制，這裡只能設定你要建立幾個User，系統會在下面出現邀請碼，你可以自己把邀請碼寄給使用者，讓他們填完自己的相關資料，你唯一能修改的只有用戶的標籤
             </v-alert>
             <v-container class='pa-5'>
@@ -235,42 +235,42 @@
       </v-dialog>
       <v-dialog v-model="tagUserW" persistent>
           <v-card>
-              <v-card-title class="headline">設定用戶所屬標籤</v-card-title>
-              <v-card-text>
-                  <v-alert type="alert" icon='fa-exclamation-triangle' class='text-left'>請注意選取你要複寫或是新增用戶標籤到使用者的帳號中，然後，記得按右下方的儲存設定，才會把變更存起來</v-alert>
-                  <v-switch
-                    v-model="moduserTagMode"
-                    label="啟動複寫模式（預設值是新增）"
-                  ></v-switch>
-                  <tag-filter
-                    @updateTags='updateTags'
-                    @plusItem='plusTag'
-                    :single='false'
-                    :selectedItem='selectednewTags'
-                    @valueUpdated='newTagUpdated'
-                    :candidatedItem='savedTags'
-                    :createable='true'
-                    label='請輸入您想加入的使用者標籤'
-                  />
-                  <div class='text-caption'>
-                    目前選取的 {{ selectedUsers.length }} 個用戶的使用者標籤聯集為：
-                    <v-simple-table>
-                      <template v-slot:default>
-                        <thead>
-                            <tr>
-                                <th class='text-center'>標籤名稱</th>
-                                <th class='text-center'>標籤內用戶數量</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="item in tagList" :key="'remove' + item._id">
-                                <td>{{ item.name }}</td>
-                                <td>{{ item.count }}</td>
-                            </tr>
-                        </tbody>
-                      </template>
-                    </v-simple-table>
-                  </div>
+            <v-card-title class="headline">設定用戶所屬標籤</v-card-title>
+            <v-card-text>
+                <v-alert outlined type="alert" icon='fa-exclamation-triangle' class='text-left'>請注意選取你要複寫或是新增用戶標籤到使用者的帳號中，然後，記得按右下方的儲存設定，才會把變更存起來</v-alert>
+                <v-switch
+                  v-model="moduserTagMode"
+                  label="啟動複寫模式（預設值是新增）"
+                ></v-switch>
+                <tag-filter
+                  @updateTags='updateTags'
+                  @plusItem='plusTag'
+                  :single='false'
+                  :selectedItem='selectednewTags'
+                  @valueUpdated='newTagUpdated'
+                  :candidatedItem='savedTags'
+                  :createable='true'
+                  label='請輸入您想加入的使用者標籤'
+                />
+                <div class='text-caption'>
+                  目前選取的 {{ selectedUsers.length }} 個用戶的使用者標籤聯集為：
+                  <v-simple-table>
+                    <template v-slot:default>
+                      <thead>
+                          <tr>
+                            <th class='text-center'>標籤名稱</th>
+                            <th class='text-center'>標籤內用戶數量</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                          <tr v-for="item in tagList" :key="'remove' + item._id">
+                            <td>{{ item.name }}</td>
+                            <td>{{ item.count }}</td>
+                          </tr>
+                      </tbody>
+                    </template>
+                  </v-simple-table>
+                </div>
               </v-card-text>
               <v-card-actions>
               <v-spacer></v-spacer>

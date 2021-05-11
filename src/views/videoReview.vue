@@ -1,12 +1,12 @@
 <template>
   <v-main ref='mainBlock' class='pa-0' style="width: 100% !important;">
-    <v-alert type="success" icon="fa-grin-wink" class='text-left' v-if="statistics.unfinishObj === 0">
+    <v-alert outlined type="success" icon="fa-grin-wink" class='text-left' v-if="statistics.unfinishObj === 0">
       本階段審查指標已全部完成，請回到DashBoard，可進入下一個階段（如果你在下一個階段還有權力的話）
     </v-alert>
-    <v-alert type="error" icon="fa-skull" class='text-left' v-if="!currentStage.current">
+    <v-alert outlined type="error" icon="fa-skull" class='text-left' v-if="!currentStage.current">
       本階段已經是歷史了，離開吧！
     </v-alert>
-    <v-alert type="info" icon='fa-info-circle' class='text-left' v-if="currentStage.coolDown">
+    <v-alert outlined type="info" icon='fa-info-circle' class='text-left' v-if="currentStage.coolDown">
       本階段進入冷靜期，你只能回復既有Issue，不能開新的Issue！
     </v-alert>
     <v-dialog v-model='diffW' fullscreen hide-overlay transition='dialog-bottom-transition'>
@@ -48,7 +48,7 @@
           <v-toolbar-title>修改審查功能的畫面預設值</v-toolbar-title>
         </v-toolbar>
         <v-card-text class='d-flex flex-column pa-0'>
-          <v-alert type='info' icon='fa-info-circle' class='text-left'>在這裡的設定只會保存在這台機器上，意思是你換一台電腦就看不到了</v-alert>
+          <v-alert outlined type='info' icon='fa-info-circle' class='text-left'>在這裡的設定只會保存在這台機器上，意思是你換一台電腦就看不到了</v-alert>
           <div class='d-flex flex-column pa-3 black--text'>
             <div class='text-h6'>隱藏右下角的Issue過濾器</div>
             <v-switch
@@ -158,7 +158,7 @@
           <v-toolbar-title>{{ currentKB.title }} 目前進度概況</v-toolbar-title>
         </v-toolbar>
         <v-card-text class='pa-0 black--text'>
-          <v-alert type='info' icon='fa-info-circle' class='text-left'>這個對話框關閉之後，你可以在審查畫面右上角點一下i按鈕開啟</v-alert>
+          <v-alert outlined type='info' icon='fa-info-circle' class='text-left'>這個對話框關閉之後，你可以在審查畫面右上角點一下i按鈕開啟</v-alert>
           <div v-if='currentKB.currentStep === 0'>專案目前沒啟動，你是怎麼到這裡的？</div>
           <div v-if='currentKB.currentStep > 0' class='pa-3'>
             <div class='text-body-1'>目前進度（階段 {{ currentKB.currentStep }} / {{ currentKB.stages.length }}）</div>

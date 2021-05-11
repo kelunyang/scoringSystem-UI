@@ -19,7 +19,7 @@
           <v-toolbar-title>計算平均值</v-toolbar-title>
         </v-toolbar>
         <v-card-text class='d-flex flex-column pa-0'>
-          <v-alert type="info" icon='fa-info-circle' class='text-left'>
+          <v-alert outlined type="info" icon='fa-info-circle' class='text-left'>
             選擇時間和人次兩種數據，就能算出逐時平均值（請先在查詢功能裡建立好至少兩個數據集）
           </v-alert>
           <v-simple-table>
@@ -93,7 +93,7 @@
           </v-simple-table>
           <v-switch
             v-model="tempavgsecondConvert"
-            label="如果你選的是秒類型的資料，請在這裡打勾，會自動把秒轉換為小時"
+            label="如果你選的是秒類型的資料，請在這裡打勾，會自動把秒轉換為分（平均數很小，因此使用分鐘而不是小時）"
           ></v-switch>
           <div class='text-h6' v-show='usedPresets.length === 0 || newPreset'>設定統計區間</div>
           <v-select
@@ -308,7 +308,7 @@
           <v-toolbar-title>請選擇你要檢視的統計數據</v-toolbar-title>
         </v-toolbar>
         <v-card-text class='d-flex flex-column pa-0'>
-          <v-alert type='info' icon='fa-info-circle' class='text-left' v-if='currentPreset > 0'>已載入 {{ dateConvert(currentPreset) }} 設定的查詢集，請記得選擇查詢時間區間，否則預設值只會查今天的</v-alert>
+          <v-alert outlined type='info' icon='fa-info-circle' class='text-left' v-if='currentPreset > 0'>已載入 {{ dateConvert(currentPreset) }} 設定的查詢集，請記得選擇查詢時間區間，否則預設值只會查今天的</v-alert>
           <div class='d-flex flex-column pa-5'>
             <div class='text-h6' v-if='usedPresets.length > 0'>已查詢過的設定檔</div>
             <v-simple-table v-if='usedPresets.length > 0'>
@@ -767,7 +767,7 @@ export default {
       this.tempsecondConvert = preset.secondConvert;
     },
     updatequeryKBTags: function (val) {
-      this.queryKBTags = val;
+      this.tempKBTags = val;
     },
     openimportW: function () {
       this.importW = true;
@@ -836,10 +836,10 @@ export default {
       this.$emit('toastPop','你沒有設定任何條件，無法查詢！');
     },
     updatequerysourceTags: function (val) {
-      this.querysourceTags = val;
+      this.tempsourceTags = val;
     },
     updatequerytypeTag: function (val) {
-      this.querytypeTag = val;
+      this.temptypeTag = val;
     },
     updatesourceTag: function (val) {
       this.sourceTag = val;
@@ -883,6 +883,7 @@ export default {
       fileReader.onload = () => {
         var arrayBuffer = fileReader.result;
         oriobj.$socket.client.emit('importKBstatistics', {
+          overwrite: oriobj.overwrite,
           typeTags: oriobj.typeTags,
           sourceTag: oriobj.sourceTag,
           uuid: data.uuid,
@@ -901,7 +902,7 @@ export default {
         this.querysourceTags = this.tempsourceTags;
         this.querytypeTag = this.temptypeTag;
         this.queryKBTags = this.tempKBTags;
-        this.queryType = this.tempqueryType;
+        this.queryType = this.tempType;
         this.secondConvert = this.tempsecondConvert;
         let now = moment().unix();
         this.sumValue = new Decimal(0);
@@ -943,7 +944,7 @@ export default {
         this.usage = COMP2DOWNLOAD;
         if(this.tempavgsecondConvert) {
           for(let i=0; i < data.length; i++) {
-            data[i].peroidlySum = data[i].peroidlySum / 60 / 60;
+            data[i].peroidlySum = data[i].peroidlySum / 60;
           }
         }
         this.comp1Data = data;

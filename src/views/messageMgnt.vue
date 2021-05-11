@@ -20,7 +20,7 @@
             </v-toolbar-items>
           </v-toolbar>
           <v-card-text class='ma-0 pa-0'>
-            <v-alert type="info" icon='fa-info-circle' class='text-left'>
+            <v-alert outlined type="info" icon='fa-info-circle' class='text-left'>
               請注意，首頁只會顯示各類型公告各一則
             </v-alert>
             <v-container>
@@ -78,7 +78,7 @@
             <v-toolbar-title>LINE訊息紀錄</v-toolbar-title>
           </v-toolbar>
           <v-card-text class='pa-0 ma-0'>
-            <v-alert type="info" icon='fa-info-circle' class='text-left'>
+            <v-alert outlined type="info" icon='fa-info-circle' class='text-left'>
               這裡只是保存歷史訊息供你回味，你無法刪除，也無法修改，發生過了就是發生過了
             </v-alert>
             <v-skeleton-loader
@@ -142,7 +142,7 @@
             <v-toolbar-title>全域廣播紀錄</v-toolbar-title>
           </v-toolbar>
           <v-card-text class='pa-0 ma-0'>
-            <v-alert type="info" icon='fa-info-circle' class='text-left'>
+            <v-alert outlined type="info" icon='fa-info-circle' class='text-left'>
               這裡只是保存歷史訊息供你回味，你無法刪除，也無法修改，發生過了就是發生過了
             </v-alert>
             <v-skeleton-loader

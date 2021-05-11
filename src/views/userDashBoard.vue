@@ -12,7 +12,7 @@
         >初次使用設定
         </v-toolbar>
         <v-card-text class='d-flex flex-column pa-0'>
-          <v-alert type='info' icon='fa-info-circle' class='text-left'>若您日後還要修改這條設定，請選擇右下角工具箱的i圖示開啟即可</v-alert>
+          <v-alert outlined type='info' icon='fa-info-circle' class='text-left'>若您日後還要修改這條設定，請選擇右下角工具箱的i圖示開啟即可</v-alert>
           <v-switch
             v-model="initStatstics"
             label="每次開啟Dashboard都先打開知識點進度總統計（通常是PM才會需要打開）"
@@ -43,7 +43,7 @@
         >指定 {{ currentKB.title }} 的標籤
         </v-toolbar>
         <v-card-text class='d-flex flex-column pa-0'>
-          <v-alert type='info' icon='fa-info-circle' class='text-left'>PM可以針對不同知識點下行銷或管理需要的標籤（如「粉紅色」、「買賣問題」、「時事性」之類），請不要刪除你看不懂的標籤，否則知識點管理中找不到這個知識點</v-alert>
+          <v-alert outlined type='info' icon='fa-info-circle' class='text-left'>PM可以針對不同知識點下行銷或管理需要的標籤（如「粉紅色」、「買賣問題」、「時事性」之類），請不要刪除你看不懂的標籤，否則知識點管理中找不到這個知識點</v-alert>
           <tag-filter
             @updateTags='updateTags'
             @plusItem='plusTag'
@@ -85,7 +85,7 @@
           下載 {{ selectedpmKBs.length }} 個知識點的最新版本
         </v-card-title>
         <v-card-text class='d-flex flex-column'>
-          <v-alert type='info' icon='fa-info-circle' class='text-left'>請注意，為節省系統資源，系統不會幫你把這些檔案壓縮，而會同時發送這些檔案給你，你應該會在瀏覽器正下方（或是正上方）看到「是否允許下載多個檔案」的提示，請務必按「同意」</v-alert>
+          <v-alert outlined type='info' icon='fa-info-circle' class='text-left'>請注意，為節省系統資源，系統不會幫你把這些檔案壓縮，而會同時發送這些檔案給你，你應該會在瀏覽器正下方（或是正上方）看到「是否允許下載多個檔案」的提示，請務必按「同意」</v-alert>
           <div class='red--text text-caption'>你要下載最新的幾個版本呢？（{{ latestCount }}）</div>
           <v-slider
             label='最新版本數量'
@@ -125,10 +125,10 @@
           <v-toolbar-title>管理知識點版本</v-toolbar-title>
         </v-toolbar>
         <v-card-text class='d-flex flex-column pa-0'>
-          <v-alert type='info' v-if='currentKB.isVendor' icon='fa-info-circle' class='text-left'>
+          <v-alert outlined type='info' v-if='currentKB.isVendor' icon='fa-info-circle' class='text-left'>
             廠商請注意：基本上你只能上傳影片（H.264/VP9）、PDF檔案（分鏡圖使用），除非是最終階段需要上傳可編輯原始檔，否則請勿上傳zip檔，另外，你的檔名就會是版本代號，請警慎命名（如「腳本第一版」）
           </v-alert>
-          <v-alert type='info' v-if='currentKB.isWriter' icon='fa-info-circle' class='text-left'>
+          <v-alert outlined type='info' v-if='currentKB.isWriter' icon='fa-info-circle' class='text-left'>
             寫手請注意：你只能上傳PDF檔案，請把你的腳本都轉換成PDF再上傳，另外，你的檔名就會是版本代號，請警慎命名（如「腳本第一版」）
           </v-alert>
           <div v-if='currentKB.isWriter || currentKB.isVendor' class='d-felx flex-column'>
@@ -241,7 +241,7 @@
           </v-btn>
         </v-toolbar>
         <v-card-text class='pa-0 ma-0 d-flex flex-column'>
-          <v-alert type="info" icon='fa-info-circle' class='text-left'>你如果發現你勾選的知識點少於系統回傳的知識點，那很明顯是因為你不具有該知識點的行政管理權，請洽你的知識點PM，把你放進行政組中</v-alert>
+          <v-alert outlined type="info" icon='fa-info-circle' class='text-left'>你如果發現你勾選的知識點少於系統回傳的知識點，那很明顯是因為你不具有該知識點的行政管理權，請洽你的知識點PM，把你放進行政組中</v-alert>
           <div v-if='participantsDB.statistics.length === 0'>
             你不具備你勾選的知識點的行政管理權，回傳的知識點數量為0
           </div>

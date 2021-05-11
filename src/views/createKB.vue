@@ -191,7 +191,7 @@
           dark
         >快速建立用戶標籤</v-toolbar>
         <v-card-text class='pa-0 d-flex flex-column'>
-          <v-alert type='info' icon='fa-info-circle' class='text-left'>本功能提供快速建立參與知識點各階段的用戶小群組，請注意，現階段沒有開放刪除標籤的規劃（避免權限表操作異常），打字不要打錯字，真的要修改請找管理員直接從資料庫修改</v-alert>
+          <v-alert outlined type='info' icon='fa-info-circle' class='text-left'>本功能提供快速建立參與知識點各階段的用戶小群組，請注意，現階段沒有開放刪除標籤的規劃（避免權限表操作異常），打字不要打錯字，真的要修改請找管理員直接從資料庫修改</v-alert>
           <div class='black--text d-flex flex-column pa-3 text-left'>
             <div class='text-h6'>請選擇你要框選的用戶所在的用戶標籤</div>
             <div class='text-caption grey--text darken-3'>可以不選，那你就會在下一個選單裡要從全部的用戶去篩選名單，基於多數用戶在帳號開設時已經被納入如「110年寫手群」這類的大標籤群組，建議你先在這裡選好，方便過濾</div>
@@ -252,7 +252,7 @@
           dark
         >選擇性複製知識點</v-toolbar>
         <v-card-text class='pa-0 d-flex flex-column'>
-          <v-alert type='info' icon='fa-info-circle' class='text-left'>請注意，所有的複製都是用「累加」的模式，不會複寫知識點原本的階段與權限設定</v-alert>
+          <v-alert outlined type='info' icon='fa-info-circle' class='text-left'>請注意，所有的複製都是用「累加」的模式，不會複寫知識點原本的階段與權限設定</v-alert>
           <div class='red--text text-center'>
             你目前選擇的知識點： {{ currentKB.name }} 
           </div>
@@ -433,7 +433,7 @@
           <v-toolbar-title>選擇科目標籤</v-toolbar-title>
         </v-toolbar>
         <v-card-text class='ma-0 pa-0'>
-          <v-alert type='info' icon='fa-info-circle' class='text-left'>請選擇您要編輯的科目標籤（如：109年國中數學科），如果您需要新增，直接輸入即可</v-alert>
+          <v-alert outlined type='info' icon='fa-info-circle' class='text-left'>請選擇您要編輯的科目標籤（如：109年國中數學科），如果您需要新增，直接輸入即可</v-alert>
           <tag-filter
             :mustSelected='true'
             @updateTags='updateTags'

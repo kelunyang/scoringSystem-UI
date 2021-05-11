@@ -1,6 +1,7 @@
 <template>
   <v-main class='pa-0'>
     <v-alert
+      outlined
       type="error"
       icon="fa-skull" class='text-left'
       v-show='currentUser.firstRun === true'

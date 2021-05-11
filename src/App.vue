@@ -139,7 +139,7 @@
           </v-btn>
         </v-card-actions>
         <v-card-text>
-          <v-alert type="info" icon='fa-info-circle' class='text-left'>
+          <v-alert outlined type="info" icon='fa-info-circle' class='text-left'>
             請注意，在這台電腦的聊天紀錄只會保存在這台電腦上，而且不保證對方會收到
           </v-alert>
           <Tip-Tap
