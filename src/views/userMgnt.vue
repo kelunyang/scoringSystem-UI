@@ -452,7 +452,6 @@
 <script>
 // @ is an alias to /src
 import moment from 'moment';
-import TagFilter from './modules/TagFilter';
 import validator from 'validator';
 import _filter from 'lodash/filter';
 import _includes from 'lodash/includes';
@@ -494,9 +493,7 @@ export default {
       this.$socket.client.on('setEmail', this.socketsetEmail);
       this.$socket.client.on('modUsers', this.socketmodUsers);
     },
-    components: {
-      TagFilter
-    },
+    components: { TagFilter: () => import(/* webpackPrefetch: true */ './modules/TagFilter') },
     computed: {
       filterColor: function () {
         return this.selectedFilterTags.length > 0 || this.queryTerm !== '' ? '#B71C1C' : '#00B0FF';

@@ -362,16 +362,17 @@ import moment from 'moment';
 import TurndownService from 'turndown';
 import marked from 'marked';
 import { v4 as uuidv4 } from 'uuid';
-import TipTap from './modules/TipTap';
 import prettyBytes from 'pretty-bytes';
 import _find from 'lodash/find';
-import IssueView from './modules/IssueView.vue';
 
 const renderer = new marked.Renderer();
 const linkRenderer = renderer.link;
 renderer.link = (href, title, text) => {
-    const html = linkRenderer.call(renderer, href, title, text);
-    return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
+  if(href !== undefined) { href = href.replace(/\\/, ''); }
+  if(title !== undefined) { title = title.replace(/\\/, ''); }
+  if(text !== undefined) { text = text.replace(/\\/, ''); }
+  const html = linkRenderer.call(renderer, href, title, text);
+  return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
 };
 
 VueClipboard.config.autoSetContainer = true;
@@ -382,7 +383,10 @@ let files = [];
 
 export default {
   name: 'Info',
-  components: { TipTap, IssueView },
+  components: { 
+    TipTap: () => import(/* webpackPrefetch: true */ './modules/TipTap'),
+    IssueView: () => import(/* webpackPrefetch: true */ './modules/IssueView'),
+  },
   methods: {
     socketrequestfeedbackSlice: function (data) {
       let oriobj = this;

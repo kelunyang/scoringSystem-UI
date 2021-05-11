@@ -284,7 +284,6 @@ import moment from 'moment';
 import prettyBytes from 'pretty-bytes';
 import TurndownService from 'turndown';
 import marked from 'marked';
-import TipTap from './modules/TipTap';
 
 let files = [];
 
@@ -292,7 +291,7 @@ const turndownService = new TurndownService();
 
 export default {
   name: 'messageMgnt',
-  components: { TipTap },
+  components: { TipTap: () => import(/* webpackPrefetch: true */ './modules/TipTap') },
   beforeDestroy () {
     this.$socket.client.off('getMessages', this.socketgetMessages);
     this.$socket.client.off('msgFileUploadDone', this.soketmsgFileUploadDone);

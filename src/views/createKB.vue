@@ -614,7 +614,7 @@
           transition="fade-transition"
           :key='mitem._id'
         >
-          <v-list class='KBcata pa-0 mt-6 d-flex flex-column justify-start' dense>
+          <div class='KBcata pa-0 mt-6 d-flex flex-column justify-start' dense>
             <div class='d-flex flex-row justify-start'>
                 <v-tooltip bottom>
                   <template v-slot:activator="{ on, attrs }">
@@ -667,78 +667,79 @@
                 <v-icon>fa-pencil-alt</v-icon>
               </v-btn>
             </v-subheader>
-            <draggable v-model="mitem.KBs" group="KBitems" handle=".subhandle" style="min-height: 10px" v-show='mitem.collapse === false'>
+            <draggable v-model="mitem.KBs" :group="'KBitems'" handle=".subhandle" style="min-height: 10px" v-show='mitem.collapse === false'>
               <template v-for="KBitem in mitem.KBs">
-                <v-row :key="KBitem._id + 'handler'" class='KBsub d-flex'>
-                  <v-col col='9' class='flex-grow-1 text-left'>
-                    {{ KBitem.title }}
-                  </v-col>
-                  <v-col col='3' class='align-center flex-grow-0 flex-shrink-0 ma-0 pa-0 d-flex flex-row'>
-                    <v-checkbox v-model="selectedKBs" :value='KBitem._id' off-icon="far fa-square" on-icon="fa-check-square"></v-checkbox>
-                    <v-tooltip top>
-                      <template v-slot:activator="{ on, attrs }">
-                        <v-btn @click="loadKBEditor(KBitem)" v-bind="attrs" v-on="on" icon>
-                          <v-icon>fa-pencil-alt</v-icon>
-                        </v-btn>
-                      </template>
-                      <span>編輯知識點</span>
-                    </v-tooltip>
-                    <v-tooltip top>
-                      <template v-slot:activator="{ on, attrs }">
-                        <v-btn @click="cloneConfigs(KBitem)" v-bind="attrs" v-on="on" icon>
-                          <v-icon>fa-copy</v-icon>
-                        </v-btn>
-                      </template>
-                      <span>設定為知識點複製範本</span>
-                    </v-tooltip>
-                    <v-tooltip top>
-                      <template v-slot:activator="{ on, attrs }">
-                        <v-btn v-bind="attrs" v-on="on" icon @click='removeKB(KBitem)'>
-                          <v-icon>fas fa-trash</v-icon>
-                        </v-btn>
-                      </template>
-                      <span>刪除知識點</span>
-                    </v-tooltip>
-                    <v-tooltip top>
-                      <template v-slot:activator="{ on, attrs }">
-                        <v-btn v-bind="attrs" v-on="on" icon class='subhandle'>
-                          <v-icon>fa-arrows-alt</v-icon>
-                        </v-btn>
-                      </template>
-                      <span>上下移動知識點</span>
-                    </v-tooltip>
-                  </v-col>
-                </v-row>
-                <v-row :key="KBitem._id + 'steps'">
-                  <v-col class='text-center text-caption grey--text darken-1 flex-grow-1' v-if='KBitem.stages.length === 0'>
-                    本知識點沒有任何階段，點右邊加號圖案去增加階段吧
-                  </v-col>
-                  <v-col class='flex-grow-1' v-if='KBitem.stages.length > 0'>
-                    <v-stepper v-model="KBitem.stepPointer">
-                      <v-stepper-header>
-                        <template
-                          v-for='(stage, index) in KBitem.stages'
-                        >
-                          <v-stepper-step
-                            :key='stage._id'
-                            :complete="KBitem.stepPointer > index"
-                            :step='index + 1'
-                            editable
-                            @click="loadReviewer(KBitem)"
-                            complete-icon='fa-check-circle'
-                            edit-icon='fa-pencil-alt'
-                          >
-                            <span v-show='(index + 1) === KBitem.stepPointer'>{{ stage.name }}</span>
-                          </v-stepper-step>
-                          <v-divider
-                            :key='"divider" + stage._id'
-                            v-if='(index + 1) !== KBitem.stages.length'
-                          ></v-divider>
+                <div class='d-flex flex-column' :key="KBitem._id + 'handler'">
+                  <div class='d-flex flex-row'>
+                    <div class='flex-grow-1 text-left'>
+                      {{ KBitem.title }}
+                    </div>
+                    <div class='align-center flex-grow-0 flex-shrink-1 ma-0 pa-0 d-flex flex-row'>
+                      <v-checkbox v-model="selectedKBs" :value='KBitem._id' off-icon="far fa-square" on-icon="fa-check-square"></v-checkbox>
+                      <v-tooltip top>
+                        <template v-slot:activator="{ on, attrs }">
+                          <v-btn @click="loadKBEditor(KBitem)" v-bind="attrs" v-on="on" icon>
+                            <v-icon>fa-pencil-alt</v-icon>
+                          </v-btn>
                         </template>
-                      </v-stepper-header>
-                    </v-stepper>
-                  </v-col>
-                  <v-col class='flex-shrink-1 flex-grow-0'>
+                        <span>編輯知識點</span>
+                      </v-tooltip>
+                      <v-tooltip top>
+                        <template v-slot:activator="{ on, attrs }">
+                          <v-btn @click="cloneConfigs(KBitem)" v-bind="attrs" v-on="on" icon>
+                            <v-icon>fa-copy</v-icon>
+                          </v-btn>
+                        </template>
+                        <span>設定為知識點複製範本</span>
+                      </v-tooltip>
+                      <v-tooltip top>
+                        <template v-slot:activator="{ on, attrs }">
+                          <v-btn v-bind="attrs" v-on="on" icon @click='removeKB(KBitem)'>
+                            <v-icon>fas fa-trash</v-icon>
+                          </v-btn>
+                        </template>
+                        <span>刪除知識點</span>
+                      </v-tooltip>
+                      <v-tooltip top>
+                        <template v-slot:activator="{ on, attrs }">
+                          <v-btn v-bind="attrs" v-on="on" icon class='subhandle'>
+                            <v-icon>fa-arrows-alt</v-icon>
+                          </v-btn>
+                        </template>
+                        <span>上下移動知識點</span>
+                      </v-tooltip>
+                    </div>
+                  </div>
+                  <div class='d-flex flex-row'>
+                    <div class='text-center text-caption grey--text darken-1 flex-grow-1' v-if='KBitem.stages.length === 0'>
+                      本知識點沒有任何階段，點右邊加號圖案去增加階段吧
+                    </div>
+                    <div class='flex-grow-1' v-if='KBitem.stages.length > 0'>
+                      <v-stepper v-model="KBitem.stepPointer">
+                        <v-stepper-header>
+                          <template
+                            v-for='(stage, index) in KBitem.stages'
+                          >
+                            <v-stepper-step
+                              :key='stage._id'
+                              :complete="KBitem.stepPointer > index"
+                              :step='index + 1'
+                              editable
+                              @click="loadReviewer(KBitem)"
+                              complete-icon='fa-check-circle'
+                              edit-icon='fa-pencil-alt'
+                            >
+                              <span v-show='(index + 1) === KBitem.stepPointer'>{{ stage.name }}</span>
+                            </v-stepper-step>
+                            <v-divider
+                              :key='"divider" + stage._id'
+                              v-if='(index + 1) !== KBitem.stages.length'
+                            ></v-divider>
+                          </template>
+                        </v-stepper-header>
+                      </v-stepper>
+                    </div>
+                  <div class='flex-shrink-1 flex-grow-0'>
                     <v-tooltip top>
                       <template v-slot:activator="{ on, attrs }">
                         <v-btn v-bind="attrs" v-on="on" icon @click="addStage(KBitem)">
@@ -747,11 +748,11 @@
                       </template>
                       <span>新增知識點編輯階段</span>
                     </v-tooltip>
-                  </v-col>
-                </v-row>
+                  </div>
+                </div>
               </template>
             </draggable>
-          </v-list>
+          </div>
         </v-lazy>
       </template>
     </draggable>
@@ -776,10 +777,7 @@
 <script>
 // @ is an alias to /src
 import Vue from 'vue';
-import draggable from 'vuedraggable';
 import prettyBytes from 'pretty-bytes';
-import TagFilter from './modules/TagFilter';
-import TipTap from './modules/TipTap';
 import { v4 as uuidv4 } from 'uuid';
 import marked from 'marked';
 import _map from 'lodash/map';
@@ -788,24 +786,26 @@ import _uniq from 'lodash/uniq';
 import _findIndex from 'lodash/findIndex';
 import _flatten from 'lodash/flatten';
 import moment from 'moment';
-import VueCtkDateTimePicker from 'vue-ctk-date-time-picker';
 import 'vue-ctk-date-time-picker/dist/vue-ctk-date-time-picker.css';
 
 const renderer = new marked.Renderer();
 const linkRenderer = renderer.link;
 renderer.link = (href, title, text) => {
-    const html = linkRenderer.call(renderer, href, title, text);
-    return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
+  if(href !== undefined) { href = href.replace(/\\/, ''); }
+  if(title !== undefined) { title = title.replace(/\\/, ''); }
+  if(text !== undefined) { text = text.replace(/\\/, ''); }
+  const html = linkRenderer.call(renderer, href, title, text);
+  return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
 };
 let files = [];
-Vue.component('VueCtkDateTimePicker', VueCtkDateTimePicker);
 
 export default {
   name: 'createKB',
-  components: {
-    TagFilter,
-    draggable,
-    TipTap
+  components: { 
+    TagFilter: () => import(/* webpackPrefetch: true */ './modules/TagFilter'),
+    draggable: () => import(/* webpackPrefetch: true */ 'vuedraggable'),
+    TipTap: () => import(/* webpackPrefetch: true */ './modules/TipTap'),
+    VueCtkDateTimePicker: () => import(/* webpackPrefetch: true */ 'vue-ctk-date-time-picker')
   },
   watch: {
     currentStageDate: function () {

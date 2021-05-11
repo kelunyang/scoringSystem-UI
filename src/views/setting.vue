@@ -242,7 +242,6 @@
 <script>
 // @ is an alias to /src
 import Vue from 'vue';
-import TagFilter from './modules/TagFilter';
 import TurndownService from 'turndown';
 import marked from 'marked';
 import moment from 'moment';
@@ -250,17 +249,18 @@ import moment from 'moment';
 const renderer = new marked.Renderer();
 const linkRenderer = renderer.link;
 renderer.link = (href, title, text) => {
-    const html = linkRenderer.call(renderer, href, title, text);
-    return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
+  if(href !== undefined) { href = href.replace(/\\/, ''); }
+  if(title !== undefined) { title = title.replace(/\\/, ''); }
+  if(text !== undefined) { text = text.replace(/\\/, ''); }
+  const html = linkRenderer.call(renderer, href, title, text);
+  return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
 };
 
 const turndownService = new TurndownService();
 
 export default {
   name: 'settings',
-  components: {
-    TagFilter
-  },
+  components: { TagFilter: () => import(/* webpackPrefetch: true */ './modules/TagFilter') },
   computed: {
     savedTags: function () {
       return this.$store.state.savedTags;

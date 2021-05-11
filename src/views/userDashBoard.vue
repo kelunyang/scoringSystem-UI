@@ -13,10 +13,16 @@
         </v-toolbar>
         <v-card-text class='d-flex flex-column pa-0'>
           <v-alert outlined type='info' icon='fa-info-circle' class='text-left'>若您日後還要修改這條設定，請選擇右下角工具箱的i圖示開啟即可</v-alert>
-          <v-switch
-            v-model="initStatstics"
-            label="每次開啟Dashboard都先打開知識點進度總統計（通常是PM才會需要打開）"
-          ></v-switch>
+          <div class='d-flex flex-column pa-1'>
+            <v-switch
+              v-model="initStatstics"
+              label="每次開啟Dashboard都先打開知識點進度總統計（通常是PM才會需要打開）"
+            ></v-switch>
+            <v-switch
+              v-model="initHistory"
+              label="打開所有和我有關的知識點，就算當前階段與我無關我也要看到（通常是PM才會需要打開）"
+            ></v-switch>
+          </div>
           <div class='text-caption red--text'>統計圖表的開關在右下角折線圖圖示，您就算不開啟此設定，平時也可以自己點擊叫出統計圖</div>
         </v-card-text>
         <v-card-actions>
@@ -321,7 +327,12 @@
     </v-dialog>
     <v-dialog v-model="authDetailW" persistent>
       <v-card>
-        <v-card-title class="headline">你在 {{ currentKB.title }} 目前階段中的的角色</v-card-title>
+        <v-toolbar
+          dark
+          color="primary"
+        >
+          <v-toolbar-title>你在 {{ currentKB.title }} 目前階段中的的角色</v-toolbar-title>
+        </v-toolbar>
         <v-card-text class='d-flex flex-column text-h6 font-weight-medium black--text text-left'>
           <div v-if='currentKB.isPM'>
             專案管理者：你可以關閉／開啟任何的Issue，並且在知識點編輯器中強制改變專案進度
@@ -460,17 +471,26 @@
         <span>修改預設值</span>
       </v-tooltip>
     </v-speed-dial>
-    <v-fab-transition>
+    <v-speed-dial v-model="filterBtns" fixed bottom right direction="left" :open-on-hover="true" transition="slide-y-reverse-transition">
+      <template v-slot:activator>
+        <v-btn
+          v-model="filterBtns"
+          color="pink"
+          dark
+          fab
+        >
+          <v-icon v-if="filterBtn">fa-chevron-up</v-icon>
+          <v-icon v-else>fa-filter</v-icon>
+        </v-btn>
+      </template>
       <v-tooltip bottom>
         <template v-slot:activator="{ on, attrs }">
           <v-btn
             v-bind="attrs" v-on="on"
-            color="pink"
-            fixed
             fab
             dark
-            bottom
-            right
+            small
+            color="pink darken-4"
             @click.stop='queryHistory = !queryHistory'
           >
             <v-icon>fa-history</v-icon>
@@ -479,7 +499,23 @@
         <span v-if='queryHistory'>查看目前屬於你的知識點</span>
         <span v-if='!queryHistory'>查看所有和你有關的知識點</span>
       </v-tooltip>
-    </v-fab-transition>
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn
+            v-bind="attrs" v-on="on"
+            fab
+            dark
+            small
+            color="pink darken-4"
+            @click.stop='sortingRule = !sortingRule'
+          >
+            <v-icon>fa-sort-numeric-down-alt</v-icon>
+          </v-btn>
+        </template>
+        <span v-if='sortingRule'>按照死線時間排序</span>
+        <span v-if='!sortingRule'>按照知識點名稱排序</span>
+      </v-tooltip>
+    </v-speed-dial>
     <div v-show='showStatstics'>
       <div class='d-flex flex-row'>
         <tag-filter
@@ -550,7 +586,7 @@
         <v-btn color='indigo darken-4' class='white--text ma-1' @click="generateList">搜尋</v-btn>
         <v-btn color="brown darken-4" class='white--text ma-1' @click="clearQueryTerm">清除</v-btn>
       </div>
-      <div v-show='!showStatstics' class='blue-grey--text darken-1 text-caption'>已篩選出{{ convertedList.length }}個知識點，為節省資源，不會全部展現出來，往下滑會載入更多</div>
+      <div class='blue-grey--text darken-1 text-caption'>已篩選出{{ convertedList.length }}個知識點，為節省資源，不會全部展現出來，往下滑會載入更多</div>
       <v-lazy
         :options="{
           threshold: 0.5
@@ -569,8 +605,6 @@
 import Vue from 'vue';
 import moment from 'moment';
 import { randomColor } from 'randomcolor';
-import ProgressTile from './modules/ProgressTile';
-import TagFilter from './modules/TagFilter';
 import _filter from 'lodash/filter';
 import _toString from 'lodash/toString';
 import _find from 'lodash/find';
@@ -591,9 +625,9 @@ let files = [];
 
 export default {
   name: 'userDashBoard',
-  components: {
-    ProgressTile,
-    TagFilter
+  components: { 
+    TagFilter: () => import(/* webpackPrefetch: true */ './modules/TagFilter'),
+    ProgressTile: () => import(/* webpackPrefetch: true */ './modules/ProgressTile')
   },
   methods: {
     clearQueryTerm: function() {
@@ -703,7 +737,7 @@ export default {
         });
       }
       this.convertedList = [];
-      let convertedList = _orderBy(list, ['remainTick'], ['asc']);
+      let convertedList = this.sortingRule ? _orderBy(list, ['remainTick'], ['asc']) : _orderBy(list, ['title'], ['asc']);
       this.convertedList = convertedList;
       let steps = _map(this.convertedList, (item) => {
         return item.stages.length;
@@ -719,7 +753,7 @@ export default {
       let steps = [];
       for (let i = 0; i <= this.statisticSteps; i++) {
         steps[i] = {
-          name: i,
+          name: i === 0 ? "尚未啟動" : "第"+ i +"階段",
           data: [0]
         };
       }
@@ -962,6 +996,14 @@ export default {
         this.initialized = true;
       }
     },
+    sortingRule: function () {
+      if(this.initialized) {
+        this.initialized = false;
+        this.generateList();
+        this.renderChart();
+        this.initialized = true;
+      }
+    },
     statisticSteps: function () {
       if(this.initialized) {
         this.initialized = false;
@@ -979,6 +1021,13 @@ export default {
         window.localStorage.setItem('initStatstics', JSON.stringify(this.initStatstics));
       }
       this.showStatstics = this.initStatstics;
+    },
+    initHistory: function () {
+      if(this.localLoaded) {
+        window.localStorage.setItem('initHistory', JSON.stringify(this.initHistory));
+      }
+      this.queryHistory = this.initHistory;
+      this.$socket.client.emit('listDashBoard');
     },
     versionFile: {
       immediate: true,
@@ -1035,6 +1084,7 @@ export default {
   },
   data () {
     return {
+      sortingRule: true,
       queriedChapters: [],
       initialized: false,
       maxStep: 5,
@@ -1088,6 +1138,8 @@ export default {
       },
       statisticSteps: 1,
       initStatstics: false,
+      initHistory: false,
+      historyConfig: false,
       initW: false,
       dashBoardFirstUse: true,
       localLoaded: false,
@@ -1149,6 +1201,11 @@ export default {
     if(initStatstics) {
       this.initStatstics = JSON.parse(initStatstics);
     }
+    let initHistory = window.localStorage.getItem('initHistory');
+    if(initHistory) {
+      this.initHistory = JSON.parse(initHistory);
+      this.historyConfig = true;
+    }
     if(this.dashBoardFirstUse) {
       this.initW = true;
     }
@@ -1163,7 +1220,9 @@ export default {
     });
     this.$emit('timerOn', true);
     this.$emit('toastPop', 'DashBoard更新中');
-    this.$socket.client.emit('listDashBoard');
+    if(!this.historyConfig) {
+      this.$socket.client.emit('listDashBoard');
+    }
     this.$socket.client.on('createUsersReport', this.socketcreateUsersReport);
     this.$socket.client.on('listDashBoard', this.socketlistDashBoard);
     this.$socket.client.on('participantStatstics', this.sockparticipantStatstics);

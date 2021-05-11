@@ -241,7 +241,10 @@
           <v-toolbar-title>匯入知識點統計</v-toolbar-title>
         </v-toolbar>
         <v-card-text class='d-flex flex-column text-left'>
-          <div class='red--text text-caption'>這個功能是提供給匯入知識點於各個平台的統計數據使用，特別提醒，如果你發現匯入進度一直停在同一處，那可能是資料庫寫入的時間差，但實際上已經匯入完成了，如果有疑惑，可以重新整理網頁，再匯入一次</div>
+          <v-alert type="info" icon="fa-info-circle" class='text-left'>
+            這個功能是提供給匯入知識點於各個平台的統計數據使用，特別提醒，如果你發現匯入進度一直停在同一處，那可能是資料庫寫入的時間差，但實際上已經匯入完成了，如果有疑惑，可以重新整理網頁，再匯入一次
+          </v-alert>
+          <a href='/storages/importData.csv' target='_blank'>請點這裡，下載範例檔，你也只能仿造範例檔的格式，上傳csv檔案</a>
           <v-switch
             v-model="importOverwrite"
             label="複寫重複的資料"
@@ -686,7 +689,6 @@ import _filter from 'lodash/filter';
 import _find from 'lodash/find';
 import _map from 'lodash/map';
 import prettyBytes from 'pretty-bytes';
-import TagFilter from './modules/TagFilter';
 import VueApexCharts from 'vue-apexcharts';
 import { randomColor } from 'randomcolor';
 import Decimal from 'decimal.js';
@@ -701,8 +703,8 @@ Vue.use(VueApexCharts);
 Vue.component('apexchart', VueApexCharts);
 
 export default {
-  components: {
-    TagFilter
+  components: { 
+    TagFilter: () => import(/* webpackPrefetch: true */ './modules/TagFilter')
   },
   name: 'charts',
   methods: {

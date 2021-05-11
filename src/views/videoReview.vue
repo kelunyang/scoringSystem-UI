@@ -628,22 +628,6 @@
                   >
                     {{ objectiveConvert(objective) }}
                   </v-btn>
-                  <!-- <v-btn
-                    v-if='currentStage.isReviewer || currentStage.isPM'
-                    color="pink accent-3 ma-1"
-                    class='white--text'
-                    @click='addIssue({ objective: objective._id })'
-                  >
-                    <span>針對這個目標發Issue</span>
-                  </v-btn>
-                  <v-btn
-                    v-if='!currentStage.isFinal'
-                    color="pink accent-3 ma-1"
-                    class='white--text'
-                    @click='viewObjective(objective._id)'
-                  >
-                    <span>{{ viewObjConvert() }}</span>
-                  </v-btn> -->
                 </td>
               </tr>
             </tbody>
@@ -1282,15 +1266,12 @@ import _findIndex from 'lodash/findIndex';
 import 'video.js/dist/video-js.css';
 import marked from 'marked';
 import { v4 as uuidv4 } from 'uuid';
-import TipTap from './modules/TipTap';
 import prettyBytes from 'pretty-bytes';
 import axios from 'axios';
 import JSZip from 'jszip';
 import mime from 'mime-types';
 import Paintable from 'vue-paintable';
 import * as htmlToImage from 'html-to-image';
-import IssueView from './modules/IssueView.vue';
-import IssueList from './modules/IssueList.vue';
 import * as Diff from 'diff'
 import * as pdfjsLib from 'pdfjs-dist/es5/build/pdf';
 import PdfjsWorker from 'workerize-loader!pdfjs-dist/build/pdf.worker.js';
@@ -1300,8 +1281,11 @@ import 'pdfjs-dist/build/pdf.worker.entry';
 const renderer = new marked.Renderer();
 const linkRenderer = renderer.link;
 renderer.link = (href, title, text) => {
-    const html = linkRenderer.call(renderer, href, title, text);
-    return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
+  if(href !== undefined) { href = href.replace(/\\/, ''); }
+  if(title !== undefined) { title = title.replace(/\\/, ''); }
+  if(text !== undefined) { text = text.replace(/\\/, ''); }
+  const html = linkRenderer.call(renderer, href, title, text);
+  return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
 };
 
 let files = [];
@@ -1311,7 +1295,11 @@ Vue.use(Paintable);
 
 export default {
   name: 'videoReview',
-  components: { TipTap, IssueView, IssueList },
+  components: { 
+    TipTap: () => import(/* webpackPrefetch: true */ './modules/TipTap'),
+    IssueView: () => import(/* webpackPrefetch: true */ './modules/IssueView'),
+    IssueList: () => import(/* webpackPrefetch: true */ './modules/IssueList')
+  },
   methods: {
     backtoIssueList: function () {
       this.$emit('toastPop', '更新已讀取Issue清單');

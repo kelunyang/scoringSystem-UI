@@ -45,30 +45,6 @@
       </template>
     </v-snackbar>
     <v-dialog
-      v-model="safariW"
-      persistent
-      max-width="50vw"
-    >
-      <v-card>
-        <v-card-title class="headline">
-          <v-icon>fab fa-safari</v-icon>
-          偵測到Safari瀏覽器！
-        </v-card-title>
-        <v-card-text class='text-left'>
-          <div>Safari瀏覽器（也就是Mac/iOS自帶的瀏覽器）對同步連線功能支援較差，建議更換到<span class='font-weight-bold'>Chrome/ Edge/ Firefox</span>在使用，否則建議您在使用過程中千萬不要按下重新整理的按鈕</div>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn
-            color="primary"
-            @click="safariW = false"
-          >
-            好的，我知道了
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-    <v-dialog
       v-model="fatalErrorW"
       persistent
       max-width="50vw"
@@ -491,6 +467,9 @@
         </v-card>
       </v-menu>
     </v-app-bar>
+    <v-alert type="error" outlined icon='fab fa-internet-explorer' class='text-left' v-if='isIE'>請勿使用Internet Explorer！</v-alert>
+    <v-alert type="error" outlined icon='fas fa-mobile-alt' class='text-left' v-if='isPortrait'>請勿使用直立操作！</v-alert>
+    <v-alert type="error" outlined icon='fas fa-safari' class='text-left' v-if='isSafari'>Safari瀏覽器可能會導致同步連線異常，建議不要使用！</v-alert>
     <div class='pa-5 ma-0' style='width: 100vw'>
       <router-view @updateTags='updateTags' @addTag='addTag' @viewIn='changePage' @toastPop='sendToast' @timerOn='timerOn' @preventReloadDetect='preventReloadDetect' @downloadFile='downloadFile'></router-view>
     </div>
@@ -529,7 +508,6 @@ import VueSocketIOExt from 'vue-socket.io-extended';
 import moment from 'moment';
 import marked from 'marked';
 import momentDurationFormatSetup from 'moment-duration-format';
-import TipTap from './views/modules/TipTap';
 import TurndownService from 'turndown';
 import { v4 as uuidv4 } from 'uuid';
 import _intersectionWith from 'lodash/intersectionWith';
@@ -538,11 +516,15 @@ import _filter from 'lodash/filter';
 import '@fortawesome/fontawesome-free/css/all.css';
 let leaveTick = 0;
 
+const angleDetect = matchMedia("screen and (orientation:portrait)");
 const renderer = new marked.Renderer();
 const linkRenderer = renderer.link;
 renderer.link = (href, title, text) => {
-    const html = linkRenderer.call(renderer, href, title, text);
-    return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
+  if(href !== undefined) { href = href.replace(/\\/, ''); }
+  if(title !== undefined) { title = title.replace(/\\/, ''); }
+  if(text !== undefined) { text = text.replace(/\\/, ''); }
+  const html = linkRenderer.call(renderer, href, title, text);
+  return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
 };
 
 const socketInstance = io('https://' + window.location.host + '/');
@@ -553,7 +535,7 @@ const turndownService = new TurndownService();
 
 export default {
   name: 'App',
-  components: { TipTap },
+  components: { TipTap: () => import(/* webpackPrefetch: true */ './views/modules/TipTap') },
   methods: {
     addTag: function (val) {
       this.$socket.client.emit('addTag', val);
@@ -827,10 +809,15 @@ export default {
         leaveTick = moment().unix();
       }
     });
+    this.isIE = navigator.userAgent.indexOf("MSIE ") > -1 || navigator.userAgent.indexOf("Trident/") > -1;
+    angleDetect.onchange = () => {
+      oriobj.isPortrait = angleDetect.matches;
+    }
+    this.isPortrait = window.screen.width < window.screen.height;
     if(!this.preventR) {
       let nav = performance.getEntriesByType("navigation");
       if(nav === undefined || nav == null || nav.length === 0) {
-        this.safariW = true;
+        this.isSafari = true;
       } else {
         if (nav[0].type === 'reload' || nav[0].type === 1) {
           this.sendToast({
@@ -1032,6 +1019,8 @@ export default {
   },
   data () {
     return {
+      isIE: false,
+      isPortrait: false,
       imgCache: {
         name: '',
         _id: ''
@@ -1065,7 +1054,7 @@ export default {
       nextCheckTime : 0,
       authW: true,
       violationW: false,
-      safariW: false,
+      isSafari: false,
       violation: {
         where: '',
         action: '',

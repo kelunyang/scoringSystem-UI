@@ -1,7 +1,5 @@
 <template>
   <v-sheet class='d-flex flex-column pa-0'>
-    <v-alert type="error" outlined icon='fab fa-internet-explorer' class='text-left' v-if='isIE'>請勿使用Internet Explorer！</v-alert>
-    <v-alert type="error" outlined icon='fas fa-mobile-alt' class='text-left' v-if='isMobile'>行動裝置請勿使用直立操作！</v-alert>
     <v-expansion-panels focusable accordion v-model='messageExpanded'>
       <v-expansion-panel v-for='item in announcements' :key='item.id' :class='item.type === 2 ? "red--text darken-4" : ""'>
         <v-expansion-panel-header expand-icon="fa-chevron-down">
@@ -54,8 +52,11 @@ import marked from 'marked';
 const renderer = new marked.Renderer();
 const linkRenderer = renderer.link;
 renderer.link = (href, title, text) => {
-    const html = linkRenderer.call(renderer, href, title, text);
-    return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
+  if(href !== undefined) { href = href.replace(/\\/, ''); }
+  if(title !== undefined) { title = title.replace(/\\/, ''); }
+  if(text !== undefined) { text = text.replace(/\\/, ''); }
+  const html = linkRenderer.call(renderer, href, title, text);
+  return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
 };
 
 export default {
@@ -131,9 +132,6 @@ export default {
     });
     this.$socket.client.on('getIndexMessages', this.socketgetIndexMessages);
     this.$socket.client.emit('getIndexMessages');
-    let ua = navigator.userAgent;
-    this.isIE = ua.indexOf("MSIE ") > -1 || ua.indexOf("Trident/") > -1;
-    this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
   }
 };
 </script>

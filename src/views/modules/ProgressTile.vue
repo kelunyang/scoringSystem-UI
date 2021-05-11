@@ -39,58 +39,40 @@
           </v-stepper-header>
         </v-stepper>
       </v-col>
-      <v-col ref='progressControl' class='d-flex flex-row align-center flex-grow-0 pa-0 ml-5 mr-5'>
-        <v-checkbox v-if='currentItem.isPM || currentItem.isFinal' off-icon="far fa-square" on-icon="fa-check-square" v-model='selectedItem'></v-checkbox>
-        <v-tooltip top>
-          <template v-slot:activator="{ on, attrs }">
-            <v-btn
-              :icon='currentItem.isPM'
-              link
-              :href='"#/videoReview/" + currentItem._id'
-              v-bind="attrs" v-on="on"
-            >
-              <v-icon v-if='currentItem.isPM'>fa-tasks</v-icon>
-              <span v-if='!currentItem.isPM'>進入審查／回應審查</span>
-            </v-btn>
-          </template>
-          <span>開始審查</span>
-        </v-tooltip>
-        <v-tooltip top v-if='currentItem.isVendor || currentItem.isWriter || currentItem.isPM'>
-          <template v-slot:activator="{ on, attrs }">
-            <v-btn
-              :icon='currentItem.isPM'
-              @click.stop='requestUpload(currentItem)'
-              v-bind="attrs" v-on="on"
-            >
-              <v-icon v-if='currentItem.isPM'>fa-code-branch</v-icon>
-              <span v-if='!currentItem.isPM'>上傳</span>
-            </v-btn>
-          </template>
-          <span>版本管理</span>
-        </v-tooltip>
-        <v-tooltip top v-if='currentItem.isPM'>
-          <template v-slot:activator="{ on, attrs }">
-            <v-btn
-              icon
-              @click.stop='tagMgnt(currentItem)'
-              v-bind="attrs" v-on="on"
-            >
-              <v-icon>fab fa-slack-hash</v-icon>
-            </v-btn>
-          </template>
-          <span>標籤管理</span>
-        </v-tooltip>
-        <v-tooltip top v-if='currentItem.isPM'>
-          <template v-slot:activator="{ on, attrs }">
-            <v-btn
-              icon
-              @click.stop="expand = !expand"
-              v-bind="attrs" v-on="on">
-              <v-icon>fa-ellipsis-v</v-icon>
-            </v-btn>
-          </template>
-          <span>查看最近發生的3則事件</span>
-        </v-tooltip>
+      <v-col ref='progressControl' class='d-flex flex-row flex-wrap align-center flex-grow-0 pa-0 ml-5 mr-5'>
+        <v-btn
+          link
+          :href='"#/videoReview/" + currentItem._id'
+        >
+          進入審查／回應審查
+        </v-btn>
+        <v-btn
+          @click.stop='requestUpload(currentItem)'
+          v-if='currentItem.isVendor || currentItem.isWriter || currentItem.isPM'
+        >
+          <span v-if='currentItem.isVendor || currentItem.isWriter'>上傳檔案</span>
+          <span v-if='currentItem.isPM'>版本管理</span>
+        </v-btn>
+        <v-btn
+          v-if='currentItem.isPM'
+          @click.stop='tagMgnt(currentItem)'
+        >
+          標籤
+        </v-btn>
+        <div class='d-flex flex-row'>
+          <v-checkbox class='ma-0' v-if='currentItem.isPM || currentItem.isFinal' off-icon="far fa-square" on-icon="fa-check-square" v-model='selectedItem'></v-checkbox>
+          <v-tooltip top v-if='currentItem.isPM'>
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                icon
+                @click.stop="expand = !expand"
+                v-bind="attrs" v-on="on">
+                <v-icon>fa-ellipsis-v</v-icon>
+              </v-btn>
+            </template>
+            <span>查看最近發生的3則事件</span>
+          </v-tooltip>
+        </div>
       </v-col>
     </v-row>
     <v-row no-gutters v-if='currentItem.currentStep > 0'>
