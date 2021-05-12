@@ -12,7 +12,7 @@
     <v-row v-if='currentUser._id === ""'>
       <v-col class='d-flex flex-row pa-2 ma-0 justify-space-around'>
         <v-btn color='light-blue darken-4' @click="submit" class='flex-grow-1 white--text'>登入</v-btn>
-        <v-btn color='red darken-4' class='white--text' @click='passwordReset'>重新設定密碼</v-btn>
+        <v-btn color='red darken-4' class='white--text' @click='passwordReset'>忘記密碼，重新設定</v-btn>
       </v-col>
     </v-row>
     <v-row v-if='currentUser._id !== ""'>

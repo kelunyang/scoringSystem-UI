@@ -1110,12 +1110,14 @@ export default {
           width: 1,
           colors: ['#fff']
         },
-        colors: randomColor({
-          luminosity: 'dark',
-          hue: this.$store.state.siteColor,
-          count: 20,
-          format: 'rgb'
-        }),
+        colors: [
+          '#E76F51',
+          '#F8961E',
+          '#F9C74F',
+          '#90BE6D',
+          '#43AA8B',
+          '#577590'
+        ],
         xaxis: {
           categories: ['專案完成度'],
         },

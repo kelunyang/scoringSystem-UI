@@ -27,7 +27,7 @@
       </div>
       <v-spacer></v-spacer>
       <v-btn
-        v-if='cStage.isPM || issue.user === currentUser._id'
+        v-if='cStage.isPM || issue.user._id === currentUser._id'
         @click='removeIssue(issue)'
         color='grey lighten-1'
         class='black--text'

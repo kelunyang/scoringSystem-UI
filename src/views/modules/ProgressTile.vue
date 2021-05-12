@@ -27,7 +27,7 @@
                   <div v-if='currentStep > 0' v-show='(index + 1) === currentStep'>[進行中]<br/>{{ stage.name }}</div>
                   <div v-if='currentStep > 0' v-show='(index + 1) < currentStep'>[已完成]<br/>{{ stage.name }}</div>
                   <div v-if='currentStep > 0' v-show='(index + 1) > currentStep'>[尚未發生]<br/>{{ stage.name }}</div>
-                  <small>起：{{ dateConvert(stage.startTick) }}</small>
+                  <small v-if='"startTick" in stage'>起：{{ dateConvert(stage.startTick) }}</small>
                   <small v-if='!("passtick" in stage)'>至：{{ dateConvert(stage.dueTick) }}</small>
                   <small v-if='"passtick" in stage'>至：{{ dateConvert(stage.passTick) }}</small>
                 </v-stepper-step>
