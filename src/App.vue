@@ -50,10 +50,9 @@
       max-width="50vw"
     >
       <v-card>
-        <v-card-title class="headline">
-          <v-icon>fa-skull</v-icon>
-          發生嚴重錯誤
-        </v-card-title>
+        <v-toolbar dark color='primary'>
+          <v-toolbar-title>發生嚴重錯誤</v-toolbar-title>
+        </v-toolbar>
         <v-card-text class='text-left'>
           <div>系統發生嚴重錯誤，請複製以下訊息並聯絡管理團隊：</div>
           <code>{{ JSON.stringify(fatalMsg) }}！</code>
@@ -92,12 +91,9 @@
       max-width="50vw"
     >
       <v-card>
-        <v-card-title class='d-flex flex-row justify-start'>
-          <v-avatar>
-            <img :src='"https://avatars.dicebear.com/api/" + messageDialog.dialogUser.types + "/" + encodeURIComponent(messageDialog.dialogUser.name + "@" + messageDialog.dialogUser.unit) + ".svg"' />
-          </v-avatar>
-          <div>和 {{ messageDialog.dialogUser.name }} （{{ messageDialog.dialogUser.email }}）通訊</div>
-        </v-card-title>
+        <v-toolbar dark color='primary'>
+          <v-toolbar-title>和 {{ messageDialog.dialogUser.name }} （{{ messageDialog.dialogUser.email }}）的通訊紀錄</v-toolbar-title>
+        </v-toolbar>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
@@ -155,9 +151,9 @@
       max-width="50vw"
     >
       <v-card>
-        <v-card-title class="headline">
-          檢視使用者
-        </v-card-title>
+        <v-toolbar dark color='primary'>
+          <v-toolbar-title>檢視使用者</v-toolbar-title>
+        </v-toolbar>
         <v-card-text class='text-left'>
           <v-avatar>
             <img :src='"https://avatars.dicebear.com/api/" + viewUser.types + "/" + encodeURIComponent(viewUser.name + "@" + viewUser.unit) + ".svg"' />
@@ -184,10 +180,9 @@
       max-width="50vw"
     >
       <v-card>
-        <v-card-title class="headline">
-          <v-icon>fa-skull</v-icon>
-          登出警告！
-        </v-card-title>
+        <v-toolbar dark color='primary'>
+          <v-toolbar-title>登出警告！</v-toolbar-title>
+        </v-toolbar>
         <v-card-text>
           {{ diedMsg }}
         </v-card-text>
@@ -208,11 +203,9 @@
       max-width="50vw"
     >
       <v-card>
-        <v-card-title class="headline">
-          <v-icon>fa-satellite-dish</v-icon>
-          全域廣播：
-          {{ broadcastMsg.title }}
-        </v-card-title>
+        <v-toolbar dark color='primary'>
+          <v-toolbar-title>全域廣播：{{ broadcastMsg.title }}</v-toolbar-title>
+        </v-toolbar>
         <v-card-text v-html="broadcastMsg.body"></v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -231,11 +224,9 @@
       max-width="50vw"
     >
       <v-card>
-        <v-card-title class="headline">
-          <v-icon>fa-satellite-dish</v-icon>
-          服務發生錯誤：
-          {{ errorm.title }}
-        </v-card-title>
+        <v-toolbar dark color='primary'>
+          <v-toolbar-title>服務發生錯誤：{{ errorm.title }}</v-toolbar-title>
+        </v-toolbar>
         <v-card-text>
           {{ errorm.text }}
         </v-card-text>
@@ -293,10 +284,9 @@
       max-width="50vw"
     >
       <v-card>
-        <v-card-title class="headline">
-          <v-icon>fa-skull</v-icon>
-          您沒有 {{ violation.where }} 的存取權
-        </v-card-title>
+        <v-toolbar dark color='primary'>
+          <v-toolbar-title>您沒有 {{ violation.where }} 的存取權</v-toolbar-title>
+        </v-toolbar>
         <v-card-text>
           您於 {{ dateConvert(violation.tick) }} 時嘗試執行 {{ violation.action }} ，但該動作需要 {{ privilegeConvert(violation.loginRequire) }} 才能執行，該動作已被系統駁回！
         </v-card-text>

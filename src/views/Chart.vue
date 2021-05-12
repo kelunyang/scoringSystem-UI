@@ -206,9 +206,9 @@
       max-width="50vw"
     >
       <v-card>
-        <v-card-title class="headline">
-          以下知識點匯入失敗
-        </v-card-title>
+        <v-toolbar dark color='primary'>
+          <v-toolbar-title>以下知識點匯入失敗</v-toolbar-title>
+        </v-toolbar>
         <v-card-text>
           <div class='text-caption red--text text-left'>
             以下知識點統計匯入失敗，可能是同範圍類型的資料以重複，或是找不到對應的知識點

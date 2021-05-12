@@ -603,7 +603,7 @@
       <v-btn class='white--text text-h5 indigo darken-4' @click='tagW = true'>請點這裡載入科目標籤</v-btn>
       <div class='text-caption'>你之後可以從右下角工具箱按鈕切換至其他的科目標籤，或者是由鉛筆按鈕新增本標簽下的章節知識點</div>
     </div>
-    <div v-if='DB.length > 0' class='blue-grey--text darken-1 text-caption'>已篩選出{{ DB.length }}個章節，為節省資源，不會全部展現出來，往下滑會載入更多</div>
+    <div v-if='DB.length > 0' class='blue-grey--text darken-1 text-caption'>目前編輯的知識點標籤是「{{ tagQuery(selectedKBTag) }}」，已篩選出{{ DB.length }}個章節，為節省資源，不會全部展現出來，往下滑會載入更多</div>
     <draggable group="Mitems" v-model="DB" style="min-height: 10px" handle='.handle'>
       <template v-for="mitem in DB">
         <v-lazy
@@ -612,7 +612,7 @@
           }"
           min-height="65"
           transition="fade-transition"
-          :key='mitem._id'
+          :key='mitem._id+"lazy"'
         >
           <div class='KBcata pa-0 mt-6 d-flex flex-column justify-start' dense>
             <div class='d-flex flex-row justify-start'>
@@ -669,85 +669,94 @@
             </v-subheader>
             <draggable v-model="mitem.KBs" :group="'KBitems'" handle=".subhandle" style="min-height: 10px" v-show='mitem.collapse === false'>
               <template v-for="KBitem in mitem.KBs">
-                <div class='d-flex flex-column' :key="KBitem._id + 'handler'">
-                  <div class='d-flex flex-row'>
-                    <div class='flex-grow-1 text-left'>
-                      {{ KBitem.title }}
-                    </div>
-                    <div class='align-center flex-grow-0 flex-shrink-1 ma-0 pa-0 d-flex flex-row'>
-                      <v-checkbox v-model="selectedKBs" :value='KBitem._id' off-icon="far fa-square" on-icon="fa-check-square"></v-checkbox>
-                      <v-tooltip top>
-                        <template v-slot:activator="{ on, attrs }">
-                          <v-btn @click="loadKBEditor(KBitem)" v-bind="attrs" v-on="on" icon>
-                            <v-icon>fa-pencil-alt</v-icon>
-                          </v-btn>
-                        </template>
-                        <span>編輯知識點</span>
-                      </v-tooltip>
-                      <v-tooltip top>
-                        <template v-slot:activator="{ on, attrs }">
-                          <v-btn @click="cloneConfigs(KBitem)" v-bind="attrs" v-on="on" icon>
-                            <v-icon>fa-copy</v-icon>
-                          </v-btn>
-                        </template>
-                        <span>設定為知識點複製範本</span>
-                      </v-tooltip>
-                      <v-tooltip top>
-                        <template v-slot:activator="{ on, attrs }">
-                          <v-btn v-bind="attrs" v-on="on" icon @click='removeKB(KBitem)'>
-                            <v-icon>fas fa-trash</v-icon>
-                          </v-btn>
-                        </template>
-                        <span>刪除知識點</span>
-                      </v-tooltip>
-                      <v-tooltip top>
-                        <template v-slot:activator="{ on, attrs }">
-                          <v-btn v-bind="attrs" v-on="on" icon class='subhandle'>
-                            <v-icon>fa-arrows-alt</v-icon>
-                          </v-btn>
-                        </template>
-                        <span>上下移動知識點</span>
-                      </v-tooltip>
-                    </div>
-                  </div>
-                  <div class='d-flex flex-row'>
-                    <div class='text-center text-caption grey--text darken-1 flex-grow-1' v-if='KBitem.stages.length === 0'>
-                      本知識點沒有任何階段，點右邊加號圖案去增加階段吧
-                    </div>
-                    <div class='flex-grow-1' v-if='KBitem.stages.length > 0'>
-                      <v-stepper v-model="KBitem.stepPointer">
-                        <v-stepper-header>
-                          <template
-                            v-for='(stage, index) in KBitem.stages'
-                          >
-                            <v-stepper-step
-                              :key='stage._id'
-                              :complete="KBitem.stepPointer > index"
-                              :step='index + 1'
-                              editable
-                              @click="loadReviewer(KBitem)"
-                              complete-icon='fa-check-circle'
-                              edit-icon='fa-pencil-alt'
-                            >
-                              <span v-show='(index + 1) === KBitem.stepPointer'>{{ stage.name }}</span>
-                            </v-stepper-step>
-                            <v-divider
-                              :key='"divider" + stage._id'
-                              v-if='(index + 1) !== KBitem.stages.length'
-                            ></v-divider>
+                <v-lazy
+                  :options="{
+                    threshold: 0.5
+                  }"
+                  min-height="65"
+                  transition="fade-transition"
+                  :key='KBitem._id+"lazy"'
+                >
+                  <div class='d-flex flex-column' :key="KBitem._id + 'handler'">
+                    <div class='d-flex flex-row'>
+                      <div class='flex-grow-1 text-left'>
+                        {{ KBitem.title }}
+                      </div>
+                      <div class='align-center flex-grow-0 flex-shrink-1 ma-0 pa-0 d-flex flex-row'>
+                        <v-checkbox v-model="selectedKBs" :value='KBitem._id' off-icon="far fa-square" on-icon="fa-check-square"></v-checkbox>
+                        <v-tooltip top>
+                          <template v-slot:activator="{ on, attrs }">
+                            <v-btn @click="loadKBEditor(KBitem)" v-bind="attrs" v-on="on" icon>
+                              <v-icon>fa-pencil-alt</v-icon>
+                            </v-btn>
                           </template>
-                        </v-stepper-header>
-                      </v-stepper>
+                          <span>編輯知識點</span>
+                        </v-tooltip>
+                        <v-tooltip top>
+                          <template v-slot:activator="{ on, attrs }">
+                            <v-btn @click="cloneConfigs(KBitem)" v-bind="attrs" v-on="on" icon>
+                              <v-icon>fa-copy</v-icon>
+                            </v-btn>
+                          </template>
+                          <span>設定為知識點複製範本</span>
+                        </v-tooltip>
+                        <v-tooltip top>
+                          <template v-slot:activator="{ on, attrs }">
+                            <v-btn v-bind="attrs" v-on="on" icon @click='removeKB(KBitem)'>
+                              <v-icon>fas fa-trash</v-icon>
+                            </v-btn>
+                          </template>
+                          <span>刪除知識點</span>
+                        </v-tooltip>
+                        <v-tooltip top>
+                          <template v-slot:activator="{ on, attrs }">
+                            <v-btn v-bind="attrs" v-on="on" icon class='subhandle'>
+                              <v-icon>fa-arrows-alt</v-icon>
+                            </v-btn>
+                          </template>
+                          <span>上下移動知識點</span>
+                        </v-tooltip>
+                      </div>
                     </div>
-                  <div class='flex-shrink-1 flex-grow-0'>
-                    <v-tooltip top>
-                      <template v-slot:activator="{ on, attrs }">
-                        <v-btn v-bind="attrs" v-on="on" icon @click="addStage(KBitem)">
-                          <v-icon>fas fa-plus</v-icon>
-                        </v-btn>
-                      </template>
-                      <span>新增知識點編輯階段</span>
-                    </v-tooltip>
+                    <div class='d-flex flex-row'>
+                      <div class='text-center text-caption grey--text darken-1 flex-grow-1' v-if='KBitem.stages.length === 0'>
+                        本知識點沒有任何階段，點右邊加號圖案去增加階段吧
+                      </div>
+                      <div class='flex-grow-1' v-if='KBitem.stages.length > 0'>
+                        <v-stepper v-model="KBitem.stepPointer">
+                          <v-stepper-header>
+                            <template
+                              v-for='(stage, index) in KBitem.stages'
+                            >
+                              <v-stepper-step
+                                :key='stage._id'
+                                :complete="KBitem.stepPointer > index"
+                                :step='index + 1'
+                                editable
+                                @click="loadReviewer(KBitem)"
+                                complete-icon='fa-check-circle'
+                                edit-icon='fa-pencil-alt'
+                              >
+                                <span v-show='(index + 1) === KBitem.stepPointer'>{{ stage.name }}</span>
+                              </v-stepper-step>
+                              <v-divider
+                                :key='"divider" + stage._id'
+                                v-if='(index + 1) !== KBitem.stages.length'
+                              ></v-divider>
+                            </template>
+                          </v-stepper-header>
+                        </v-stepper>
+                      </div>
+                    <div class='flex-shrink-1 flex-grow-0'>
+                      <v-tooltip top>
+                        <template v-slot:activator="{ on, attrs }">
+                          <v-btn v-bind="attrs" v-on="on" icon @click="addStage(KBitem)">
+                            <v-icon>fas fa-plus</v-icon>
+                          </v-btn>
+                        </template>
+                        <span>新增知識點編輯階段</span>
+                      </v-tooltip>
+                    </div>
                   </div>
                 </div>
               </template>

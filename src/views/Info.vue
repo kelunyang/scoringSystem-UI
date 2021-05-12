@@ -125,9 +125,9 @@
         max-width="50vw"
       >
         <v-card>
-          <v-card-title class="headline">
-            編輯用戶回饋
-          </v-card-title>
+          <v-toolbar dark color='primary'>
+            <v-toolbar-title>編輯用戶回饋</v-toolbar-title>
+          </v-toolbar>
           <v-card-text class='text-left'>
             <v-select outlined :items='wishFeatures' label='指定功能' multiple v-model='feedback.type' v-if='feedback.parent === undefined'></v-select>
             <v-text-field v-model='feedback.title' v-if='feedback.parent === undefined' outlined clearable dense/>
@@ -174,10 +174,9 @@
         max-width="50vw"
       >
         <v-card>
-          <v-card-title class="headline">
-            <v-icon>fab fa-line</v-icon>
-            發送LINE訊息給管理群
-          </v-card-title>
+          <v-toolbar dark color='primary'>
+            <v-toolbar-title>發送LINE訊息給管理群</v-toolbar-title>
+          </v-toolbar>
           <v-card-text class='text-left'>
             <v-textarea
               label="LINE訊息"

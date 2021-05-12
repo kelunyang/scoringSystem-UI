@@ -86,10 +86,9 @@
       max-width="50vw"
     >
       <v-card>
-        <v-card-title class="headline">
-          <v-icon>fa-satellite-dish</v-icon>
-          下載 {{ selectedpmKBs.length }} 個知識點的最新版本
-        </v-card-title>
+        <v-toolbar dark color='primary'>
+          <v-toolbar-title>下載 {{ selectedpmKBs.length }} 個知識點的最新版本</v-toolbar-title>
+        </v-toolbar>
         <v-card-text class='d-flex flex-column'>
           <v-alert outlined type='info' icon='fa-info-circle' class='text-left'>請注意，為節省系統資源，系統不會幫你把這些檔案壓縮，而會同時發送這些檔案給你，你應該會在瀏覽器正下方（或是正上方）看到「是否允許下載多個檔案」的提示，請務必按「同意」</v-alert>
           <div class='red--text text-caption'>你要下載最新的幾個版本呢？（{{ latestCount }}）</div>

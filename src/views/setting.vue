@@ -17,6 +17,7 @@
     <div class='text-h5 text-center pt-5 font-weight-black'>全域設定設定</div>
     <v-divider inset></v-divider>
     <v-text-field label='網站網址' outlined clearable dense v-model='siteLocation'></v-text-field>
+    <v-text-field label='用戶預設密碼（系統預設值為0000）' outlined clearable dense v-model='defaultPassword'></v-text-field>
     <v-select
       outlined
       :items='frontendCommits'
@@ -350,6 +351,7 @@ export default {
       this.dbbackupCopies = data.dbbackupCopies;
     },
     socketgetGlobalSettings: function (data) {
+      this.defaultPassword = data.defaultPassword;
       this.selectedSysTags = data.settingTags;
       this.selectedUsrTags = data.userTags;
       this.selectedflowTags = data.projectTags;
@@ -371,7 +373,7 @@ export default {
       this.savedUsers = data;
     },
     socketsetSetting: function () {
-      this.$emit('toastPop', "系統設定儲存完成...");
+      this.$emit('toastPop', "系統設定儲存完成！");
       this.icontype = 'fa-cloud-upload-alt';
     },
     HTMLConverter: function (msg) {
@@ -382,6 +384,7 @@ export default {
       this.$emit('toastPop', "儲存系統設定中...");
       this.icontype = 'fa-spinner';
       this.$socket.client.emit('setSetting', {
+        defaultPassword: this.defaultPassword,
         storageLocation: this.storageLocation,
         backupDuration: this.backupDuration,
         backupLocation: this.backupLocation,
@@ -461,6 +464,7 @@ export default {
   },
   data () {
     return {
+      defaultPassword: '0000',
       selectedserviceTags: [],
       LastPatrol: 0,
       LastDBbackup: 0,

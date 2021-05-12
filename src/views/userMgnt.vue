@@ -6,10 +6,9 @@
         max-width="50vw"
       >
         <v-card>
-          <v-card-title class="headline">
-            <v-icon>fa-key</v-icon>
-            Email修改： {{ editingUser.name }}
-          </v-card-title>
+          <v-toolbar dark color='primary'>
+            <v-toolbar-title>Email修改： {{ editingUser.name }}</v-toolbar-title>
+          </v-toolbar>
           <v-card-text>
             <v-alert outlined type="alert" icon='fa-exclamation-triangle' class='text-left'>請注意，使用者登入時是依據Email登入，因此Email不可重複</v-alert>
             <v-text-field outlined clearable dense prepend-icon='fa-at' label='用戶Email' v-model='editingUser.email'></v-text-field>
@@ -45,12 +44,11 @@
         max-width="50vw"
       >
         <v-card>
-          <v-card-title class="headline">
-            <v-icon>fa-key</v-icon>
-            密碼重置： {{ editingUser.name }}
-          </v-card-title>
-          <v-card-text>
-            請注意，當你按下確認按鈕之後，用戶的舊密碼就會被系統自動產生的暫時密碼複寫，用戶會收到一封通知信，告訴他新的密碼，基於資訊安全，你不會知道這個密碼，請務必確認主機的Email伺服器設定正確，然後用戶也收的到這封信
+          <v-toolbar dark color='primary'>
+            <v-toolbar-title>密碼重置： {{ editingUser.name }}</v-toolbar-title>
+          </v-toolbar>
+          <v-card-text class='text-left'>
+            請注意，當你按下確認按鈕之後，用戶的舊密碼就會被系統系統預設密碼（{{ defaultPassword }}）複寫，基於資訊安全，請務必確認主機的Email伺服器設定正確，然後用戶也收的到這封信，並立刻修改密碼！
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
@@ -188,7 +186,7 @@
           </v-toolbar>
           <v-card-text class='ma-0 pa-0'>
             <v-alert outlined type="info" icon='fa-info-circle' class='text-left'>
-              由於本系統的用戶都是廠商、各校老師，因此新增用戶功能採用邀請制，這裡只能設定你要建立幾個User，系統會在下面出現邀請碼，你可以自己把邀請碼寄給使用者，讓他們填完自己的相關資料，你唯一能修改的只有用戶的標籤
+              由於本系統的用戶都是廠商、各校老師，因此新增用戶功能採用邀請制，系統會寄出邀請連結，讓用戶填完自己的相關資料並修改密碼，用戶的預設密碼是：{{ defaultPassword }}
             </v-alert>
             <v-container class='pa-5'>
               <v-row>
@@ -235,7 +233,9 @@
       </v-dialog>
       <v-dialog v-model="tagUserW" persistent>
           <v-card>
-            <v-card-title class="headline">設定用戶所屬標籤</v-card-title>
+            <v-toolbar color='primary'>
+              <v-toolbar-title>設定用戶所屬標籤</v-toolbar-title>
+            </v-toolbar>
             <v-card-text>
                 <v-alert outlined type="alert" icon='fa-exclamation-triangle' class='text-left'>請注意選取你要複寫或是新增用戶標籤到使用者的帳號中，然後，記得按右下方的儲存設定，才會把變更存起來</v-alert>
                 <v-switch
@@ -620,6 +620,7 @@ export default {
       socketgetGlobalSettings: function (data) {
         this.$socket.client.emit('getUsers');
         this.robotTag = data.robotTag;
+        this.defaultPassword = data.defaultPassword;
       },
       socketgetUsers: function (data) {
         this.userList = data;
@@ -737,6 +738,7 @@ export default {
     },
     data () {
       return {
+        defaultPassword: '0000',
         moduserTagMode: false,
         emailW: false,
         passwordW: false,
