@@ -77,13 +77,19 @@
     </v-row>
     <v-row no-gutters v-if='currentItem.currentStep > 0'>
       <v-col class='d-flex flex-row pa-1 align-center' :class='currentItem.remainTick < 86400 ? "red--text" : "black--text"'>
+        <span v-if='currentItem.unreaded > 0'>
+          <v-icon  class='ma-1' small left color="red accent-4">
+            fas fa-envelope-open-text
+          </v-icon>
+          {{ currentItem.unreaded }}則Issue未讀
+        </span>
         <span v-if='currentItem.remainTick < Number.MAX_SAFE_INTEGER'>
           <v-icon class='ma-1' small :color='currentItem.remainTick < 86400 ? "red" : "black"'>fa-stopwatch</v-icon>
           <span>本階段</span>
           <span v-if='rangeConvert(currentItem.remainTick,0, 864000)'>距離死線約有：{{ timeConvert(currentItem.remainTick) }}</span>
           <span v-if='currentItem.remainTick < 0'>超過死線約有：{{ timeConvert(currentItem.remainTick) }}</span>
-          <span>／</span>
         </span>
+        <v-icon class='ma-1' small :color='currentItem.remainTick < 86400 ? "red" : "black"'>fa-user</v-icon>
         <span>你的角色為</span>
         <span class='text-weight-bold'>
           <span class='cyan--text darken-4' v-if='currentItem.isPM'>[PM]</span>

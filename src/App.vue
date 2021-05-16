@@ -26,7 +26,7 @@
             <v-icon>fa-download</v-icon>
           </v-btn>
         </v-toolbar>
-        <v-card-text class='pa-3'>
+        <v-card-text class='pa-3 text-left black--text text-body-1'>
           <img width="100%" :src="'/storages/' + imgCache._id" />
         </v-card-text>
       </v-card>
@@ -53,7 +53,7 @@
         <v-toolbar dark color='primary'>
           <v-toolbar-title>發生嚴重錯誤</v-toolbar-title>
         </v-toolbar>
-        <v-card-text class='text-left'>
+        <v-card-text class='text-left black--text text-body-1'>
           <div>系統發生嚴重錯誤，請複製以下訊息並聯絡管理團隊：</div>
           <code>{{ JSON.stringify(fatalMsg) }}！</code>
         </v-card-text>
@@ -154,7 +154,7 @@
         <v-toolbar dark color='primary'>
           <v-toolbar-title>檢視使用者</v-toolbar-title>
         </v-toolbar>
-        <v-card-text class='text-left'>
+        <v-card-text class='text-left black--text text-body-1'>
           <v-avatar>
             <img :src='"https://avatars.dicebear.com/api/" + viewUser.types + "/" + encodeURIComponent(viewUser.name + "@" + viewUser.unit) + ".svg"' />
           </v-avatar>
@@ -183,7 +183,7 @@
         <v-toolbar dark color='primary'>
           <v-toolbar-title>登出警告！</v-toolbar-title>
         </v-toolbar>
-        <v-card-text>
+        <v-card-text class='text-left black--text text-body-1'>
           {{ diedMsg }}
         </v-card-text>
         <v-card-actions>
@@ -206,7 +206,7 @@
         <v-toolbar dark color='primary'>
           <v-toolbar-title>全域廣播：{{ broadcastMsg.title }}</v-toolbar-title>
         </v-toolbar>
-        <v-card-text v-html="broadcastMsg.body"></v-card-text>
+        <v-card-text class='text-left black--text text-body-1' v-html="broadcastMsg.body"></v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
@@ -227,7 +227,7 @@
         <v-toolbar dark color='primary'>
           <v-toolbar-title>服務發生錯誤：{{ errorm.title }}</v-toolbar-title>
         </v-toolbar>
-        <v-card-text>
+        <v-card-text class='text-left black--text text-body-1'>
           {{ errorm.text }}
         </v-card-text>
         <v-card-actions>
@@ -257,7 +257,7 @@
           <v-icon>fas fa-plug</v-icon>
           同步連線建立中！
         </v-card-title>
-        <v-card-text class='text-left'>
+        <v-card-text class='text-left black--text text-body-1'>
           可能是網頁剛剛開啟，連與伺服器間的同步連線尚未啟動，但如果您是使用到一半看到本訊息，請嘗試重新整理網頁（可能需要重新登入），如重複發生請聯絡管理員
         </v-card-text>
         <v-card-actions>
@@ -287,7 +287,7 @@
         <v-toolbar dark color='primary'>
           <v-toolbar-title>您沒有 {{ violation.where }} 的存取權</v-toolbar-title>
         </v-toolbar>
-        <v-card-text>
+        <v-card-text class='text-left black--text text-body-1'>
           您於 {{ dateConvert(violation.tick) }} 時嘗試執行 {{ violation.action }} ，但該動作需要 {{ privilegeConvert(violation.loginRequire) }} 才能執行，該動作已被系統駁回！
         </v-card-text>
         <v-card-actions>
@@ -510,9 +510,9 @@ const angleDetect = matchMedia("screen and (orientation:portrait)");
 const renderer = new marked.Renderer();
 const linkRenderer = renderer.link;
 renderer.link = (href, title, text) => {
-  if(href !== undefined) { href = href.replace(/\\/, ''); }
-  if(title !== undefined) { title = title.replace(/\\/, ''); }
-  if(text !== undefined) { text = text.replace(/\\/, ''); }
+  if(href !== undefined) { href = (decodeURIComponent(href)).replace(/\\/g, ''); }
+  if(title !== undefined) { title = (decodeURIComponent(title)).replace(/\\/g, ''); }
+  if(text !== undefined) { text = (decodeURIComponent(text)).replace(/\\/g, ''); }
   const html = linkRenderer.call(renderer, href, title, text);
   return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
 };

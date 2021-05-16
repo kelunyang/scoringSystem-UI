@@ -19,12 +19,36 @@
           <v-toolbar-title><span v-if='currentStage._id === ""'>設定知識點編輯階段</span><span v-if='currentStage._id !== ""'>{{ currentKB.title }}： {{ currentStage.name }}</span></v-toolbar-title>
         </v-toolbar>
         <v-card-actions>
-          <v-btn @click='removeStage'>刪除目前的階段</v-btn>
-          <v-btn @click='setStage'>儲存目前的階段</v-btn>
-          <v-btn @click='tagUserW = true'>快速建立新的用戶群組標籤</v-btn>
-          <v-btn @click='closeAssign'>關閉對話框</v-btn>
+          <v-menu
+            offset-y
+            attach
+            transition="slide-y-transition"
+          >
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                v-bind="attrs" v-on="on"
+                class='ma-1'
+              >
+                刪除目前的階段
+              </v-btn>
+            </template>
+            <v-sheet class='d-flex flex-column pa-1'>
+              <div class='text-h6'>確認刪除階段？</div>
+              <v-btn
+                color='red accent-4'
+                class='white--text ma-1'
+                @click='removeStage'
+              >
+                是，我要刪除這個階段
+              </v-btn>
+              <div class='text-caption'>如果你只是誤觸，請隨意點擊其他地方即會關閉本對話框</div>
+            </v-sheet>
+          </v-menu>
+          <v-btn class='ma-1' @click='setStage'>儲存目前的階段</v-btn>
+          <v-btn class='ma-1' @click='tagUserW = true'>快速建立新的用戶群組標籤</v-btn>
+          <v-btn class='ma-1' @click='closeAssign'>關閉對話框</v-btn>
         </v-card-actions>
-        <v-card-text class='pa-5'>
+        <v-card-text class='pa-5 text-left black--text text-body-1'>
           <div v-if='currentKB.stages.length === 0'>目前沒有設定階段</div>
           <v-skeleton-loader
             class="mx-auto"
@@ -102,19 +126,34 @@
                           </template>
                           <span>撤回目標許可</span>
                         </v-tooltip>
-                        <v-tooltip bottom>
-                          <template v-slot:activator="{ on, attrs }">
-                            <v-btn
-                              outlined
-                              icon
-                              @click='removeObjective(objective._id)'
-                              v-bind="attrs" v-on="on"
-                            >
-                              <v-icon>fa-trash</v-icon>
-                            </v-btn>
+                        <v-menu>
+                          <template v-slot:activator="{ on: menu, attrs }">
+                            <v-tooltip bottom>
+                              <template v-slot:activator="{ on: tooltip }">
+                                <v-btn
+                                  icon
+                                  outlined
+                                  v-bind="attrs"
+                                  v-on="{ ...tooltip, ...menu }"
+                                >
+                                  <v-icon>fas fa-trash</v-icon>
+                                </v-btn>
+                              </template>
+                              <span>刪除審查指標</span>
+                            </v-tooltip>
                           </template>
-                          <span>刪除目標</span>
-                        </v-tooltip>
+                          <v-sheet class='d-flex flex-column pa-1'>
+                            <div class='text-h6'>確認刪除審查指標？</div>
+                            <v-btn
+                              color='red accent-4'
+                              class='white--text ma-1'
+                              @click='removeObjective(objective._id)'
+                            >
+                              是，我要刪除審查指標！
+                            </v-btn>
+                            <div class='text-caption'>如果你只是誤觸，請隨意點擊其他地方即會關閉本對話框</div>
+                          </v-sheet>
+                        </v-menu>
                       </td>
                     </tr>
                   </tbody>
@@ -190,8 +229,8 @@
           color="primary"
           dark
         >快速建立用戶標籤</v-toolbar>
-        <v-card-text class='pa-0 d-flex flex-column'>
-          <v-alert outlined type='info' icon='fa-info-circle' class='text-left'>本功能提供快速建立參與知識點各階段的用戶小群組，請注意，現階段沒有開放刪除標籤的規劃（避免權限表操作異常），打字不要打錯字，真的要修改請找管理員直接從資料庫修改</v-alert>
+        <v-card-text class='pa-0 d-flex flex-column text-left black--text text-body-1'>
+          <v-alert outlined type='error' icon='fa-skull' class='text-left'>請要記得按下下方的「儲存設定值」，不然你輸入的東西都不會存起來啊啊啊啊啊啊啊啊啊啊啊啊!!!!!</v-alert>
           <div class='black--text d-flex flex-column pa-3 text-left'>
             <div class='text-h6'>請選擇你要框選的用戶所在的用戶標籤</div>
             <div class='text-caption grey--text darken-3'>可以不選，那你就會在下一個選單裡要從全部的用戶去篩選名單，基於多數用戶在帳號開設時已經被納入如「110年寫手群」這類的大標籤群組，建議你先在這裡選好，方便過濾</div>
@@ -205,7 +244,7 @@
               :createable='false'
               label='請選擇用戶所在的標籤'
             />
-            <v-btn @click='getAllUsers'>上欄留空，按此，可以列出全部的用戶清單</v-btn>
+            <v-btn @click='getUsers'>上欄留空，按此，可以列出全部的用戶清單</v-btn>
             <div class='text-h6'>請選擇你要框選的用戶</div>
             <div class='text-caption grey--text darken-3'>系統在此會把email、姓名全部合併成一個欄位，方便你搜尋，你輸入什麼，系統都會直接顯示出來</div>
             <tag-filter
@@ -232,7 +271,6 @@
               label='請新的用戶標籤'
             />
           </div>
-          <div class='red--text text-caption'>請要記得按下下方的「儲存設定值」，不然你輸入的東西都不會存起來啊啊啊啊啊啊啊啊啊啊啊啊!!!!!</div>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -251,10 +289,10 @@
           color="primary"
           dark
         >選擇性複製知識點</v-toolbar>
-        <v-card-text class='pa-0 d-flex flex-column'>
-          <v-alert outlined type='info' icon='fa-info-circle' class='text-left'>請注意，所有的複製都是用「累加」的模式，不會複寫知識點原本的階段與權限設定</v-alert>
+        <v-card-text class='pa-0 d-flex flex-column text-left black--text text-body-1'>
+          <v-alert outlined type='info' icon='fa-info-circle' class='text-left'>請注意，所有的複製都是用「累加」的模式，不會複寫知識點原本的階段與權限設定，關閉對話框後，請將目標知識點打勾（右側），然後在右下角工具箱中選擇「複製」，就會按照你的設定複製過去了</v-alert>
           <div class='red--text text-center'>
-            你目前選擇的知識點： {{ currentKB.name }} 
+            你目前選擇的知識點： {{ currentKB.title }} 
           </div>
           <div class='d-flex flex-column pa-3'>
             <v-switch
@@ -305,8 +343,8 @@
           </div>
         </v-card-text>
         <v-card-actions>
+          <v-spacer></v-spacer>
           <v-btn @click='cloneW = false'>關閉對話框</v-btn>
-          <div class='text-caption red--text'>關閉對話框後，請將目標知識點打勾（右側），然後在右下角工具箱中選擇「複製」，就會按照你的設定複製過去了</div>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -321,7 +359,7 @@
           dark
         >匯入知識點</v-toolbar>
         <v-card-text>
-          <div class='text-caption red--text text-left'>
+          <div class='text-caption red--text text-left black--text text-body-1'>
             知識點匯入功能，請完全按照以下說明操作
             <ol>
               <li><a href='/storages/importSample.zip' target='_blank'>請點這裡，下載範例檔，你也只能仿造範例檔的格式，上傳一個zip</a></li>
@@ -624,14 +662,33 @@
                   </template>
                   <span>新增知識點</span>
                 </v-tooltip>
-                <v-tooltip bottom>
-                  <template v-slot:activator="{ on, attrs }">
-                    <v-btn v-bind="attrs" v-on="on" icon @click='removeChapter(mitem)'>
-                      <v-icon>fa-minus</v-icon>
-                    </v-btn>
+                <v-menu>
+                  <template v-slot:activator="{ on: menu, attrs }">
+                    <v-tooltip bottom>
+                      <template v-slot:activator="{ on: tooltip }">
+                        <v-btn
+                          icon
+                          v-bind="attrs"
+                          v-on="{ ...tooltip, ...menu }"
+                        >
+                          <v-icon>fas fa-minus</v-icon>
+                        </v-btn>
+                      </template>
+                      <span>刪除本分類</span>
+                    </v-tooltip>
                   </template>
-                  <span>刪除本分類</span>
-                </v-tooltip>
+                  <v-sheet class='d-flex flex-column pa-1'>
+                    <div class='text-h6'>確認刪除知識點大分類？</div>
+                    <v-btn
+                      color='red accent-4'
+                      class='white--text ma-1'
+                      @click='removeChapter(mitem)'
+                    >
+                      是，我要刪除這個大分類！
+                    </v-btn>
+                    <div class='text-caption'>如果你只是誤觸，請隨意點擊其他地方即會關閉本對話框</div>
+                  </v-sheet>
+                </v-menu>
                 <v-tooltip bottom v-show='mitem.collapse === false'>
                   <template v-slot:activator="{ on, attrs }">
                     <v-btn v-bind="attrs" v-on="on" icon @click='mitem.collapse = true' v-show='mitem.collapse === false'>
@@ -700,14 +757,33 @@
                           </template>
                           <span>設定為知識點複製範本</span>
                         </v-tooltip>
-                        <v-tooltip top>
-                          <template v-slot:activator="{ on, attrs }">
-                            <v-btn v-bind="attrs" v-on="on" icon @click='removeKB(KBitem)'>
-                              <v-icon>fas fa-trash</v-icon>
-                            </v-btn>
+                        <v-menu>
+                          <template v-slot:activator="{ on: menu, attrs }">
+                            <v-tooltip bottom>
+                              <template v-slot:activator="{ on: tooltip }">
+                                <v-btn
+                                  icon
+                                  v-bind="attrs"
+                                  v-on="{ ...tooltip, ...menu }"
+                                >
+                                  <v-icon>fas fa-trash</v-icon>
+                                </v-btn>
+                              </template>
+                              <span>刪除知識點</span>
+                            </v-tooltip>
                           </template>
-                          <span>刪除知識點</span>
-                        </v-tooltip>
+                          <v-sheet class='d-flex flex-column pa-1'>
+                            <div class='text-h6'>確認刪除知識點？</div>
+                            <v-btn
+                              color='red accent-4'
+                              class='white--text ma-1'
+                              @click='removeKB(KBitem)'
+                            >
+                              是，我要刪除知識點！
+                            </v-btn>
+                            <div class='text-caption'>如果你只是誤觸，請隨意點擊其他地方即會關閉本對話框</div>
+                          </v-sheet>
+                        </v-menu>
                         <v-tooltip top>
                           <template v-slot:activator="{ on, attrs }">
                             <v-btn v-bind="attrs" v-on="on" icon class='subhandle'>
@@ -800,9 +876,9 @@ import 'vue-ctk-date-time-picker/dist/vue-ctk-date-time-picker.css';
 const renderer = new marked.Renderer();
 const linkRenderer = renderer.link;
 renderer.link = (href, title, text) => {
-  if(href !== undefined) { href = href.replace(/\\/, ''); }
-  if(title !== undefined) { title = title.replace(/\\/, ''); }
-  if(text !== undefined) { text = text.replace(/\\/, ''); }
+  if(href !== undefined) { href = (decodeURIComponent(href)).replace(/\\/g, ''); }
+  if(title !== undefined) { title = (decodeURIComponent(title)).replace(/\\/g, ''); }
+  if(text !== undefined) { text = (decodeURIComponent(text)).replace(/\\/g, ''); }
   const html = linkRenderer.call(renderer, href, title, text);
   return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
 };

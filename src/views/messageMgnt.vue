@@ -77,7 +77,7 @@
             </v-btn>
             <v-toolbar-title>LINE訊息紀錄</v-toolbar-title>
           </v-toolbar>
-          <v-card-text class='pa-0 ma-0'>
+          <v-card-text class='pa-0 ma-0 text-left black--text text-body-1'>
             <v-alert outlined type="info" icon='fa-info-circle' class='text-left'>
               這裡只是保存歷史訊息供你回味，你無法刪除，也無法修改，發生過了就是發生過了
             </v-alert>
@@ -141,7 +141,7 @@
             </v-btn>
             <v-toolbar-title>全域廣播紀錄</v-toolbar-title>
           </v-toolbar>
-          <v-card-text class='pa-0 ma-0'>
+          <v-card-text class='pa-0 ma-0 text-left black--text text-body-1'>
             <v-alert outlined type="info" icon='fa-info-circle' class='text-left'>
               這裡只是保存歷史訊息供你回味，你無法刪除，也無法修改，發生過了就是發生過了
             </v-alert>

@@ -20,7 +20,7 @@
         >
           <v-toolbar-title>第一次登入嗎？請看這裡</v-toolbar-title>
         </v-toolbar>
-        <v-card-text class='pa-5 text-left text-body-1'>
+        <v-card-text class='pa-5 text-left text-body-1 text-left black--text text-body-1'>
           <div>請注意以下事項：</div>
           <ol>
             <li>你必須變更密碼，沒有密碼規則，隨便設定，但是只要你不改，你每次都會看到這個視窗</li>

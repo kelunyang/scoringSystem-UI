@@ -9,7 +9,7 @@
           <v-toolbar dark color='primary'>
             <v-toolbar-title>Email修改： {{ editingUser.name }}</v-toolbar-title>
           </v-toolbar>
-          <v-card-text>
+          <v-card-text class='text-left black--text text-body-1'>
             <v-alert outlined type="alert" icon='fa-exclamation-triangle' class='text-left'>請注意，使用者登入時是依據Email登入，因此Email不可重複</v-alert>
             <v-text-field outlined clearable dense prepend-icon='fa-at' label='用戶Email' v-model='editingUser.email'></v-text-field>
           </v-card-text>
@@ -47,7 +47,7 @@
           <v-toolbar dark color='primary'>
             <v-toolbar-title>密碼重置： {{ editingUser.name }}</v-toolbar-title>
           </v-toolbar>
-          <v-card-text class='text-left'>
+          <v-card-text class='text-left black--text text-body-1'>
             請注意，當你按下確認按鈕之後，用戶的舊密碼就會被系統系統預設密碼（{{ defaultPassword }}）複寫，基於資訊安全，請務必確認主機的Email伺服器設定正確，然後用戶也收的到這封信，並立刻修改密碼！
           </v-card-text>
           <v-card-actions>
@@ -80,7 +80,7 @@
               <v-icon>fa-cloud-upload-alt</v-icon>
             </v-btn>
           </v-toolbar>
-          <v-card-text class='pa-0 ma-0'>
+          <v-card-text class='pa-0 ma-0 text-left black--text text-body-1'>
             <v-alert outlined type="info" icon='fa-info-circle' class='text-left'>
               如果你打算變更用戶的密碼，請用補發密碼功能，這裡是用來修改用戶資訊用的
             </v-alert>

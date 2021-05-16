@@ -17,7 +17,7 @@
           </v-btn>
           <v-toolbar-title>Issue對比</v-toolbar-title>
         </v-toolbar>
-        <v-card-text class='black--text'>
+        <v-card-text class='text-left black--text text-body-1'>
           <v-container>
             <v-row no-gutters>
               <v-col v-for='(diff, index) in diffIssues' :key='diff._id' class='d-flex flex-column pa-1 ma-1' style='border:1px solid #333'>
@@ -47,7 +47,7 @@
         >
           <v-toolbar-title>修改審查功能的畫面預設值</v-toolbar-title>
         </v-toolbar>
-        <v-card-text class='d-flex flex-column pa-0'>
+        <v-card-text class='d-flex flex-column pa-0 text-left black--text text-body-1'>
           <v-alert outlined type='info' icon='fa-info-circle' class='text-left'>在這裡的設定只會保存在這台機器上，意思是你換一台電腦就看不到了</v-alert>
           <div class='d-flex flex-column pa-3 black--text'>
             <div class='text-h6'>隱藏右下角的Issue過濾器</div>
@@ -157,7 +157,7 @@
         >
           <v-toolbar-title>{{ currentKB.title }} 目前進度概況</v-toolbar-title>
         </v-toolbar>
-        <v-card-text class='pa-0 black--text'>
+        <v-card-text class='pa-0 text-left black--text text-body-1'>
           <v-alert outlined type='info' icon='fa-info-circle' class='text-left'>這個對話框關閉之後，你可以在審查畫面右上角點一下i按鈕開啟</v-alert>
           <div v-if='currentKB.currentStep === 0'>專案目前沒啟動，你是怎麼到這裡的？</div>
           <div v-if='currentKB.currentStep > 0' class='pa-3'>
@@ -224,7 +224,7 @@
           </v-btn>
           <v-toolbar-title>知識點影片完整歷程</v-toolbar-title>
         </v-toolbar>
-        <v-card-text>
+        <v-card-text class='text-left black--text text-body-1'>
           <v-skeleton-loader
             class="mx-auto"
             type="card"
@@ -1178,7 +1178,7 @@
   }
   .compareBtn {
     cursor: grab;
-    top: 30vh;
+    top: 50%;
     position: absolute;
     left: -18px;
   }
@@ -1281,9 +1281,9 @@ import 'pdfjs-dist/build/pdf.worker.entry';
 const renderer = new marked.Renderer();
 const linkRenderer = renderer.link;
 renderer.link = (href, title, text) => {
-  if(href !== undefined) { href = href.replace(/\\/, ''); }
-  if(title !== undefined) { title = title.replace(/\\/, ''); }
-  if(text !== undefined) { text = text.replace(/\\/, ''); }
+  if(href !== undefined) { href = (decodeURIComponent(href)).replace(/\\/g, ''); }
+  if(title !== undefined) { title = (decodeURIComponent(title)).replace(/\\/g, ''); }
+  if(text !== undefined) { text = (decodeURIComponent(text)).replace(/\\/g, ''); }
   const html = linkRenderer.call(renderer, href, title, text);
   return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
 };

@@ -11,7 +11,7 @@
           dark
         >初次使用設定
         </v-toolbar>
-        <v-card-text class='d-flex flex-column pa-0'>
+        <v-card-text class='d-flex flex-column pa-0 text-left black--text text-body-1'>
           <v-alert outlined type='info' icon='fa-info-circle' class='text-left'>若您日後還要修改這條設定，請選擇右下角工具箱的i圖示開啟即可</v-alert>
           <div class='d-flex flex-column pa-1'>
             <v-switch
@@ -89,7 +89,7 @@
         <v-toolbar dark color='primary'>
           <v-toolbar-title>下載 {{ selectedpmKBs.length }} 個知識點的最新版本</v-toolbar-title>
         </v-toolbar>
-        <v-card-text class='d-flex flex-column'>
+        <v-card-text class='d-flex flex-column text-left black--text text-body-1'>
           <v-alert outlined type='info' icon='fa-info-circle' class='text-left'>請注意，為節省系統資源，系統不會幫你把這些檔案壓縮，而會同時發送這些檔案給你，你應該會在瀏覽器正下方（或是正上方）看到「是否允許下載多個檔案」的提示，請務必按「同意」</v-alert>
           <div class='red--text text-caption'>你要下載最新的幾個版本呢？（{{ latestCount }}）</div>
           <v-slider
@@ -245,7 +245,7 @@
             <v-icon>fa-download</v-icon>
           </v-btn>
         </v-toolbar>
-        <v-card-text class='pa-0 ma-0 d-flex flex-column'>
+        <v-card-text class='pa-0 ma-0 d-flex flex-column text-left black--text text-body-1'>
           <v-alert outlined type="info" icon='fa-info-circle' class='text-left'>你如果發現你勾選的知識點少於系統回傳的知識點，那很明顯是因為你不具有該知識點的行政管理權，請洽你的知識點PM，把你放進行政組中</v-alert>
           <div v-if='participantsDB.statistics.length === 0'>
             你不具備你勾選的知識點的行政管理權，回傳的知識點數量為0
@@ -556,7 +556,7 @@
             <tr>
               <th class='text-center' v-for='(step,n) in chartSeries' :key='"stepth" + n'>
                 <span v-if='step.name === 0'>尚未啟動</span>
-                <span v-else>第{{ step.name }}階段</span>
+                <span v-else>{{ step.name }}</span>
               </th>
               <th class="text-center">
                 總計
@@ -629,6 +629,22 @@ export default {
     ProgressTile: () => import(/* webpackPrefetch: true */ './modules/ProgressTile')
   },
   methods: {
+    socketdashBoardUnreaded: function(data) {
+      let oriobj = this;
+      this.$emit('timerOn', false);
+      this.$emit('toastPop', '未讀取Issue清單已下載，更新清單中');
+      this.unreadedList = data;
+      this.generateList();
+      this.dashboardPopulated = true;
+      this.$emit('toastPop', '更新清單完成');
+      clearTimeout(this.queryTimer);
+      this.queryTimer = setTimeout(() => {
+        this.initialized = false;
+        oriobj.$emit('timerOn', true);
+        oriobj.$emit('toastPop', 'DashBoard更新中');
+        oriobj.$socket.client.emit('listDashBoard');
+      }, this.siteSettings.userCheckTime * 60 * 1000);
+    },
     clearQueryTerm: function() {
       this.queryTerm = '';
       this.generateList();
@@ -667,6 +683,11 @@ export default {
         let KB = list[i];
         KB.attention = 0;
         KB.selected = false;
+        let unreaded = _find(oriobj.unreadedList, (item) => {
+          return item._id === KB._id;
+        });
+        KB.unreaded = unreaded !== undefined ? unreaded.numberOfissue : 0;
+        KB.sortingRank = KB.tag.length > 0 ? KB.tag[0] + KB.sort : KB.title;
         KB.currentStep = (_countBy(KB.stages, {
           current: false
         })) === KB.stages.length ? 0 : (_findIndex(KB.stages, {
@@ -736,7 +757,7 @@ export default {
         });
       }
       this.convertedList = [];
-      let convertedList = this.sortingRule ? _orderBy(list, ['remainTick'], ['asc']) : _orderBy(list, ['title'], ['asc']);
+      let convertedList = this.sortingRule ? _orderBy(list, ['remainTick'], ['asc']) : _orderBy(list, ['sortingRank'], ['asc']);
       this.convertedList = convertedList;
       let steps = _map(this.convertedList, (item) => {
         return item.stages.length;
@@ -810,20 +831,10 @@ export default {
       this.$socket.client.emit('getKBVersions', data._id);
     },
     socketlistDashBoard: function (data) {
-      let oriobj = this;
       this.$emit('timerOn', false);
-      this.$emit('toastPop', 'DashBoard更新完成');
+      this.$emit('toastPop', '您目前被分派到的知識點以下載，正在確認未讀issue數量...');
       this.lastCheckTime = moment().unix();
       this.progressList = data;
-      this.generateList();
-      this.dashboardPopulated = true;
-      clearTimeout(this.queryTimer);
-      this.queryTimer = setTimeout(() => {
-        this.initialized = false;
-        oriobj.$emit('timerOn', true);
-        oriobj.$emit('toastPop', 'DashBoard更新中');
-        oriobj.$socket.client.emit('listDashBoard');
-      }, this.siteSettings.userCheckTime * 60 * 1000);
     },
     updateFilterTag: function (value) {
       this.selectedFilterTags = value;
@@ -1083,6 +1094,7 @@ export default {
   },
   data () {
     return {
+      unreadedList: [],
       sortingRule: true,
       queriedChapters: [],
       initialized: false,
@@ -1180,6 +1192,7 @@ export default {
     };
   },
   beforeDestroy () {
+    this.$socket.client.off('dashBoardUnreaded', this.socketdashBoardUnreaded);
     this.$socket.client.off('createUsersReport', this.socketcreateUsersReport);
     this.$socket.client.off('listDashBoard', this.socketlistDashBoard);
     this.$socket.client.off('participantStatstics', this.sockparticipantStatstics);
@@ -1224,6 +1237,7 @@ export default {
     if(!this.historyConfig) {
       this.$socket.client.emit('listDashBoard');
     }
+    this.$socket.client.on('dashBoardUnreaded', this.socketdashBoardUnreaded);
     this.$socket.client.on('createUsersReport', this.socketcreateUsersReport);
     this.$socket.client.on('listDashBoard', this.socketlistDashBoard);
     this.$socket.client.on('participantStatstics', this.sockparticipantStatstics);

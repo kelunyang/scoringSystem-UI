@@ -75,9 +75,9 @@ import prettyBytes from 'pretty-bytes';
 const renderer = new marked.Renderer();
 const linkRenderer = renderer.link;
 renderer.link = (href, title, text) => {
-  if(href !== undefined) { href = href.replace(/\\/, ''); }
-  if(title !== undefined) { title = title.replace(/\\/, ''); }
-  if(text !== undefined) { text = text.replace(/\\/, ''); }
+  if(href !== undefined) { href = (decodeURIComponent(href)).replace(/\\/g, ''); }
+  if(title !== undefined) { title = (decodeURIComponent(title)).replace(/\\/g, ''); }
+  if(text !== undefined) { text = (decodeURIComponent(text)).replace(/\\/g, ''); }
   const html = linkRenderer.call(renderer, href, title, text);
   return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
 };

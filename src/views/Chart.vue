@@ -209,7 +209,7 @@
         <v-toolbar dark color='primary'>
           <v-toolbar-title>以下知識點匯入失敗</v-toolbar-title>
         </v-toolbar>
-        <v-card-text>
+        <v-card-text class='text-left black--text text-body-1'>
           <div class='text-caption red--text text-left'>
             以下知識點統計匯入失敗，可能是同範圍類型的資料以重複，或是找不到對應的知識點
             <ol>
@@ -240,7 +240,7 @@
         >
           <v-toolbar-title>匯入知識點統計</v-toolbar-title>
         </v-toolbar>
-        <v-card-text class='d-flex flex-column text-left'>
+        <v-card-text class='d-flex flex-column text-left black--text text-body-1'>
           <v-alert type="info" icon="fa-info-circle" class='text-left'>
             這個功能是提供給匯入知識點於各個平台的統計數據使用，特別提醒，如果你發現匯入進度一直停在同一處，那可能是資料庫寫入的時間差，但實際上已經匯入完成了，如果有疑惑，可以重新整理網頁，再匯入一次
           </v-alert>
@@ -579,8 +579,8 @@
       v-if='!statisticsPopulated'
       width="100%"
     ></v-skeleton-loader>
-    <div v-if='statisticsPopulated' class='d-flex flex-row flex-wrap justify-space-around'>
-      <div>過濾條件：自{{ querystartTick }}至{{ queryendTick }}，來自
+    <div v-if='statisticsPopulated' class='d-flex flex-row flex-wrap justify-space-between'>
+      <div class='flex-grow-1'>過濾條件：自{{ querystartTick }}至{{ queryendTick }}，來自
       <span v-if='selectedKB === undefined'>
         <span class="text-decoration-underline ml-1" v-for='tag in querysourceTags' :key='tag'>
           {{ tagConverter(tag) }}
@@ -595,8 +595,10 @@
         知識點： {{ selectedKB.title }}
       </span>
       </div>
-      <v-btn @click='openFilterW'>改變查詢條件</v-btn>
-      <v-btn @click='openAvgW'>計算平均值</v-btn>
+      <div class='d-flex flex-row flex-shrink-1 flex-grow-0'>
+        <v-btn @click='openFilterW'>改變查詢條件</v-btn>
+        <v-btn @click='openAvgW'>計算平均值</v-btn>
+      </div>
     </div>
     <div v-if='statisticsPopulated'>
       <span v-if='selectedKB === undefined'>
