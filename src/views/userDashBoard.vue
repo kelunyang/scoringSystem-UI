@@ -642,8 +642,8 @@ import _toString from 'lodash/toString';
 import _find from 'lodash/find';
 import _uniq from 'lodash/uniq';
 import _orderBy from 'lodash/orderBy';
+import _padStart from 'lodash/padStart';
 import _map from 'lodash/map';
-import _head from 'lodash/head';
 import _includes from 'lodash/includes';
 import _flatten from 'lodash/flatten';
 import _countBy from 'lodash/countBy';
@@ -665,9 +665,10 @@ export default {
   methods: {
     getUnread: function() {
       this.$emit('toastPop', '取得未讀取Issue清單中（完成後您會在每個知識點左下方看到數量）');
-      this.$socket.client.emit('dashBoardUnreaded', this.progressList);
       this.exeUnread = true;
       this.unreadW = false;
+      this.dashboardPopulated = false;
+      this.$socket.client.emit('dashBoardUnreaded', this.progressList);
     },
     closeUnread: function() {
       this.exeUnread = false;
@@ -715,6 +716,16 @@ export default {
           return (new RegExp(oriobj.queryTerm, 'g')).test(item.title + item.desc);
         });
       }
+      let maxDig = 1;
+      if(list.length > 0) {
+        let sortList = _map(list, (item) => {
+          return item.sort;
+        });
+        let orderedSort = sortList.sort((a, b) => {
+          return b - a;
+        });
+        maxDig = orderedSort[0].toString().length;
+      }
       for (let i = 0; i< list.length; i++) {
         let KB = list[i];
         KB.attention = 0;
@@ -727,7 +738,9 @@ export default {
         } else {
           KB.unreaded = 0;
         }
-        KB.mainTag = _head(KB.tag);
+        KB.sortRanking = KB.tag.length > 0 ? KB.tag[0] : KB.title;
+        let sort = _padStart(KB.sort, maxDig, '0');
+        KB.sortRanking += sort;
         KB.currentStep = (_countBy(KB.stages, {
           current: false
         })) === KB.stages.length ? 0 : (_findIndex(KB.stages, {
@@ -797,7 +810,7 @@ export default {
         });
       }
       this.convertedList = [];
-      let convertedList = this.sortingRule ? _orderBy(list, ['remainTick'], ['asc']) : _orderBy(list, ['mainTag', 'sort'], ['asc', 'asc']);
+      let convertedList = this.sortingRule ? _orderBy(list, ['remainTick'], ['asc']) : _orderBy(list, ['sortRanking'], ['asc']);
       this.convertedList = convertedList;
       let steps = _map(this.convertedList, (item) => {
         return item.stages.length;
@@ -876,10 +889,6 @@ export default {
       this.$emit('toastPop', '產生清單中，請稍後...');
       this.lastCheckTime = moment().unix();
       this.progressList = data;
-      if(this.firstRun) {
-        this.unreadW = true;
-        this.firstRun = false;
-      }
       if(!this.exeUnread) { 
         this.generateList();
         this.dashboardPopulated = true;
@@ -888,6 +897,10 @@ export default {
       if(this.exeUnread) {
         this.$emit('toastPop', '取得未讀取Issue清單中（完成後您會在每個知識點左下方看到數量）');
         this.$socket.client.emit('dashBoardUnreaded', this.progressList);
+      }
+      if(this.firstRun) {
+        this.unreadW = true;
+        this.firstRun = false;
       }
       clearTimeout(this.queryTimer);
       this.queryTimer = setTimeout(() => {
