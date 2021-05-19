@@ -1,6 +1,39 @@
 <template>
   <v-sheet class='d-flex flex-column'>
     <v-dialog
+      v-model="unreadW"
+      persistent
+      max-width="50vw"
+    >
+      <v-card>
+        <v-toolbar
+          color="primary"
+          dark
+        >您要下載未讀取的Issue統計嗎？
+        </v-toolbar>
+        <v-card-text class='d-flex flex-column pa-3 text-left black--text text-body-1'>
+          如您同意，系統會載入每條跟您有關知識點中您未讀取的Issue，但這會花上最少20秒的時間（與您被分配到的知識點與Issue數量呈正比）
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            color='red'
+            class='white--text'
+            @click='getUnread'
+          >
+            是，我要下載統計
+          </v-btn>
+          <v-btn
+            color='blue'
+            class='white--text'
+            @click='closeUnread'
+          >
+            不用，我只是查看列表
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog
       v-model="initW"
       persistent
       max-width="50vw"
@@ -131,14 +164,14 @@
         </v-toolbar>
         <v-card-text class='d-flex flex-column pa-0'>
           <v-alert outlined type='info' v-if='currentKB.isVendor' icon='fa-info-circle' class='text-left'>
-            廠商請注意：基本上你只能上傳影片（H.264/VP9）、PDF檔案（分鏡圖使用），除非是最終階段需要上傳可編輯原始檔，否則請勿上傳zip檔，另外，你的檔名就會是版本代號，請警慎命名（如「腳本第一版」）
+            廠商請注意：基本上你只能上傳影片（H.264/VP9）、PDF檔案（分鏡圖使用），除非是最終階段需要上傳可編輯原始檔，否則請勿上傳zip檔，另外，你的檔名就會是版本代號，請謹慎命名（如「腳本第一版」）
           </v-alert>
           <v-alert outlined type='info' v-if='currentKB.isWriter' icon='fa-info-circle' class='text-left'>
-            寫手請注意：你只能上傳PDF檔案，請把你的腳本都轉換成PDF再上傳，另外，你的檔名就會是版本代號，請警慎命名（如「腳本第一版」）
+            寫手請注意：你只能上傳PDF檔案，請把你的腳本都轉換成PDF再上傳，另外，你的檔名就會是版本代號，請謹慎命名（如「腳本第一版」）
           </v-alert>
           <div v-if='currentKB.isWriter || currentKB.isVendor' class='d-felx flex-column'>
             <div class='text-subtitle-2 font-weight-blod'>版本發行說明（必填但不得超過30個字）</div>
-            <v-text-field outlined clearable dense hint='請輸入這個新版本的註解，不得超過30個字' v-model='versionComment' />
+            <v-text-field outlined placeholder='請輸入一些說明，上傳檔案選單才會出現喔！' clearable dense hint='請輸入這個新版本的註解，不得超過30個字' v-model='versionComment' />
             <div class='text-subtitle-2 font-weight-blod'>版本檔案</div>
             <v-file-input
               v-if="versionComment !== ''"
@@ -629,21 +662,23 @@ export default {
     ProgressTile: () => import(/* webpackPrefetch: true */ './modules/ProgressTile')
   },
   methods: {
+    getUnread: function() {
+      this.$emit('toastPop', '取得未讀取Issue清單中（完成後您會在每個知識點左下方看到數量）');
+      this.$socket.client.emit('dashBoardUnreaded', this.progressList);
+      this.exeUnread = true;
+      this.unreadW = false;
+    },
+    closeUnread: function() {
+      this.exeUnread = false;
+      this.unreadW = false;
+    },
     socketdashBoardUnreaded: function(data) {
-      let oriobj = this;
       this.$emit('timerOn', false);
       this.$emit('toastPop', '未讀取Issue清單已下載，更新清單中');
       this.unreadedList = data;
       this.generateList();
       this.dashboardPopulated = true;
       this.$emit('toastPop', '更新清單完成');
-      clearTimeout(this.queryTimer);
-      this.queryTimer = setTimeout(() => {
-        this.initialized = false;
-        oriobj.$emit('timerOn', true);
-        oriobj.$emit('toastPop', 'DashBoard更新中');
-        oriobj.$socket.client.emit('listDashBoard');
-      }, this.siteSettings.userCheckTime * 60 * 1000);
     },
     clearQueryTerm: function() {
       this.queryTerm = '';
@@ -683,11 +718,15 @@ export default {
         let KB = list[i];
         KB.attention = 0;
         KB.selected = false;
-        let unreaded = _find(oriobj.unreadedList, (item) => {
-          return item._id === KB._id;
-        });
-        KB.unreaded = unreaded !== undefined ? unreaded.numberOfissue : 0;
-        KB.sortingRank = KB.tag.length > 0 ? KB.tag[0] + KB.sort : KB.title;
+        if(oriobj.exeUnread) {
+          let unreaded = _find(oriobj.unreadedList, (item) => {
+            return item._id === KB._id;
+          });
+          KB.unreaded = unreaded !== undefined ? unreaded.numberOfissue : 0;
+        } else {
+          KB.unreaded = 0;
+        }
+        KB.sortingRank = KB.tag.length > 0 ? KB.tag[0] : KB.title;
         KB.currentStep = (_countBy(KB.stages, {
           current: false
         })) === KB.stages.length ? 0 : (_findIndex(KB.stages, {
@@ -757,7 +796,7 @@ export default {
         });
       }
       this.convertedList = [];
-      let convertedList = this.sortingRule ? _orderBy(list, ['remainTick'], ['asc']) : _orderBy(list, ['sortingRank'], ['asc']);
+      let convertedList = this.sortingRule ? _orderBy(list, ['remainTick'], ['asc']) : _orderBy(list, ['sortingRank', 'sort'], ['asc', 'asc']);
       this.convertedList = convertedList;
       let steps = _map(this.convertedList, (item) => {
         return item.stages.length;
@@ -831,10 +870,27 @@ export default {
       this.$socket.client.emit('getKBVersions', data._id);
     },
     socketlistDashBoard: function (data) {
+      let oriobj = this;
       this.$emit('timerOn', false);
-      this.$emit('toastPop', '您目前被分派到的知識點以下載，正在確認未讀issue數量...');
+      this.$emit('toastPop', '產生清單中，請稍後...');
       this.lastCheckTime = moment().unix();
       this.progressList = data;
+      if(!this.exeUnread) { 
+        this.generateList();
+        this.dashboardPopulated = true;
+        this.$emit('toastPop', '更新清單完成');
+      }
+      if(this.exeUnread) {
+        this.$emit('toastPop', '取得未讀取Issue清單中（完成後您會在每個知識點左下方看到數量）');
+        this.$socket.client.emit('dashBoardUnreaded', this.progressList);
+      }
+      clearTimeout(this.queryTimer);
+      this.queryTimer = setTimeout(() => {
+        this.initialized = false;
+        oriobj.$emit('timerOn', true);
+        oriobj.$emit('toastPop', 'DashBoard更新中');
+        oriobj.$socket.client.emit('listDashBoard');
+      }, this.siteSettings.userCheckTime * 60 * 1000);
     },
     updateFilterTag: function (value) {
       this.selectedFilterTags = value;
@@ -1094,6 +1150,8 @@ export default {
   },
   data () {
     return {
+      unreadW: true,
+      exeUnread: false,
       unreadedList: [],
       sortingRule: true,
       queriedChapters: [],

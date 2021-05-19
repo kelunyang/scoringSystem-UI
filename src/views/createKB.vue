@@ -1,6 +1,24 @@
 <template>
   <v-sheet class='pa-0'>
     <v-dialog
+      v-model="fabRemoveKB"
+      max-width="50vw"
+    >
+      <template>
+        <v-sheet class='d-flex flex-column pa-1'>
+          <div class='text-h6'>確認刪除多個知識點？</div>
+          <v-btn
+            color='red accent-4'
+            class='white--text ma-1'
+            @click='removeMutipleKB'
+          >
+            是，快讓我刪除知識點！
+          </v-btn>
+          <div class='text-caption'>如果你只是誤觸，請隨意點擊其他地方即會關閉本對話框</div>
+        </v-sheet>
+      </template>
+    </v-dialog>
+    <v-dialog
       v-model='assignW'
       fullscreen
       hide-overlay
@@ -562,7 +580,7 @@
               dark
               small
               color="blue darken-4"
-              @click.stop='removeMutipleKB()'
+              @click.stop='fabRemoveKB = true'
             >
               <v-icon>fa-folder-minus</v-icon>
             </v-btn>
@@ -735,7 +753,7 @@
                   :key='KBitem._id+"lazy"'
                 >
                   <div class='d-flex flex-column' :key="KBitem._id + 'handler'">
-                    <div class='d-flex flex-row'>
+                    <div class='d-flex flex-row blue-grey lighten-5'>
                       <div class='flex-grow-1 text-left'>
                         {{ KBitem.title }}
                       </div>
@@ -1460,6 +1478,7 @@ export default {
   },
   data () {
     return {
+      fabRemoveKB: false,
       tagUserW: false,
       selectednewTags: [],
       selectedUsers: [],
