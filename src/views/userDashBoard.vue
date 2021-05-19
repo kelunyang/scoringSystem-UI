@@ -643,6 +643,7 @@ import _find from 'lodash/find';
 import _uniq from 'lodash/uniq';
 import _orderBy from 'lodash/orderBy';
 import _map from 'lodash/map';
+import _head from 'lodash/head';
 import _includes from 'lodash/includes';
 import _flatten from 'lodash/flatten';
 import _countBy from 'lodash/countBy';
@@ -726,7 +727,7 @@ export default {
         } else {
           KB.unreaded = 0;
         }
-        KB.sortingRank = KB.tag.length > 0 ? KB.tag[0] : KB.title;
+        KB.mainTag = _head(KB.tag);
         KB.currentStep = (_countBy(KB.stages, {
           current: false
         })) === KB.stages.length ? 0 : (_findIndex(KB.stages, {
@@ -796,7 +797,7 @@ export default {
         });
       }
       this.convertedList = [];
-      let convertedList = this.sortingRule ? _orderBy(list, ['remainTick'], ['asc']) : _orderBy(list, ['sortingRank', 'sort'], ['asc', 'asc']);
+      let convertedList = this.sortingRule ? _orderBy(list, ['remainTick'], ['asc']) : _orderBy(list, ['mainTag', 'sort'], ['asc', 'asc']);
       this.convertedList = convertedList;
       let steps = _map(this.convertedList, (item) => {
         return item.stages.length;
@@ -875,6 +876,10 @@ export default {
       this.$emit('toastPop', '產生清單中，請稍後...');
       this.lastCheckTime = moment().unix();
       this.progressList = data;
+      if(this.firstRun) {
+        this.unreadW = true;
+        this.firstRun = false;
+      }
       if(!this.exeUnread) { 
         this.generateList();
         this.dashboardPopulated = true;
@@ -1150,7 +1155,8 @@ export default {
   },
   data () {
     return {
-      unreadW: true,
+      firstRun: true,
+      unreadW: false,
       exeUnread: false,
       unreadedList: [],
       sortingRule: true,
