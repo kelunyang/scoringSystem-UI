@@ -568,7 +568,7 @@
       <div class='d-flex flex-row flex-wrap ma-1'>
         <v-chip
           v-for='ch in queriedChapters'
-          :key="ch" @click='selectedFilterTags.push(ch)'
+          :key="'recent'+ch" @click='selectedFilterTags.push(ch)'
           class='ma-1'
         >
           {{ tagQuery(ch) }}
@@ -625,7 +625,7 @@
         }"
         min-height="100"
         transition="fade-transition"
-        v-for="item in convertedList" :key="'KB'+item._id"
+        v-for="(item,n) in convertedList" :key="'KB'+n"
       >
         <progress-tile @tags='openTagW' @requestUpload='openUploadW' @viewDetail='openauthDetail' @KBselected='KBupdated' :progressItem='item' />
       </v-lazy>
@@ -810,17 +810,19 @@ export default {
         });
       }
       this.convertedList = [];
-      let convertedList = this.sortingRule ? _orderBy(list, ['remainTick'], ['asc']) : _orderBy(list, ['sortRanking'], ['asc']);
-      this.convertedList = convertedList;
-      let steps = _map(this.convertedList, (item) => {
-        return item.stages.length;
+      Vue.nextTick(() => {
+        let convertedList = oriobj.sortingRule ? _orderBy(list, ['remainTick'], ['asc']) : _orderBy(list, ['sortRanking'], ['asc']);
+        oriobj.convertedList = convertedList;
+        let steps = _map(oriobj.convertedList, (item) => {
+          return item.stages.length;
+        });
+        let orderedSteps = steps.sort((a, b) => {
+          return b - a;
+        });
+        oriobj.maxStep = orderedSteps.length > 0 ? orderedSteps[0] : 5;
+        oriobj.initialized = true;
+        oriobj.statisticSteps = oriobj.maxStep;
       });
-      let orderedSteps = steps.sort((a, b) => {
-        return b - a;
-      });
-      this.maxStep = orderedSteps.length > 0 ? orderedSteps[0] : 5;
-      this.initialized = true;
-      this.statisticSteps = this.maxStep;
     },
     renderChart: function() {
       let steps = [];
