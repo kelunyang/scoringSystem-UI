@@ -740,7 +740,6 @@ export default {
         let KB = list[i];
         KB.attention = 0;
         KB.selected = false;
-        KB.unreaded = 0;
         KB.sortRanking = KB.tag.length > 0 ? KB.tag[0] : KB.title;
         KB.sortRanking += KB.chapter.length > 0 ? KB.chapter[0]._id : KB.title;
         let sort = _padStart(KB.sort, maxDig, '0');
@@ -828,12 +827,10 @@ export default {
       this.convertedList = convertedList;
       Vue.nextTick(() => {
         oriobj.renderList = convertedList;
-        if(oriobj.unreadedList.length > 0) {
-          oriobj.injectUnread();
-        } else {
-          this.$emit('toastPop', '取得未讀取Issue清單中（完成後您會在每個知識點左下方看到數量）');
-          this.$socket.client.emit('dashBoardUnreaded', this.progressList);
-        }
+        oriobj.$emit('toastPop', '取得未讀取Issue清單中（完成後您會在每個知識點左下方看到數量）');
+        oriobj.issueTimer = setTimeout(() => {
+          oriobj.$socket.client.emit('dashBoardUnreaded', oriobj.progressList);
+        }, 2000);
       });
     },
     renderChart: function() {
@@ -902,6 +899,9 @@ export default {
       this.$emit('timerOn', false);
       this.$emit('toastPop', '產生清單中，請稍後...');
       this.lastCheckTime = moment().unix();
+      for(let i=0; i<data.length;i++) {
+        data[i].unreaded = 0;
+      }
       this.progressList = data;
       this.generateList();
       this.dashboardPopulated = true;
