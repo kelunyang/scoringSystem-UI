@@ -664,7 +664,6 @@ export default {
   },
   methods: {
     injectUnread: function() {
-      console.dir(this.unreadedList);
       for(let i=0; i<this.unreadedList.length; i++) {
         let unreadKB = this.unreadedList[i];
         let readedRender = _find(this.renderList, (item) => {
@@ -827,12 +826,15 @@ export default {
       this.initialized = true;
       this.statisticSteps = this.maxStep;
       this.convertedList = convertedList;
-      setTimeout(() => {
+      Vue.nextTick(() => {
         oriobj.renderList = convertedList;
         if(oriobj.unreadedList.length > 0) {
           oriobj.injectUnread();
+        } else {
+          this.$emit('toastPop', '取得未讀取Issue清單中（完成後您會在每個知識點左下方看到數量）');
+          this.$socket.client.emit('dashBoardUnreaded', this.progressList);
         }
-      }, 10);
+      });
     },
     renderChart: function() {
       let steps = [];
@@ -906,8 +908,6 @@ export default {
       //this.dashboardPopulated = true;
       this.$emit('toastPop', '更新清單完成');
       //if(this.exeUnread) {
-        this.$emit('toastPop', '取得未讀取Issue清單中（完成後您會在每個知識點左下方看到數量）');
-        this.$socket.client.emit('dashBoardUnreaded', this.progressList);
       /*}
       if(this.firstRun) {
         this.unreadW = true;
