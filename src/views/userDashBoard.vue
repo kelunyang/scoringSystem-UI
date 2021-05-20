@@ -618,14 +618,14 @@
         <v-btn color='indigo darken-4' class='white--text ma-1' @click="generateList">搜尋</v-btn>
         <v-btn color="brown darken-4" class='white--text ma-1' @click="clearQueryTerm">清除</v-btn>
       </div>
-      <div class='blue-grey--text darken-1 text-caption'>已篩選出{{ convertedList.length }}個知識點，為節省資源，不會全部展現出來，往下滑會載入更多</div>
+      <div class='blue-grey--text darken-1 text-caption'>已篩選出{{ renderList.length }}個知識點，為節省資源，不會全部展現出來，往下滑會載入更多</div>
       <v-lazy
         :options="{
           threshold: 0.5
         }"
         min-height="100"
         transition="fade-transition"
-        v-for="(item,n) in convertedList" :key="'KB'+n"
+        v-for="(item,n) in renderList" :key="'KB'+n"
       >
         <progress-tile @tags='openTagW' @requestUpload='openUploadW' @viewDetail='openauthDetail' @KBselected='KBupdated' :progressItem='item' />
       </v-lazy>
@@ -739,6 +739,7 @@ export default {
           KB.unreaded = 0;
         }
         KB.sortRanking = KB.tag.length > 0 ? KB.tag[0] : KB.title;
+        KB.sortRanking += KB.chapter.length > 0 ? KB.chapter[0]._id : KB.title;
         let sort = _padStart(KB.sort, maxDig, '0');
         KB.sortRanking += sort;
         KB.currentStep = (_countBy(KB.stages, {
@@ -810,18 +811,20 @@ export default {
         });
       }
       this.convertedList = [];
+      this.renderList = [];
+      let convertedList = this.sortingRule ? _orderBy(list, ['remainTick'], ['asc']) : _orderBy(list, ['sortRanking'], ['asc']);
+      let steps = _map(convertedList, (item) => {
+        return item.stages.length;
+      });
+      let orderedSteps = steps.sort((a, b) => {
+        return b - a;
+      });
+      this.maxStep = orderedSteps.length > 0 ? orderedSteps[0] : 5;
+      this.initialized = true;
+      this.statisticSteps = this.maxStep;
+      this.convertedList = convertedList;
       Vue.nextTick(() => {
-        let convertedList = oriobj.sortingRule ? _orderBy(list, ['remainTick'], ['asc']) : _orderBy(list, ['sortRanking'], ['asc']);
-        oriobj.convertedList = convertedList;
-        let steps = _map(oriobj.convertedList, (item) => {
-          return item.stages.length;
-        });
-        let orderedSteps = steps.sort((a, b) => {
-          return b - a;
-        });
-        oriobj.maxStep = orderedSteps.length > 0 ? orderedSteps[0] : 5;
-        oriobj.initialized = true;
-        oriobj.statisticSteps = oriobj.maxStep;
+        oriobj.renderList = convertedList;
       });
     },
     renderChart: function() {
@@ -1170,6 +1173,7 @@ export default {
   },
   data () {
     return {
+      renderList: [],
       firstRun: true,
       unreadW: false,
       exeUnread: false,
