@@ -663,14 +663,20 @@ export default {
     ProgressTile: () => import(/* webpackPrefetch: true */ './modules/ProgressTile')
   },
   methods: {
-    injectUnread: function() {
-      for(let i=0; i<this.unreadedList.length; i++) {
-        let unreadKB = this.unreadedList[i];
+    injectUnread: function(data) {
+      for(let i=0; i<data.length; i++) {
+        let unreadKB = data[i];
         let readedRender = _find(this.renderList, (item) => {
           return item._id === unreadKB._id;
         });
         if(readedRender !== undefined) {
           readedRender.unreaded = unreadKB.numberOfissue;
+        }
+        let readedProgress = _find(this.progressList, (item) => {
+          return item._id === unreadKB._id;
+        });
+        if(readedProgress !== undefined) {
+          readedProgress.unreaded = unreadKB.numberOfissue;
         }
       }
     },
@@ -688,8 +694,9 @@ export default {
     socketdashBoardUnreaded: function(data) {
       this.$emit('timerOn', false);
       this.$emit('toastPop', '未讀取Issue清單已下載，更新清單中');
+      console.dir(data);
       this.unreadedList = data;
-      this.injectUnread();
+      this.injectUnread(data);
       this.$emit('toastPop', '更新清單完成');
     },
     clearQueryTerm: function() {
@@ -704,6 +711,7 @@ export default {
       let now = moment().unix();
       let list = [];
       let oriobj = this;
+      this.$emit('toastPop', '整理清單中，請稍後...');
       if(oriobj.selectedFilterTags.length > 0) {
         for (let i = 0; i < oriobj.selectedFilterTags.length; i++) {
           let tag = oriobj.selectedFilterTags[i];
@@ -825,12 +833,19 @@ export default {
       this.initialized = true;
       this.statisticSteps = this.maxStep;
       this.convertedList = convertedList;
+      let requestList = _map(this.progressList, (item) => {
+        return item._id;
+      });
+      console.dir(requestList);
+      this.$emit('toastPop', '清單整理完成，請稍後...');
       Vue.nextTick(() => {
         oriobj.renderList = convertedList;
-        oriobj.$emit('toastPop', '取得未讀取Issue清單中（完成後您會在每個知識點左下方看到數量）');
-        oriobj.issueTimer = setTimeout(() => {
-          oriobj.$socket.client.emit('dashBoardUnreaded', oriobj.progressList);
-        }, 2000);
+        if(oriobj.unreadedList.length === 0) {
+          oriobj.$emit('toastPop', '5秒後開始下載未讀取Issue清單中（完成後您會在每個知識點左下方看到數量）');
+          oriobj.issueTimer = setTimeout(() => {
+            oriobj.$socket.client.emit('dashBoardUnreaded', requestList);
+          }, 5000);
+        }
       });
     },
     renderChart: function() {
@@ -897,7 +912,7 @@ export default {
     socketlistDashBoard: function (data) {
       let oriobj = this;
       this.$emit('timerOn', false);
-      this.$emit('toastPop', '產生清單中，請稍後...');
+      this.$emit('toastPop', '清單下載完成，請稍後...');
       this.lastCheckTime = moment().unix();
       for(let i=0; i<data.length;i++) {
         data[i].unreaded = 0;
