@@ -5,7 +5,7 @@ import _orderBy from 'lodash/orderBy';
 import VueGtag from "vue-gtag";
 
 Vue.config.productionTip = false;
-Vue.config.devtools = true;
+Vue.config.devtools = false;
 
 Vue.use(Vuex);
 Vue.use(VueGtag, {
