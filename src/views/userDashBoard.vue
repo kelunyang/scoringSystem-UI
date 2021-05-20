@@ -1,6 +1,6 @@
 <template>
   <v-sheet class='d-flex flex-column'>
-    <v-dialog
+    <!-- <v-dialog
       v-model="unreadW"
       persistent
       max-width="50vw"
@@ -32,7 +32,7 @@
           </v-btn>
         </v-card-actions>
       </v-card>
-    </v-dialog>
+    </v-dialog> -->
     <v-dialog
       v-model="initW"
       persistent
@@ -663,7 +663,18 @@ export default {
     ProgressTile: () => import(/* webpackPrefetch: true */ './modules/ProgressTile')
   },
   methods: {
-    getUnread: function() {
+    injectUnread: function() {
+      for(let i=0; i<this.unreadedList.length; i++) {
+        let unreadKB = this.unreadedList[i];
+        let readedRender = _find(this.renderList, (item) => {
+          return item._id === unreadKB._id;
+        });
+        if(readedRender !== undefined) {
+          readedRender.unreaded = unreadKB.numberOfissue;
+        }
+      }
+    },
+    /*getUnread: function() {
       this.$emit('toastPop', '取得未讀取Issue清單中（完成後您會在每個知識點左下方看到數量）');
       this.exeUnread = true;
       this.unreadW = false;
@@ -673,13 +684,12 @@ export default {
     closeUnread: function() {
       this.exeUnread = false;
       this.unreadW = false;
-    },
+    },*/
     socketdashBoardUnreaded: function(data) {
       this.$emit('timerOn', false);
       this.$emit('toastPop', '未讀取Issue清單已下載，更新清單中');
       this.unreadedList = data;
-      this.generateList();
-      this.dashboardPopulated = true;
+      this.injectUnread();
       this.$emit('toastPop', '更新清單完成');
     },
     clearQueryTerm: function() {
@@ -730,14 +740,7 @@ export default {
         let KB = list[i];
         KB.attention = 0;
         KB.selected = false;
-        if(oriobj.exeUnread) {
-          let unreaded = _find(oriobj.unreadedList, (item) => {
-            return item._id === KB._id;
-          });
-          KB.unreaded = unreaded !== undefined ? unreaded.numberOfissue : 0;
-        } else {
-          KB.unreaded = 0;
-        }
+        KB.unreaded = 0;
         KB.sortRanking = KB.tag.length > 0 ? KB.tag[0] : KB.title;
         KB.sortRanking += KB.chapter.length > 0 ? KB.chapter[0]._id : KB.title;
         let sort = _padStart(KB.sort, maxDig, '0');
@@ -825,6 +828,9 @@ export default {
       this.convertedList = convertedList;
       Vue.nextTick(() => {
         oriobj.renderList = convertedList;
+        if(this.unreadedList.length > 0) {
+          this.injectUnread();
+        }
       });
     },
     renderChart: function() {
@@ -894,19 +900,18 @@ export default {
       this.$emit('toastPop', '產生清單中，請稍後...');
       this.lastCheckTime = moment().unix();
       this.progressList = data;
-      if(!this.exeUnread) { 
-        this.generateList();
-        this.dashboardPopulated = true;
-        this.$emit('toastPop', '更新清單完成');
-      }
-      if(this.exeUnread) {
+      this.generateList();
+      this.dashboardPopulated = true;
+      //this.dashboardPopulated = true;
+      this.$emit('toastPop', '更新清單完成');
+      //if(this.exeUnread) {
         this.$emit('toastPop', '取得未讀取Issue清單中（完成後您會在每個知識點左下方看到數量）');
         this.$socket.client.emit('dashBoardUnreaded', this.progressList);
-      }
+      /*}
       if(this.firstRun) {
         this.unreadW = true;
         this.firstRun = false;
-      }
+      }*/
       clearTimeout(this.queryTimer);
       this.queryTimer = setTimeout(() => {
         this.initialized = false;
@@ -1174,9 +1179,9 @@ export default {
   data () {
     return {
       renderList: [],
-      firstRun: true,
+      /*firstRun: true,
       unreadW: false,
-      exeUnread: false,
+      exeUnread: false,*/
       unreadedList: [],
       sortingRule: true,
       queriedChapters: [],
