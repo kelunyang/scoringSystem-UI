@@ -828,8 +828,8 @@ export default {
       this.convertedList = convertedList;
       Vue.nextTick(() => {
         oriobj.renderList = convertedList;
-        if(this.unreadedList.length > 0) {
-          this.injectUnread();
+        if(oriobj.unreadedList.length > 0) {
+          oriobj.injectUnread();
         }
       });
     },
