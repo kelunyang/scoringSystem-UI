@@ -664,6 +664,7 @@ export default {
   },
   methods: {
     injectUnread: function() {
+      console.dir(this.unreadedList);
       for(let i=0; i<this.unreadedList.length; i++) {
         let unreadKB = this.unreadedList[i];
         let readedRender = _find(this.renderList, (item) => {
@@ -826,12 +827,12 @@ export default {
       this.initialized = true;
       this.statisticSteps = this.maxStep;
       this.convertedList = convertedList;
-      Vue.nextTick(() => {
+      setTimeout(() => {
         oriobj.renderList = convertedList;
         if(oriobj.unreadedList.length > 0) {
           oriobj.injectUnread();
         }
-      });
+      }, 10);
     },
     renderChart: function() {
       let steps = [];

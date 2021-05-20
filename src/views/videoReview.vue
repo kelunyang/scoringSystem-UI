@@ -2692,7 +2692,7 @@ export default {
       diffIssues: [],
       localLoaded: false,
       hideFilterBtns: false,
-      disableCompareMode: false,
+      disableCompareMode: true,
       previousPDF: null,
       currentPDF: null,
       currentZipFIle: null,
