@@ -1,12 +1,12 @@
 <template>
   <v-main ref='mainBlock' class='pa-0' style="width: 100% !important;">
-    <v-alert outlined type="success" icon="fa-grin-wink" class='text-left' v-if="statistics.unfinishObj === 0">
+    <v-alert outlined type="success" icon="fa-grin-wink" class='text-left' v-show="hideAlert" v-if="statistics.unfinishObj === 0">
       本階段審查指標已全部完成，請回到DashBoard，可進入下一個階段（如果你在下一個階段還有權力的話）
     </v-alert>
-    <v-alert outlined type="error" icon="fa-skull" class='text-left' v-if="!currentStage.current">
+    <v-alert outlined type="error" icon="fa-skull" class='text-left' v-show="hideAlert" v-if="!currentStage.current">
       本階段已經是歷史了，離開吧！
     </v-alert>
-    <v-alert outlined type="info" icon='fa-info-circle' class='text-left' v-if="currentStage.coolDown">
+    <v-alert outlined type="info" icon='fa-info-circle' class='text-left' v-show="hideAlert" v-if="currentStage.coolDown">
       本階段進入冷靜期，你只能回復既有Issue，不能開新的Issue！
     </v-alert>
     <v-dialog v-model='diffW' fullscreen hide-overlay transition='dialog-bottom-transition'>
@@ -724,7 +724,7 @@
                     <span v-if="cType === 'video'">加速播放</span>
                     <span v-if="cType === 'pdf'">下一頁</span>
                   </v-tooltip>
-                  <v-tooltip top v-if='cType === "video" || cType === "pdf"'>
+                  <!-- <v-tooltip top v-if='cType === "video" || cType === "pdf"'>
                     <template v-slot:activator="{ on, attrs }">
                       <v-btn
                         v-bind="attrs" v-on="on"
@@ -736,7 +736,7 @@
                       </v-btn>
                     </template>
                     <span>擷取當前播放畫面</span>
-                  </v-tooltip>
+                  </v-tooltip>-->
                   <v-tooltip top>
                     <template v-slot:activator="{ on, attrs }">
                       <v-btn
@@ -845,7 +845,7 @@
                     <span v-if='pType === "video"'>加速播放</span>
                     <span v-if='pType === "pdf"'>下一頁</span>
                   </v-tooltip>
-                  <v-tooltip top v-if='pType === "video" || pType === "pdf"'>
+                  <!-- <v-tooltip top v-if='pType === "video" || pType === "pdf"'>
                     <template v-slot:activator="{ on, attrs }">
                       <v-btn
                         v-bind="attrs" v-on="on"
@@ -857,7 +857,7 @@
                       </v-btn>
                     </template>
                     <span>擷取當前播放畫面</span>
-                  </v-tooltip>
+                  </v-tooltip>-->
                   <v-tooltip top>
                     <template v-slot:activator="{ on, attrs }">
                       <v-btn
@@ -909,9 +909,25 @@
               </div>
               <div ref='compareBar' class='compareBar' v-if='currentVersion._id !== ""'>
                 <div ref='compareBtnC'>
-                  <v-btn icon ref='compareBtn' class='compareBtn' draggable="true" @touchmove.prevent='checkDrag' @touchend.prevent='checkDrag' @dragend.prevent='checkDrag' @drag.prevent="checkDrag">
-                    <v-icon>fa-arrows-alt-h</v-icon>
-                  </v-btn>
+                  <v-tooltip top>
+                    <template v-slot:activator="{ on, attrs }">
+                      <v-btn
+                        icon
+                        ref='compareBtn'
+                        class='compareBtn'
+                        draggable="true"
+                        @touchmove.prevent='checkDrag'
+                        @touchend.prevent='checkDrag'
+                        @dragend.prevent='checkDrag'
+                        @drag.prevent="checkDrag"
+                        @dblclick='cancalCompare'
+                        v-bind="attrs" v-on="on"
+                      >
+                        <v-icon>fa-arrows-alt-h</v-icon>
+                      </v-btn>
+                    </template>
+                    拖曳可移動對比框，雙擊可關閉/開啟對比模式
+                  </v-tooltip>
                 </div>
               </div>
             </div>
@@ -1301,6 +1317,9 @@ export default {
     IssueList: () => import(/* webpackPrefetch: true */ './modules/IssueList')
   },
   methods: {
+    cancalCompare: function () {
+      this.disableCompareMode = !this.disableCompareMode;
+    },
     backtoIssueList: function () {
       this.$emit('toastPop', '更新已讀取Issue清單');
       this.$socket.client.emit('getReadedIssue');
@@ -1372,15 +1391,14 @@ export default {
         }
       }
     },
-    endPinMode: function () {
-      this.pinMode = false;
-    },
     scrollEvent: function () {
       let top = (this.$refs.previewArea.getBoundingClientRect().top - 80);
       if(top < 0) {
         this.pinMode = true;
+        this.hideAlert = false;
       } else {
         this.pinMode = false;
+        this.hideAlert = true;
       }
     },
     citetoIssue: async function () {
@@ -2683,6 +2701,7 @@ export default {
   },
   data () {
     return {
+      hideAlert: true,
       issuekeywordFilter: '',
       fabIssue: false,
       pinOn: false,

@@ -34,7 +34,7 @@
           >
             <v-icon>fa-times</v-icon>
           </v-btn>
-          <v-toolbar-title><span v-if='currentStage._id === ""'>設定知識點編輯階段</span><span v-if='currentStage._id !== ""'>{{ currentKB.title }}： {{ currentStage.name }}</span></v-toolbar-title>
+          <v-toolbar-title><span v-if='currentStage._id === ""'>設定知識點編輯階段</span><span v-if='currentStage._id !== ""'>{{ currentKB.title }}： {{ currentStage.name }}[{{ (currentStage.sort+1) }}]</span></v-toolbar-title>
         </v-toolbar>
         <v-card-actions>
           <v-menu
@@ -189,6 +189,15 @@
                 :createable='false'
                 label='請輸入本階段的PM標籤'
               />
+              <div class='d-flex flex-row flex-wrap ma-1'>
+                <v-chip
+                  v-for='rt in recentTags'
+                  :key="'recentpm'+rt._id" @click='addPMTag(rt._id)'
+                  class='ma-1'
+                >
+                  {{ tagQuery(rt._id) }}
+                </v-chip>
+              </div>
               <div class='text-subtitle-2 font-weight-blod'>本階段的審查者群組標籤</div>
               <tag-filter
                 :mustSelected='false'
@@ -200,6 +209,15 @@
                 :createable='false'
                 label='請輸入本階段的審查者標籤'
               />
+              <div class='d-flex flex-row flex-wrap ma-1'>
+                <v-chip
+                  v-for='rt in recentTags'
+                  :key="'recentreviewer'+rt._id" @click='addReviewerTag(rt._id)'
+                  class='ma-1'
+                >
+                  {{ tagQuery(rt._id) }}
+                </v-chip>
+              </div>
               <div class='text-subtitle-2 font-weight-blod'>本階段的廠商群組標籤</div>
               <tag-filter
                 :mustSelected='false'
@@ -211,6 +229,15 @@
                 :createable='false'
                 label='請輸入本階段的廠商標籤'
               />
+              <div class='d-flex flex-row flex-wrap ma-1'>
+                <v-chip
+                  v-for='rt in recentTags'
+                  :key="'recentvendor'+rt._id" @click='addVendorTag(rt._id)'
+                  class='ma-1'
+                >
+                  {{ tagQuery(rt._id) }}
+                </v-chip>
+              </div>
               <div class='text-subtitle-2 font-weight-blod'>本階段的寫手群組標籤</div>
               <tag-filter
                 :mustSelected='false'
@@ -222,6 +249,15 @@
                 :createable='false'
                 label='請輸入本階段的寫手標籤'
               />
+              <div class='d-flex flex-row flex-wrap ma-1'>
+                <v-chip
+                  v-for='rt in recentTags'
+                  :key="'recentwriter'+rt._id" @click='addWriterTag(rt._id)'
+                  class='ma-1'
+                >
+                  {{ tagQuery(rt._id) }}
+                </v-chip>
+              </div>
               <div class='text-subtitle-2 font-weight-blod'>本階段的行政組群組標籤</div>
               <tag-filter
                 :mustSelected='false'
@@ -233,6 +269,15 @@
                 :createable='false'
                 label='請輸入本階段的行政組標籤'
               />
+              <div class='d-flex flex-row flex-wrap ma-1'>
+                <v-chip
+                  v-for='rt in recentTags'
+                  :key="'recentfinal'+rt._id" @click='addFinalTag(rt._id)'
+                  class='ma-1'
+                >
+                  {{ tagQuery(rt._id) }}
+                </v-chip>
+              </div>
             </div>
           </div>
         </v-card-text>
@@ -831,7 +876,7 @@
                                 complete-icon='fa-check-circle'
                                 edit-icon='fa-pencil-alt'
                               >
-                                <span v-show='(index + 1) === KBitem.stepPointer'>{{ stage.name }}</span>
+                                <span v-show='(index + 1) === KBitem.stepPointer'>[{{ (stage.sort+1) }}]{{ stage.name }}</span>
                               </v-stepper-step>
                               <v-divider
                                 :key='"divider" + stage._id'
@@ -888,6 +933,8 @@ import _find from 'lodash/find';
 import _uniq from 'lodash/uniq';
 import _findIndex from 'lodash/findIndex';
 import _flatten from 'lodash/flatten';
+import _orderBy from 'lodash/orderBy';
+import _slice from 'lodash/slice';
 import moment from 'moment';
 import 'vue-ctk-date-time-picker/dist/vue-ctk-date-time-picker.css';
 
@@ -976,6 +1023,58 @@ export default {
     }
   },
   methods: {
+    socketsetStage: function (data) {
+      let now = moment().unix();
+      let tags = this.recentTags;
+      let newTags = [];
+      let successTag = _flatten([data.pmTags, data.reviewerTags, data.vendorTags, data.writerTags, data.finalTags]);
+      for(let i=0; i<successTag.length; i++) {
+        let workingTag = successTag[i];
+        let tag = _find(tags, (item) => {
+          return item._id === workingTag[i];
+        });
+        if(tag !== undefined) {
+          tag.tick = now;
+        } else {
+          newTags.push({
+            _id: workingTag,
+            tick: now
+          });
+        }
+      }
+      for(let i=0; i<newTags.length; i++) {
+        let workingTag = newTags[i];
+        tags.push(workingTag);
+      }
+      let sorted = _orderBy(tags, ['tick'], ['desc']);
+      this.recentTags = _slice(sorted, 0 , 5);
+      localStorage.setItem('recentEditTags', JSON.stringify(this.recentTags));
+    },
+    addFinalTag: function (data) {
+      let finalTags = [...this.currentStage.finalTags];
+      finalTags.push(data);
+      this.currentStage.finalTags = _uniq(finalTags);
+    },
+    addWriterTag: function (data) {
+      let writerTags = [...this.currentStage.writerTags];
+      writerTags.push(data);
+      this.currentStage.writerTags = _uniq(writerTags);
+    },
+    addVendorTag: function (data) {
+      let vendorTags = [...this.currentStage.vendorTags];
+      vendorTags.push(data);
+      this.currentStage.vendorTags = _uniq(vendorTags);
+    },
+    addReviewerTag: function (data) {
+      let reviewerTags = [...this.currentStage.reviewerTags];
+      reviewerTags.push(data);
+      this.currentStage.reviewerTags = _uniq(reviewerTags);
+    },
+    addPMTag: function (data) {
+      let pmTags = [...this.currentStage.pmTags];
+      pmTags.push(data);
+      this.currentStage.pmTags = _uniq(pmTags);
+    },
     getUsers: function () {
       if(this.filteruserTag.length > 0) {
         this.$socket.client.emit('getTagUsers', this.filteruserTag);
@@ -1491,6 +1590,7 @@ export default {
         stages: [],
         roles: false
       },
+      recentTags: [],
       queriedChapters: [],
       currentStageDate: '1970-01-01 00:00:00',
       stagePopulated: true,
@@ -1548,6 +1648,7 @@ export default {
       DB: this.DB,
       tag: this.selectedKBTag
     });
+    this.$socket.client.off('setStage', this.socketsetStage);
     this.$socket.client.off('modUserTags', this.socketmodUserTags);
     this.$socket.client.off('getUsers', this.socketgetUsers);
     this.$socket.client.off('getTagUsers', this.socketgetUsers);
@@ -1587,6 +1688,11 @@ export default {
     if(queriedChapters) {
       this.queriedChapters = JSON.parse(queriedChapters);
     }
+    let recentTags = window.localStorage.getItem('recentEditTags');
+    if(recentTags) {
+      this.recentTags = JSON.parse(recentTags);
+    }
+    this.$socket.client.on('setStage', this.socketsetStage);
     this.$socket.client.on('modUserTags', this.socketmodUserTags);
     this.$socket.client.on('getUsers', this.socketgetUsers);
     this.$socket.client.on('getTagUsers', this.socketgetUsers);

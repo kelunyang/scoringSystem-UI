@@ -2,12 +2,12 @@
   <v-main class='pa-0 mt-1 mb-1 ml-0 mr-0 d-flex black--text'>
     <v-row no-gutters class='pa-0 mb-1'>
       <v-col class='d-flex flex-row pa-0'>
-        <span class='text-h6 text-decoration-underline text-left font-weight-bold'>{{ currentItem.title }}</span>
+        <span class='text-h6 text-decoration-underline text-left font-weight-bold'><span class='text-body-2 blue-grey--text darken-4'>[{{ chapterConverter(currentItem.chapter) }}-{{ (currentItem.sort+1) }}]</span>{{ currentItem.title }}</span>
       </v-col>
     </v-row>
-    <v-row v-if="events.length > 0" no-gutters>
+    <v-row v-if="currentItem.eventLog.length > 0" no-gutters>
       <v-col class='text-right d-flex justify-end text-caption pa-1'>
-        <v-icon small>fas fa-paw</v-icon>{{ announcedEvent.desc }}[{{ announcedEvent.user.name }} @ {{ dateConvert(announcedEvent.tick) }}]
+        <v-icon small>fas fa-paw</v-icon>{{ announceEvent.desc }}[{{ announceEvent.user.name }} @ {{ dateConvert(announceEvent.tick) }}]
       </v-col>
     </v-row>
     <v-row no-gutters>
@@ -83,9 +83,14 @@
           </v-icon>
           {{ currentItem.unreaded }}則Issue未讀
         </span>
+        <span>
+          <v-icon  class='ma-1' small left color="red accent-4">
+            fas fa-chess-rook
+          </v-icon>
+          目前階段：{{ stageConvert(currentItem.currentStep) }}
+        </span>
         <span v-if='currentItem.remainTick < Number.MAX_SAFE_INTEGER'>
           <v-icon class='ma-1' small :color='currentItem.remainTick < 86400 ? "red" : "black"'>fa-stopwatch</v-icon>
-          <span>本階段</span>
           <span v-if='rangeConvert(currentItem.remainTick,0, 864000)'>距離死線約有：{{ timeConvert(currentItem.remainTick) }}</span>
           <span v-if='currentItem.remainTick < 0'>超過死線約有：{{ timeConvert(currentItem.remainTick) }}</span>
         </span>
@@ -126,7 +131,7 @@
               }"
               min-height="100"
               transition="fade-transition"
-              v-for="event in events"
+              v-for="event in currentItem.eventLog"
               :key="'event'+event._id"
             >
               <v-timeline-item
@@ -153,7 +158,6 @@
 
 <script>
 import moment from 'moment';
-import _slice from 'lodash/slice';
 import _head from 'lodash/head';
 import _inRange from 'lodash/inRange';
 import momentDurationFormatSetup from 'moment-duration-format';
@@ -166,6 +170,13 @@ export default {
       progressItem: Object
     },
     methods: {
+      stageConvert: function (step) {
+        return step > 0 ? this.currentItem.stages[step-1].name : "未啟動";
+      },
+      chapterConverter: function (chs) {
+        let chapter = _head(chs);
+        return chapter === undefined ? "" : chapter.title;
+      },
       rangeConvert: function (value, start, end) {
         return _inRange(value, start - 0.001, end + 0.001);
       },
@@ -185,6 +196,24 @@ export default {
         this.$emit('tags', item);
       }
     },
+    computed: {
+      savedTags: function () {
+        return this.$store.state.savedTags;
+      },
+      announceEvent: function () {
+        if(this.currentItem.eventLog.length === 0) {
+          return {
+            desc: '',
+            user: {
+              name: ''
+            },
+            tick: 0
+          }
+        } else {
+          return _head(this.currentItem.eventLog);
+        }
+      }
+    },
     watch: {
       selectedItem: function () {
         this.$emit('KBselected', this.currentItem);
@@ -194,25 +223,9 @@ export default {
       this.currentItem = this.progressItem;
       this.selectedItem = this.currentItem.selected;
       this.currentStep = this.currentItem.currentStep;
-      let events = this.currentItem.eventLog;
-      events.sort((a, b) => {
-        return b.tick - a.tick;
-      });
-      this.events = _slice(events, 0, 3);
-      if(events.length > 0) {
-        this.announcedEvent = _head(events);
-      }
     },
     data () {
       return {
-        events: [],
-        announcedEvent: {
-          desc: '',
-          user: {
-            name: ''
-          },
-          tick: 0
-        },
         currentItem: {
           _id: '',
           currentStep: 0,

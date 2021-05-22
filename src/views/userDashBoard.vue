@@ -1,38 +1,5 @@
 <template>
   <v-sheet class='d-flex flex-column'>
-    <!-- <v-dialog
-      v-model="unreadW"
-      persistent
-      max-width="50vw"
-    >
-      <v-card>
-        <v-toolbar
-          color="primary"
-          dark
-        >您要下載未讀取的Issue統計嗎？
-        </v-toolbar>
-        <v-card-text class='d-flex flex-column pa-3 text-left black--text text-body-1'>
-          如您同意，系統會載入每條跟您有關知識點中您未讀取的Issue，但這會花上最少20秒的時間（與您被分配到的知識點與Issue數量呈正比）
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn
-            color='red'
-            class='white--text'
-            @click='getUnread'
-          >
-            是，我要下載統計
-          </v-btn>
-          <v-btn
-            color='blue'
-            class='white--text'
-            @click='closeUnread'
-          >
-            不用，我只是查看列表
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog> -->
     <v-dialog
       v-model="initW"
       persistent
@@ -49,11 +16,11 @@
           <div class='d-flex flex-column pa-1'>
             <v-switch
               v-model="initStatstics"
-              label="每次開啟Dashboard都先打開知識點進度總統計（通常是PM才會需要打開）"
+              label="每次開啟Dashboard都先打開知識點進度總統計（通常是PM、行政才會需要打開）"
             ></v-switch>
             <v-switch
               v-model="initHistory"
-              label="打開所有和我有關的知識點，就算當前階段與我無關我也要看到（通常是PM才會需要打開）"
+              label="打開所有和我有關的知識點，就算當前階段與我無關我也要看到（通常是PM、行政才會需要打開）"
             ></v-switch>
           </div>
           <div class='text-caption red--text'>統計圖表的開關在右下角折線圖圖示，您就算不開啟此設定，平時也可以自己點擊叫出統計圖</div>
@@ -544,8 +511,8 @@
             <v-icon>fa-sort-numeric-down-alt</v-icon>
           </v-btn>
         </template>
-        <span v-if='sortingRule'>按照死線時間排序</span>
-        <span v-if='!sortingRule'>按照知識點名稱排序</span>
+        <span v-if='sortingRule'>按照知識點時間排序</span>
+        <span v-if='!sortingRule'>按照死線名稱排序</span>
       </v-tooltip>
     </v-speed-dial>
     <div v-show='showStatstics'>
@@ -568,7 +535,7 @@
       <div class='d-flex flex-row flex-wrap ma-1'>
         <v-chip
           v-for='ch in queriedChapters'
-          :key="'recent'+ch" @click='selectedFilterTags.push(ch)'
+          :key="'recent'+ch" @click='addFilterTags(ch)'
           class='ma-1'
         >
           {{ tagQuery(ch) }}
@@ -663,6 +630,30 @@ export default {
     ProgressTile: () => import(/* webpackPrefetch: true */ './modules/ProgressTile')
   },
   methods: {
+    socketdashBoardEventLog: function(data) {
+      this.$emit('timerOn', false);
+      this.$emit('toastPop', '知識點編輯紀錄已下載，更新清單中');
+      this.eventList = data;
+      this.injectEvents(data);
+      this.$emit('toastPop', '知識點編輯紀錄更新完成');
+    },
+    injectEvents: function(data) {
+      for(let i=0; i<data.length; i++) {
+        let event = data[i];
+        let eventRender = _find(this.renderList, (item) => {
+          return item._id === event._id;
+        });
+        if(eventRender !== undefined) {
+          eventRender.eventLog = event.events;
+        }
+        let eventProgress = _find(this.progressList, (item) => {
+          return item._id === event._id;
+        });
+        if(eventProgress !== undefined) {
+          eventProgress.eventLog = event.events;
+        }
+      }
+    },
     injectUnread: function(data) {
       for(let i=0; i<data.length; i++) {
         let unreadKB = data[i];
@@ -680,24 +671,17 @@ export default {
         }
       }
     },
-    /*getUnread: function() {
-      this.$emit('toastPop', '取得未讀取Issue清單中（完成後您會在每個知識點左下方看到數量）');
-      this.exeUnread = true;
-      this.unreadW = false;
-      this.dashboardPopulated = false;
-      this.$socket.client.emit('dashBoardUnreaded', this.progressList);
+    addFilterTags: function(data) {
+      let selectedFilterTags = [...this.selectedFilterTags];
+      selectedFilterTags.push(data);
+      this.selectedFilterTags = _uniq(selectedFilterTags);
     },
-    closeUnread: function() {
-      this.exeUnread = false;
-      this.unreadW = false;
-    },*/
     socketdashBoardUnreaded: function(data) {
       this.$emit('timerOn', false);
       this.$emit('toastPop', '未讀取Issue清單已下載，更新清單中');
-      console.dir(data);
       this.unreadedList = data;
       this.injectUnread(data);
-      this.$emit('toastPop', '更新清單完成');
+      this.$emit('toastPop', '未讀取Issue清單更新完成');
     },
     clearQueryTerm: function() {
       this.queryTerm = '';
@@ -836,15 +820,24 @@ export default {
       let requestList = _map(this.progressList, (item) => {
         return item._id;
       });
-      console.dir(requestList);
+      window.clearTimeout(this.issueTimer);
+      window.clearTimeout(this.eventTimer);
+      this.issueTimer = undefined;
+      this.eventTimer = undefined;
       this.$emit('toastPop', '清單整理完成，請稍後...');
       Vue.nextTick(() => {
         oriobj.renderList = convertedList;
         if(oriobj.unreadedList.length === 0) {
-          oriobj.$emit('toastPop', '5秒後開始下載未讀取Issue清單中（完成後您會在每個知識點左下方看到數量）');
+          oriobj.$emit('toastPop', '5秒後開始下載未讀取Issue清單（完成後您會在每個知識點左下方看到數量）');
           oriobj.issueTimer = setTimeout(() => {
             oriobj.$socket.client.emit('dashBoardUnreaded', requestList);
           }, 5000);
+        }
+        if(oriobj.eventList.length === 0) {
+          oriobj.$emit('toastPop', '3秒後開始下載知識點編輯紀錄（完成後您會在每個知識點右上方看到最後一次的編輯紀錄）');
+          oriobj.eventTimer = setTimeout(() => {
+            oriobj.$socket.client.emit('dashBoardEventLog', requestList);
+          }, 3000);
         }
       });
     },
@@ -916,6 +909,7 @@ export default {
       this.lastCheckTime = moment().unix();
       for(let i=0; i<data.length;i++) {
         data[i].unreaded = 0;
+        data[i].eventLog = [];
       }
       this.progressList = data;
       this.generateList();
@@ -1194,6 +1188,9 @@ export default {
   },
   data () {
     return {
+      issueTimer: undefined,
+      eventTimer: undefined,
+      eventList: [],
       renderList: [],
       /*firstRun: true,
       unreadW: false,
@@ -1296,6 +1293,7 @@ export default {
     };
   },
   beforeDestroy () {
+    this.$socket.client.off('dashBoardEventLog', this.socketdashBoardEventLog);
     this.$socket.client.off('dashBoardUnreaded', this.socketdashBoardUnreaded);
     this.$socket.client.off('createUsersReport', this.socketcreateUsersReport);
     this.$socket.client.off('listDashBoard', this.socketlistDashBoard);
@@ -1309,6 +1307,10 @@ export default {
     this.$socket.client.off('setKBTag', this.soketsetKBTag);
     window.clearTimeout(this.queryTimer);
     this.queryTimer = null;
+    window.clearTimeout(this.issueTimer);
+    window.clearTimeout(this.eventTimer);
+    this.issueTimer = undefined;
+    this.eventTimer = undefined;
   },
   mounted () {
     let dashBoardFirstUse = window.localStorage.getItem('dashBoardFirstUse');
@@ -1330,6 +1332,7 @@ export default {
     this.localLoaded = true;
   },
   created () {
+    let oriobj = this;
     this.$emit('viewIn', {
       text: 'DashBoard',
       icon: 'fa-tachometer-alt',
@@ -1338,9 +1341,12 @@ export default {
     });
     this.$emit('timerOn', true);
     this.$emit('toastPop', 'DashBoard更新中');
-    if(!this.historyConfig) {
-      this.$socket.client.emit('listDashBoard');
-    }
+    Vue.nextTick(() => {
+      if(!oriobj.historyConfig) {
+        oriobj.$socket.client.emit('listDashBoard');
+      }
+    });
+    this.$socket.client.on('dashBoardEventLog', this.socketdashBoardEventLog);
     this.$socket.client.on('dashBoardUnreaded', this.socketdashBoardUnreaded);
     this.$socket.client.on('createUsersReport', this.socketcreateUsersReport);
     this.$socket.client.on('listDashBoard', this.socketlistDashBoard);
