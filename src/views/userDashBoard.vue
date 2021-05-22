@@ -1332,7 +1332,6 @@ export default {
     this.localLoaded = true;
   },
   created () {
-    let oriobj = this;
     this.$emit('viewIn', {
       text: 'DashBoard',
       icon: 'fa-tachometer-alt',
