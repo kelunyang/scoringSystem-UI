@@ -1341,11 +1341,9 @@ export default {
     });
     this.$emit('timerOn', true);
     this.$emit('toastPop', 'DashBoard更新中');
-    Vue.nextTick(() => {
-      if(!oriobj.historyConfig) {
-        oriobj.$socket.client.emit('listDashBoard');
-      }
-    });
+    if(!this.historyConfig) {
+      this.$socket.client.emit('listDashBoard');
+    }
     this.$socket.client.on('dashBoardEventLog', this.socketdashBoardEventLog);
     this.$socket.client.on('dashBoardUnreaded', this.socketdashBoardUnreaded);
     this.$socket.client.on('createUsersReport', this.socketcreateUsersReport);
