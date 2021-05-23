@@ -1704,6 +1704,8 @@ export default {
               } else if(issue.version.type.indexOf('pdf') > -1) {
                 this.previousGoto = issue.position
               }
+              this.disableCompareMode = true;
+              this.$emit('toastPop', '這則Issue與舊版文件有關，對比模式已自動開啟');
             }
           }
         }
@@ -1888,10 +1890,10 @@ export default {
       return item.loaded ? 'd-flex flex-column loadedItem' : 'd-flex flex-column loadingItem';
     },
     objectiveWConvert: function () {
-      return this.objectiveW ? '隱藏審查指標' : '顯示審查指標';
+      return this.objectiveW ? '隱藏審查目標清單' : this.currentStage.isPM || this.currentStage.isReviewer ? '同意通過審查目標' : '查看審查目標';
     },
     objectiveConvert: function (data) {
-      return 'signUser' in data ? '標記為未完成' : '標記為完成';
+      return 'signUser' in data ? '撤回完成許可（請按此確認）' : '本目標可通過（請按此確認）';
     },
     updateKBTag: function (value) {
       this.currentKB.tag = value;

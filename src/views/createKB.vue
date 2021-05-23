@@ -1,6 +1,148 @@
 <template>
   <v-sheet class='pa-0'>
     <v-dialog
+      v-model='pointerW'
+      fullscreen
+      hide-overlay
+      scrollable
+      transition="dialog-bottom-transition"
+    >
+      <v-card tile>
+        <v-toolbar dark color='primary'>
+          <v-btn
+            icon
+            dark
+            @click="pointerW = false"
+          >
+            <v-icon>fa-times</v-icon>
+          </v-btn>
+          <v-toolbar-title>快速指派用戶標籤</v-toolbar-title>
+        </v-toolbar>
+        <v-card-actions>
+          <v-btn class='ma-1' @click='tagUserW = true'>快速建立新的用戶群組標籤</v-btn>
+          <v-btn class='ma-1' @click='execPointer'>執行指派</v-btn>
+        </v-card-actions>
+        <v-card-text class='pa-5 text-left black--text text-body-1'>
+          <v-alert v-if='pointerMin === 0' outlined type='error' icon='fa-skull' class='text-left'>你選擇了{{ selectedKBs.length }}個知識點，其中有知識點根本沒有階段，無法派送！</v-alert>
+          <div v-if='pointerMin > 0' class='d-flex flex-column'>
+            <v-alert outlined type='info' icon='fa-info' class='text-left'>你選擇了{{ selectedKBs.length }}個知識點（清單在底部），他們最少具有{{ pointerMax }}個階段</v-alert>
+            <div class='text-subtitle-2 font-weight-blod'>要權限標籤打入這些知識點的哪個階段裡？</div>
+            <v-slider
+              :label='"統一打入第"+pointerStage+"個階段？"'
+              :min='pointerMin'
+              :max='pointerMax'
+              v-model="pointerStage"
+              thumb-label
+            ></v-slider>
+            <div class='text-subtitle-2 font-weight-blod'>新增到該階段的PM群組標籤</div>
+            <tag-filter
+              :mustSelected='false'
+              @updateTags='updateTags'
+              :single='false'
+              :selectedItem='pointerpmTags'
+              @valueUpdated='pointerPMTagUpdated'
+              :candidatedItem='savedTags'
+              :createable='false'
+              label='請輸入新增到該階段的PM標籤'
+            />
+            <div class='d-flex flex-row flex-wrap ma-1'>
+              <v-chip
+                v-for='rt in recentTags'
+                :key="'recentpm'+rt._id" @click='addpointerPMTag(rt._id)'
+                class='ma-1'
+              >
+                {{ tagQuery(rt._id) }}
+              </v-chip>
+            </div>
+            <div class='text-subtitle-2 font-weight-blod'>新增到該階段的審查者群組標籤</div>
+            <tag-filter
+              :mustSelected='false'
+              @updateTags='updateTags'
+              :single='false'
+              :selectedItem='pointerreviewerTags'
+              @valueUpdated='pointerreviewerTagUpdated'
+              :candidatedItem='savedTags'
+              :createable='false'
+              label='請輸入新增到該階段的審查者標籤'
+            />
+            <div class='d-flex flex-row flex-wrap ma-1'>
+              <v-chip
+                v-for='rt in recentTags'
+                :key="'recentreviewer'+rt._id" @click='addpointerReviewerTag(rt._id)'
+                class='ma-1'
+              >
+                {{ tagQuery(rt._id) }}
+              </v-chip>
+            </div>
+            <div class='text-subtitle-2 font-weight-blod'>新增到該階段的廠商群組標籤</div>
+            <tag-filter
+              :mustSelected='false'
+              @updateTags='updateTags'
+              :single='false'
+              :selectedItem='pointervendorTags'
+              @valueUpdated='pointervendorTagUpdated'
+              :candidatedItem='savedTags'
+              :createable='false'
+              label='請輸入新增到該階段的廠商標籤'
+            />
+            <div class='d-flex flex-row flex-wrap ma-1'>
+              <v-chip
+                v-for='rt in recentTags'
+                :key="'recentvendor'+rt._id" @click='addpointerVendorTag(rt._id)'
+                class='ma-1'
+              >
+                {{ tagQuery(rt._id) }}
+              </v-chip>
+            </div>
+            <div class='text-subtitle-2 font-weight-blod'>新增到該階段的寫手群組標籤</div>
+            <tag-filter
+              :mustSelected='false'
+              @updateTags='updateTags'
+              :single='false'
+              :selectedItem='pointerwriterTags'
+              @valueUpdated='pointerwriterTagUpdated'
+              :candidatedItem='savedTags'
+              :createable='false'
+              label='請輸入新增到該階段的寫手標籤'
+            />
+            <div class='d-flex flex-row flex-wrap ma-1'>
+              <v-chip
+                v-for='rt in recentTags'
+                :key="'recentwriter'+rt._id" @click='addpointerWriterTag(rt._id)'
+                class='ma-1'
+              >
+                {{ tagQuery(rt._id) }}
+              </v-chip>
+            </div>
+            <div class='text-subtitle-2 font-weight-blod'>新增到該階段的行政組群組標籤</div>
+            <tag-filter
+              :mustSelected='false'
+              @updateTags='updateTags'
+              :single='false'
+              :selectedItem='pointerfinalTags'
+              @valueUpdated='pointerfinalTagUpdated'
+              :candidatedItem='savedTags'
+              :createable='false'
+              label='請輸入新增到該階段的行政組標籤'
+            />
+            <div class='d-flex flex-row flex-wrap ma-1'>
+              <v-chip
+                v-for='rt in recentTags'
+                :key="'recentfinal'+rt._id" @click='addpointerFinalTag(rt._id)'
+                class='ma-1'
+              >
+                {{ tagQuery(rt._id) }}
+              </v-chip>
+            </div>
+            <div class='text-subtitle-2 font-weight-blod'>你選取的知識點清單</div>
+            <ol>
+              <li v-for='KB in scanPointerKBs' :key='"pointer"+KB._id'>{{ KB.title }}({{ KB.stages.length }}個階段)</li>
+            </ol>
+          </div>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+    <v-dialog
       v-model="fabRemoveKB"
       max-width="50vw"
     >
@@ -617,7 +759,7 @@
         :content='selectedKBs.length'
         :value='selectedKBs.length'
       >
-        <v-tooltip bottom>
+        <v-tooltip bottom v-if='selectedKBs.length > 0'>
           <template v-slot:activator="{ on, attrs }">
             <v-btn
               v-bind="attrs" v-on="on"
@@ -638,6 +780,7 @@
         overlap
         :content='selectedKBs.length'
         :value='selectedKBs.length'
+        v-show='currentKB._id !== ""'
       >
         <v-tooltip bottom v-if='selectedKBs.length > 0'>
           <template v-slot:activator="{ on, attrs }">
@@ -653,7 +796,29 @@
               <v-icon>fa-copy</v-icon>
             </v-btn>
           </template>
-          <span>複製知識點的流程設定（也會複製0秒的Issue，不包含Issue附件和目標）</span>
+          <span>複製知識點的流程設定</span>
+        </v-tooltip>
+      </v-badge>
+      <v-badge
+        color="red"
+        overlap
+        :content='selectedKBs.length'
+        :value='selectedKBs.length'
+      >
+        <v-tooltip bottom v-if='selectedKBs.length > 0'>
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn
+              v-bind="attrs" v-on="on"
+              fab
+              dark
+              small
+              color="blue darken-4"
+              @click.stop='scanPointerKB'
+            >
+              <v-icon>fa-users</v-icon>
+            </v-btn>
+          </template>
+          <span>大量指派用戶標籤到選定知識點</span>
         </v-tooltip>
       </v-badge>
     </v-speed-dial>
@@ -799,7 +964,7 @@
                 >
                   <div class='d-flex flex-column' :key="KBitem._id + 'handler'">
                     <div class='d-flex flex-row blue-grey lighten-5'>
-                      <div class='flex-grow-1 text-left'>
+                      <div class='flex-grow-1 text-left text-h6'>
                         {{ KBitem.title }}
                       </div>
                       <div class='align-center flex-grow-0 flex-shrink-1 ma-0 pa-0 d-flex flex-row'>
@@ -931,6 +1096,7 @@ import marked from 'marked';
 import _map from 'lodash/map';
 import _find from 'lodash/find';
 import _uniq from 'lodash/uniq';
+import _uniqWith from 'lodash/uniqWith';
 import _findIndex from 'lodash/findIndex';
 import _flatten from 'lodash/flatten';
 import _orderBy from 'lodash/orderBy';
@@ -1023,32 +1189,84 @@ export default {
     }
   },
   methods: {
-    socketsetStage: function (data) {
+    socketpointerStageTags: function () {
+      this.$emit('toastPop', '快速指派操作完成...');
+      this.pointerW = false;
+    },
+    execPointer: function () {
+      this.$emit('toastPop', '送出快速指派中...');
+      this.$socket.client.emit('pointerStageTags', {
+        KBs: this.selectedKBs,
+        tag: this.selectedKBTag,
+        stagePointer: this.pointerStage,
+        writerTags: this.pointerwriterTags,
+        vendorTags: this.pointerwriterTags,
+        reviewerTags: this.pointervendorTags,
+        pmTags: this.pointerpmTags,
+        finalTags: this.pointerfinalTags
+      });
+    },
+    scanPointerKB: function () {
+      this.scanPointerKBs = [];
+      for(let i=0; i<this.selectedKBs.length; i++) {
+        let search = this.selectedKBs[i];
+        for(let k=0;k<this.DB.length;k++) {
+          let KBs = this.DB[k].KBs;
+          let KB = _find(KBs, (item) => {
+            return item._id === search;
+          });
+          if(KB !== undefined) {
+            this.pointerMin = KB.stages.length > 0 ? 1 : 0;
+            this.scanPointerKBs.push(KB);
+          }
+        }
+      }
+      let maxs = _map(this.scanPointerKBs, (item) => {
+        return item.stages.length;
+      });
+      let sorted = maxs.sort((a, b) => {
+        return a-b;
+      });
+      this.pointerMax = sorted.length > 0 ? sorted[0] : this.pointerMin;
+      this.pointerfinalTags = [];
+      this.pointerwriterTags = [];
+      this.pointervendorTags = [];
+      this.pointerreviewerTags = [];
+      this.pointerpmTags = [];
+      this.pointerStage = this.pointerMin;
+      this.pointerW = true;
+    },
+    socketpriviTagUsed: function (data) {
       let now = moment().unix();
       let tags = this.recentTags;
       let newTags = [];
       let successTag = _flatten([data.pmTags, data.reviewerTags, data.vendorTags, data.writerTags, data.finalTags]);
-      for(let i=0; i<successTag.length; i++) {
-        let workingTag = successTag[i];
-        let tag = _find(tags, (item) => {
-          return item._id === workingTag[i];
-        });
-        if(tag !== undefined) {
-          tag.tick = now;
-        } else {
-          newTags.push({
-            _id: workingTag,
-            tick: now
+      if(successTag.length > 0) {
+        for(let i=0; i<successTag.length; i++) {
+          let workingTag = successTag[i];
+          let tag = _find(tags, (item) => {
+            return item._id === workingTag[i];
           });
+          if(tag !== undefined) {
+            tag.tick = now;
+          } else {
+            newTags.push({
+              _id: workingTag,
+              tick: now
+            });
+          }
         }
+        for(let i=0; i<newTags.length; i++) {
+          let workingTag = newTags[i];
+          tags.push(workingTag);
+        }
+        let sorted = _orderBy(tags, ['tick'], ['desc']);
+        let uniqed = _uniqWith(sorted, (aKB, bKB) => {
+          return aKB._id === bKB._id;
+        });
+        this.recentTags = _slice(uniqed, 0 , 5);
+        localStorage.setItem('recentEditTags', JSON.stringify(this.recentTags));
       }
-      for(let i=0; i<newTags.length; i++) {
-        let workingTag = newTags[i];
-        tags.push(workingTag);
-      }
-      let sorted = _orderBy(tags, ['tick'], ['desc']);
-      this.recentTags = _slice(sorted, 0 , 5);
-      localStorage.setItem('recentEditTags', JSON.stringify(this.recentTags));
     },
     addFinalTag: function (data) {
       let finalTags = [...this.currentStage.finalTags];
@@ -1074,6 +1292,31 @@ export default {
       let pmTags = [...this.currentStage.pmTags];
       pmTags.push(data);
       this.currentStage.pmTags = _uniq(pmTags);
+    },
+    addpointerFinalTag: function (data) {
+      let pointerfinalTags = [...this.pointerfinalTags];
+      pointerfinalTags.push(data);
+      this.pointerfinalTags = _uniq(pointerfinalTags);
+    },
+    addpointerWriterTag: function (data) {
+      let pointerwriterTags = [...this.pointerwriterTags];
+      pointerwriterTags.push(data);
+      this.pointerwriterTags = _uniq(pointerwriterTags);
+    },
+    addpointerVendorTag: function (data) {
+      let pointervendorTags = [...this.pointervendorTags];
+      pointervendorTags.push(data);
+      this.pointervendorTags = _uniq(pointervendorTags);
+    },
+    addpointerReviewerTag: function (data) {
+      let pointerreviewerTags = [...this.pointerreviewerTags];
+      pointerreviewerTags.push(data);
+      this.pointerreviewerTags = _uniq(pointerreviewerTags);
+    },
+    addpointerPMTag: function (data) {
+      let pointerpmTags = [...this.pointerpmTags];
+      pointerpmTags.push(data);
+      this.pointerpmTags = _uniq(pointerpmTags);
     },
     getUsers: function () {
       if(this.filteruserTag.length > 0) {
@@ -1459,6 +1702,21 @@ export default {
     byteConvert: function (size) {
       return prettyBytes(size);
     },
+    pointerreviewerTagUpdated: function (val) {
+      this.pointerreviewerTags = val;
+    },
+    pointervendorTagUpdated: function (val) {
+      this.pointervendorTags = val;
+    },
+    pointerwriterTagUpdated: function (val) {
+      this.pointerwriterTags = val;
+    },
+    pointerfinalTagUpdated: function (val) {
+      this.pointerfinalTags = val;
+    },
+    pointerPMTagUpdated: function (val) {
+      this.pointerpmTags = val;
+    },
     filterreviewerTagUpdated: function (val) {
       this.currentStage.reviewerTags = val;
     },
@@ -1577,6 +1835,16 @@ export default {
   },
   data () {
     return {
+      scanPointerKBs: [],
+      pointerfinalTags: [],
+      pointerwriterTags: [],
+      pointervendorTags: [],
+      pointerreviewerTags: [],
+      pointerpmTags: [],
+      pointerMin: 0,
+      pointerMax: 1,
+      pointerStage: 0,
+      pointerW: false,
       fabRemoveKB: false,
       tagUserW: false,
       selectednewTags: [],
@@ -1648,7 +1916,8 @@ export default {
       DB: this.DB,
       tag: this.selectedKBTag
     });
-    this.$socket.client.off('setStage', this.socketsetStage);
+    this.$socket.client.off('pointerStageTags', this.socketpointerStageTags);
+    this.$socket.client.off('priviTagUsed', this.socketpriviTagUsed);
     this.$socket.client.off('modUserTags', this.socketmodUserTags);
     this.$socket.client.off('getUsers', this.socketgetUsers);
     this.$socket.client.off('getTagUsers', this.socketgetUsers);
@@ -1692,7 +1961,8 @@ export default {
     if(recentTags) {
       this.recentTags = JSON.parse(recentTags);
     }
-    this.$socket.client.on('setStage', this.socketsetStage);
+    this.$socket.client.on('pointerStageTags', this.socketpointerStageTags);
+    this.$socket.client.on('priviTagUsed', this.socketpriviTagUsed);
     this.$socket.client.on('modUserTags', this.socketmodUserTags);
     this.$socket.client.on('getUsers', this.socketgetUsers);
     this.$socket.client.on('getTagUsers', this.socketgetUsers);

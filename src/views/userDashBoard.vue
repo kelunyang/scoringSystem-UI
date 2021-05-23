@@ -581,7 +581,7 @@
     <v-sheet v-if='dashboardPopulated' class='pa-0 ma-0 d-flex flex-column'>
       <div v-if='progressList.length === 0'>您目前沒有待處理的項目</div>
       <div class='d-flex flex-row' v-if='progressList.length > 0'>
-        <v-text-field outlined clearable dense class='flex-grow-1' label='搜尋知識點關鍵字' prepend-icon="fa-search" v-model="queryTerm"></v-text-field>
+        <v-text-field outlined clearable dense class='flex-grow-1' label='搜尋知識點關鍵字，可以蒐科目、章節、排序、標題，輸入部分關鍵字即可' prepend-icon="fa-search" v-model="queryTerm"></v-text-field>
         <v-btn color='indigo darken-4' class='white--text ma-1' @click="generateList">搜尋</v-btn>
         <v-btn color="brown darken-4" class='white--text ma-1' @click="clearQueryTerm">清除</v-btn>
       </div>
@@ -609,6 +609,7 @@ import _toString from 'lodash/toString';
 import _find from 'lodash/find';
 import _uniq from 'lodash/uniq';
 import _orderBy from 'lodash/orderBy';
+import _uniqWith from 'lodash/uniqWith';
 import _padStart from 'lodash/padStart';
 import _map from 'lodash/map';
 import _includes from 'lodash/includes';
@@ -616,6 +617,7 @@ import _flatten from 'lodash/flatten';
 import _countBy from 'lodash/countBy';
 import _findIndex from 'lodash/findIndex';
 import _intersectionWith from 'lodash/intersectionWith';
+import _head from 'lodash/head';
 import { v4 as uuidv4 } from 'uuid';
 import VueApexCharts from 'vue-apexcharts';
 import prettyBytes from 'pretty-bytes';
@@ -683,29 +685,29 @@ export default {
       this.injectUnread(data);
       this.$emit('toastPop', '未讀取Issue清單更新完成');
     },
-    clearQueryTerm: function() {
+    clearQueryTerm:async function() {
       this.queryTerm = '';
-      this.generateList();
+      await this.generateList();
     },
-    clearFilterTag: function() {
+    clearFilterTag:async function() {
       this.selectedFilterTags = '';
-      this.generateList();
+      await this.generateList();
     },
-    generateList: function() {
+    generateList: async function() {
       let now = moment().unix();
       let list = [];
       let oriobj = this;
       this.$emit('toastPop', '整理清單中，請稍後...');
-      if(oriobj.selectedFilterTags.length > 0) {
-        for (let i = 0; i < oriobj.selectedFilterTags.length; i++) {
-          let tag = oriobj.selectedFilterTags[i];
+      if(this.selectedFilterTags.length > 0) {
+        for (let i = 0; i < this.selectedFilterTags.length; i++) {
+          let tag = this.selectedFilterTags[i];
           let found = _filter(this.progressList, (item) => {
             return _includes(item.tag, tag);
           });
           if(found.length > 0) {
-            oriobj.queriedChapters.push(oriobj.selectedKBTag);
-            oriobj.queriedChapters = _uniq(oriobj.queriedChapters);
-            localStorage.setItem('queriedChapters', JSON.stringify(oriobj.queriedChapters));
+            this.queriedChapters.push(this.selectedKBTag);
+            this.queriedChapters = _uniq(this.queriedChapters);
+            localStorage.setItem('queriedChapters', JSON.stringify(this.queriedChapters));
             list.push(found);
           }
         }
@@ -715,7 +717,7 @@ export default {
       }
       if(this.queryTerm !== '') {
         list = _filter(list, (item) => {
-          return (new RegExp(oriobj.queryTerm, 'g')).test(item.title + item.desc);
+          return (new RegExp(oriobj.queryTerm, 'g')).test(item.mainTag+item.mainChapter+item.sort+item.title + item.desc);
         });
       }
       let maxDig = 1;
@@ -732,6 +734,16 @@ export default {
         let KB = list[i];
         KB.attention = 0;
         KB.selected = false;
+        let chapter = _head(KB.chapter);
+        KB.mainChapter = chapter === undefined ? '' : chapter.title;
+        let mtag = _head(KB.tag);
+        let mainTag = undefined;
+        if(mtag !== undefined) {
+          mainTag = _find(this.savedTags, (tag) => {
+            return tag._id === mtag;
+          });
+        }
+        KB.mainTag = mainTag === undefined ? '' : mainTag.name;
         KB.sortRanking = KB.tag.length > 0 ? KB.tag[0] : KB.title;
         KB.sortRanking += KB.chapter.length > 0 ? KB.chapter[0]._id : KB.title;
         let sort = _padStart(KB.sort, maxDig, '0');
@@ -798,6 +810,9 @@ export default {
           }
           list = _flatten(result);
         }
+        list = _uniqWith(list, (aKB, bKB) => {
+          return aKB._id === bKB._id;
+        });
         list.sort((a, b) => {
           let aTime = a.attention > 0 ? aTime * 100000 : Math.abs(aTime);
           let bTime = b.attention > 0 ? bTime * 100000 : Math.abs(bTime);
@@ -825,21 +840,19 @@ export default {
       this.issueTimer = undefined;
       this.eventTimer = undefined;
       this.$emit('toastPop', '清單整理完成，請稍後...');
-      Vue.nextTick(() => {
-        oriobj.renderList = convertedList;
-        if(oriobj.unreadedList.length === 0) {
-          oriobj.$emit('toastPop', '5秒後開始下載未讀取Issue清單（完成後您會在每個知識點左下方看到數量）');
-          oriobj.issueTimer = setTimeout(() => {
-            oriobj.$socket.client.emit('dashBoardUnreaded', requestList);
-          }, 5000);
-        }
-        if(oriobj.eventList.length === 0) {
-          oriobj.$emit('toastPop', '3秒後開始下載知識點編輯紀錄（完成後您會在每個知識點右上方看到最後一次的編輯紀錄）');
-          oriobj.eventTimer = setTimeout(() => {
-            oriobj.$socket.client.emit('dashBoardEventLog', requestList);
-          }, 3000);
-        }
-      });
+      this.renderList = convertedList;
+      if(this.unreadedList.length === 0) {
+        this.$emit('toastPop', '5秒後開始下載未讀取Issue清單（完成後您會在每個知識點左下方看到數量）');
+        this.issueTimer = setTimeout(() => {
+          this.$socket.client.emit('dashBoardUnreaded', requestList);
+        }, 5000);
+      }
+      if(this.eventList.length === 0) {
+        this.$emit('toastPop', '3秒後開始下載知識點編輯紀錄（完成後您會在每個知識點右上方看到最後一次的編輯紀錄）');
+        this.eventTimer = setTimeout(() => {
+          this.$socket.client.emit('dashBoardEventLog', requestList);
+        }, 3000);
+      }
     },
     renderChart: function() {
       let steps = [];
@@ -902,7 +915,7 @@ export default {
       this.currentKB = data;
       this.$socket.client.emit('getKBVersions', data._id);
     },
-    socketlistDashBoard: function (data) {
+    socketlistDashBoard:async function (data) {
       let oriobj = this;
       this.$emit('timerOn', false);
       this.$emit('toastPop', '清單下載完成，請稍後...');
@@ -912,7 +925,7 @@ export default {
         data[i].eventLog = [];
       }
       this.progressList = data;
-      this.generateList();
+      await this.generateList();
       this.dashboardPopulated = true;
       //this.dashboardPopulated = true;
       this.$emit('toastPop', '更新清單完成');
@@ -1092,18 +1105,18 @@ export default {
     }
   },
   watch: {
-    queryHistory: function () {
+    queryHistory:async function () {
       if(this.initialized) {
         this.initialized = false;
-        this.generateList();
+        await this.generateList();
         this.renderChart();
         this.initialized = true;
       }
     },
-    sortingRule: function () {
+    sortingRule:async function () {
       if(this.initialized) {
         this.initialized = false;
-        this.generateList();
+        await this.generateList();
         this.renderChart();
         this.initialized = true;
       }
@@ -1131,7 +1144,6 @@ export default {
         window.localStorage.setItem('initHistory', JSON.stringify(this.initHistory));
       }
       this.queryHistory = this.initHistory;
-      this.$socket.client.emit('listDashBoard');
     },
     versionFile: {
       immediate: true,
@@ -1253,7 +1265,6 @@ export default {
       statisticSteps: 1,
       initStatstics: false,
       initHistory: false,
-      historyConfig: false,
       initW: false,
       dashBoardFirstUse: true,
       localLoaded: false,
@@ -1324,7 +1335,6 @@ export default {
     let initHistory = window.localStorage.getItem('initHistory');
     if(initHistory) {
       this.initHistory = JSON.parse(initHistory);
-      this.historyConfig = true;
     }
     if(this.dashBoardFirstUse) {
       this.initW = true;
@@ -1340,9 +1350,6 @@ export default {
     });
     this.$emit('timerOn', true);
     this.$emit('toastPop', 'DashBoard更新中');
-    if(!this.historyConfig) {
-      this.$socket.client.emit('listDashBoard');
-    }
     this.$socket.client.on('dashBoardEventLog', this.socketdashBoardEventLog);
     this.$socket.client.on('dashBoardUnreaded', this.socketdashBoardUnreaded);
     this.$socket.client.on('createUsersReport', this.socketcreateUsersReport);
@@ -1359,6 +1366,7 @@ export default {
     if(queriedChapters) {
       this.queriedChapters = JSON.parse(queriedChapters);
     }
+    this.$socket.client.emit('listDashBoard');
   }
 };
 </script>

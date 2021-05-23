@@ -39,7 +39,16 @@
     </div>
     <div v-if='currentUser._id !== ""' class='flex-grow-1 d-flex flex-column'>
       <div>{{ currentUser.name }} 已登入 </div>
-      <v-btn class='flex-grow-1 indigo darken-4 white--text ma-3 text-subtitle-2 font-weight-bold' link href="#/userDashBoard" >進入DashBoard</v-btn>
+      <v-btn 
+        elevation="3"
+        x-large
+        style='width: 50%'
+        class='flex-grow-1 indigo darken-4 white--text ma-3 text-h6 font-weight-bold'
+        link
+        href="#/userDashBoard"
+      >
+        進入DashBoard
+      </v-btn>
     </div>
   </v-sheet>
 </template>

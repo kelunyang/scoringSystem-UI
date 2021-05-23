@@ -2,11 +2,14 @@
   <v-main class='pa-0 mt-1 mb-1 ml-0 mr-0 d-flex black--text'>
     <v-row no-gutters class='pa-0 mb-1'>
       <v-col class='d-flex flex-row pa-0'>
-        <span class='text-h6 text-decoration-underline text-left font-weight-bold'><span class='text-body-2 blue-grey--text darken-4'>[{{ chapterConverter(currentItem.chapter) }}-{{ (currentItem.sort+1) }}]</span>{{ currentItem.title }}</span>
+        <span class='text-h6 text-decoration-underline text-left font-weight-bold'>{{ currentItem.title }}</span>
       </v-col>
     </v-row>
-    <v-row v-if="currentItem.eventLog.length > 0" no-gutters>
-      <v-col class='text-right d-flex justify-end text-caption pa-1'>
+    <v-row no-gutters  class='d-flex justify-space-between text-caption pa-1'>
+      <v-col class='text-left'>
+        [{{currentItem.mainTag}}-{{ currentItem.mainChapter }}-{{ (currentItem.sort+1) }}]
+      </v-col>
+      <v-col class='text-right'>
         <v-icon small>fas fa-paw</v-icon>{{ announceEvent.desc }}[{{ announceEvent.user.name }} @ {{ dateConvert(announceEvent.tick) }}]
       </v-col>
     </v-row>
@@ -173,10 +176,6 @@ export default {
       stageConvert: function (step) {
         return step > 0 ? this.currentItem.stages[step-1].name : "未啟動";
       },
-      chapterConverter: function (chs) {
-        let chapter = _head(chs);
-        return chapter === undefined ? "" : chapter.title;
-      },
       rangeConvert: function (value, start, end) {
         return _inRange(value, start - 0.001, end + 0.001);
       },
@@ -228,6 +227,8 @@ export default {
       return {
         currentItem: {
           _id: '',
+          mainChapter: '',
+          mainTag: '',
           currentStep: 0,
           isPM: false,
           isVendor: false,

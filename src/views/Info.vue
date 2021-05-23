@@ -444,6 +444,11 @@ export default {
       }
     },
     socketgetfeedbackList: function (data) {
+      this.$socket.client.emit('getGithubBackendCommit');
+      this.$socket.client.emit('getGithubFrontendCommit');
+      this.$socket.client.emit('getsiteAdminUsers', [
+        'settingTags'
+      ]);
       this.histroyListPopulated = true;
       this.feedbackList = data;
     },
@@ -733,7 +738,6 @@ export default {
     this.$socket.client.off('getGithubFrontendCommit', this.socketgetGithubFrontendCommit);
   },
   created () {
-    let oriobj = this;
     this.$emit('viewIn', {
       text: '關於本系統&許願池',
       icon: 'fa-info-circle',
@@ -755,14 +759,7 @@ export default {
     this.$socket.client.on('feedbackFileUploadError', this.socketfeedbackFileUploadError);
     this.$socket.client.on('feedbackFileDeleteError', this.socketfeedbackfileDeleteError);
     this.$socket.client.on('requestfeedbackSlice', this.socketrequestfeedbackSlice);
-    Vue.nextTick(() => {
-      oriobj.$socket.client.emit('getsiteAdminUsers', [
-        'settingTags'
-      ]);
-      oriobj.$socket.client.emit('getfeedbackList');
-      oriobj.$socket.client.emit('getGithubBackendCommit');
-      oriobj.$socket.client.emit('getGithubFrontendCommit');
-    });
+    this.$socket.client.emit('getfeedbackList');
   }
 };
 </script>
