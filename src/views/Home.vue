@@ -37,7 +37,7 @@
         按此登入系統
       </v-btn>
     </div>
-    <div v-if='currentUser._id !== ""' class='flex-grow-1 d-flex flex-column'>
+    <div v-if='currentUser._id !== ""' class='d-flex flex-column flex-grow-1 justify-center align-center'>
       <div>{{ currentUser.name }} 已登入 </div>
       <v-btn 
         elevation="3"
