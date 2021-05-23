@@ -1,5 +1,5 @@
 <template>
-  <v-main>
+  <v-main class='pa-1'>
     <v-alert outlined v-model='loginFail' type="error" icon="fa-skull" class='text-left'>登入失敗</v-alert>
     <v-alert outlined v-model='loginSuccess' type="success" icon="fa-grin-wink" class='text-left'>登入成功！三秒之後跳轉首頁</v-alert>
     <v-alert outlined v-if='currentUser._id === ""' type='info' icon='fa-info-circle' class='text-left'>請注意帳號密碼大小寫</v-alert>

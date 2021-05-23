@@ -857,12 +857,16 @@ export default {
           oriobj.issueTimer = setTimeout(() => {
             oriobj.$socket.client.emit('dashBoardUnreaded', requestList);
           }, 5000);
+        } else {
+          oriobj.injectUnread(oriobj.unreadedList);
         }
         if(oriobj.eventList.length === 0) {
           oriobj.$emit('toastPop', '3秒後開始下載知識點編輯紀錄（完成後您會在每個知識點右上方看到最後一次的編輯紀錄）');
           oriobj.eventTimer = setTimeout(() => {
             oriobj.$socket.client.emit('dashBoardEventLog', requestList);
           }, 3000);
+        } else {
+          oriobj.injectEvents(oriobj.eventList);
         }
       });
     },
