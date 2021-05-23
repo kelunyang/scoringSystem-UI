@@ -581,7 +581,7 @@
     <v-sheet v-if='dashboardPopulated' class='pa-0 ma-0 d-flex flex-column'>
       <div v-if='progressList.length === 0'>您目前沒有待處理的項目</div>
       <div class='d-flex flex-row' v-if='progressList.length > 0'>
-        <v-text-field outlined clearable dense class='flex-grow-1' label='搜尋知識點關鍵字，可以蒐科目、章節、排序、標題，輸入部分關鍵字即可' prepend-icon="fa-search" v-model="queryTerm"></v-text-field>
+        <v-text-field outlined clearable dense class='flex-grow-1' label='搜尋知識點關鍵字，可以搜科目、章節、排序、標題，輸入部分關鍵字即可' prepend-icon="fa-search" v-model="queryTerm"></v-text-field>
         <v-btn color='indigo darken-4' class='white--text ma-1' @click="generateList">搜尋</v-btn>
         <v-btn color="brown darken-4" class='white--text ma-1' @click="clearQueryTerm">清除</v-btn>
       </div>

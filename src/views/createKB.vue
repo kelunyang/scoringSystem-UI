@@ -25,7 +25,7 @@
         <v-card-text class='pa-5 text-left black--text text-body-1'>
           <v-alert v-if='pointerMin === 0' outlined type='error' icon='fa-skull' class='text-left'>你選擇了{{ selectedKBs.length }}個知識點，其中有知識點根本沒有階段，無法派送！</v-alert>
           <div v-if='pointerMin > 0' class='d-flex flex-column'>
-            <v-alert outlined type='info' icon='fa-info' class='text-left'>你選擇了{{ selectedKBs.length }}個知識點（清單在底部），他們最少具有{{ pointerMax }}個階段</v-alert>
+            <v-alert outlined type='info' icon='fa-info' class='text-left'>你選擇了{{ selectedKBs.length }}個知識點（清單在底部），他們最少具有{{ pointerMax }}個階段，變更完要請用戶重新整理才會看到</v-alert>
             <div class='text-subtitle-2 font-weight-blod'>要權限標籤打入這些知識點的哪個階段裡？</div>
             <v-slider
               :label='"統一打入第"+pointerStage+"個階段？"'
