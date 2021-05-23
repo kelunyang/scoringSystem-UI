@@ -582,7 +582,7 @@
       <div v-if='progressList.length === 0'>您目前沒有待處理的項目</div>
       <div class='d-flex flex-row' v-if='progressList.length > 0'>
         <v-text-field outlined clearable dense class='flex-grow-1' label='搜尋知識點關鍵字，可以搜科目、章節、排序、標題，輸入部分關鍵字即可' prepend-icon="fa-search" v-model="queryTerm"></v-text-field>
-        <v-btn color='indigo darken-4' class='white--text ma-1' @click="generateList">搜尋</v-btn>
+        <v-btn color='indigo darken-4' class='white--text ma-1' @click="execSearch">搜尋</v-btn>
         <v-btn color="brown darken-4" class='white--text ma-1' @click="clearQueryTerm">清除</v-btn>
       </div>
       <div class='blue-grey--text darken-1 text-caption'>已篩選出{{ renderList.length }}個知識點，為節省資源，不會全部展現出來，往下滑會載入更多</div>
@@ -632,6 +632,14 @@ export default {
     ProgressTile: () => import(/* webpackPrefetch: true */ './modules/ProgressTile')
   },
   methods: {
+    execSearch:async function() {
+      if(this.initialized) {
+        this.initialized = false;
+        await this.generateList();
+        this.renderChart();
+        this.initialized = true;
+      }
+    },
     socketdashBoardEventLog: function(data) {
       this.$emit('timerOn', false);
       this.$emit('toastPop', '知識點編輯紀錄已下載，更新清單中');
@@ -688,10 +696,12 @@ export default {
     clearQueryTerm:async function() {
       this.queryTerm = '';
       await this.generateList();
+      this.renderChart();
     },
     clearFilterTag:async function() {
       this.selectedFilterTags = '';
       await this.generateList();
+      this.renderChart();
     },
     generateList: async function() {
       let now = moment().unix();
@@ -840,19 +850,21 @@ export default {
       this.issueTimer = undefined;
       this.eventTimer = undefined;
       this.$emit('toastPop', '清單整理完成，請稍後...');
-      this.renderList = convertedList;
-      if(this.unreadedList.length === 0) {
-        this.$emit('toastPop', '5秒後開始下載未讀取Issue清單（完成後您會在每個知識點左下方看到數量）');
-        this.issueTimer = setTimeout(() => {
-          this.$socket.client.emit('dashBoardUnreaded', requestList);
-        }, 5000);
-      }
-      if(this.eventList.length === 0) {
-        this.$emit('toastPop', '3秒後開始下載知識點編輯紀錄（完成後您會在每個知識點右上方看到最後一次的編輯紀錄）');
-        this.eventTimer = setTimeout(() => {
-          this.$socket.client.emit('dashBoardEventLog', requestList);
-        }, 3000);
-      }
+      await Vue.nextTick(() => {
+        oriobj.renderList = convertedList;
+        if(oriobj.unreadedList.length === 0) {
+          oriobj.$emit('toastPop', '5秒後開始下載未讀取Issue清單（完成後您會在每個知識點左下方看到數量）');
+          oriobj.issueTimer = setTimeout(() => {
+            oriobj.$socket.client.emit('dashBoardUnreaded', requestList);
+          }, 5000);
+        }
+        if(oriobj.eventList.length === 0) {
+          oriobj.$emit('toastPop', '3秒後開始下載知識點編輯紀錄（完成後您會在每個知識點右上方看到最後一次的編輯紀錄）');
+          oriobj.eventTimer = setTimeout(() => {
+            oriobj.$socket.client.emit('dashBoardEventLog', requestList);
+          }, 3000);
+        }
+      });
     },
     renderChart: function() {
       let steps = [];
@@ -926,6 +938,7 @@ export default {
       }
       this.progressList = data;
       await this.generateList();
+      this.renderChart();
       this.dashboardPopulated = true;
       //this.dashboardPopulated = true;
       this.$emit('toastPop', '更新清單完成');
@@ -1105,7 +1118,14 @@ export default {
     }
   },
   watch: {
-    queryHistory:async function () {
+    showStatstics: async function () {
+      if(this.showStatstics) {
+        if(this.convertedList.length > 0) {
+          this.renderChart();
+        }
+      }
+    },
+    queryHistory: async function () {
       if(this.initialized) {
         this.initialized = false;
         await this.generateList();

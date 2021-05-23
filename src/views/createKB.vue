@@ -28,7 +28,7 @@
             <v-alert outlined type='info' icon='fa-info' class='text-left'>你選擇了{{ selectedKBs.length }}個知識點（清單在底部），他們最少具有{{ pointerMax }}個階段，變更完要請用戶重新整理才會看到</v-alert>
             <div class='text-subtitle-2 font-weight-blod'>要權限標籤打入這些知識點的哪個階段裡？</div>
             <v-slider
-              :label='"統一打入第"+pointerStage+"個階段？"'
+              :label='"統一打入第"+pointerStage+"個階段"'
               :min='pointerMin'
               :max='pointerMax'
               v-model="pointerStage"
