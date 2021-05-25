@@ -1,70 +1,99 @@
 <template>
-  <v-main class='mt-1 mb-0 ml-0 mr-0 pa-1 black--text' style='border: 1px solid black'>
-    <v-row class='d-flex flex-row pa-0 ma-0'>
-      <div v-if='cCommit.tick > 0'>
-        <v-tooltip top v-if='cCommit.tick < issue.tick'>
-          <template v-slot:activator="{ on, attrs }">
-            <v-icon
-              dense
-              color="red accent-4"
-              v-bind="attrs" v-on="on"
-            >fa-history</v-icon>
-          </template>
-          <span>本Issue晚於您指定的版本發布</span>
-        </v-tooltip>
-      </div>
-      <div v-if='cUser.tick > 0'>
-        <v-tooltip top v-if='cUser.tick < issue.tick'>
-          <template v-slot:activator="{ on, attrs }">
-            <v-icon
-              dense
-              color="red accent-4"
-              v-bind="attrs" v-on="on"
-            >fa-user-clock</v-icon>
-          </template>
-          <span>本Issue晚於您登入之後發布</span>
-        </v-tooltip>
-      </div>
-      <v-spacer></v-spacer>
-      <v-btn
-        v-if='cStage.isPM || issue.user._id === currentUser._id'
-        @click='removeIssue(issue)'
-        color='grey lighten-1'
-        class='black--text'
-      >
-        刪除
-      </v-btn>
-      <v-btn
-        v-if='eDiff'
-        @click='sendDiff'
-        color='grey lighten-1'
-        class='black--text'
-      >
-        啟動對比
-      </v-btn>
-    </v-row>
-    <v-row class='pa-0 ma-0'>
-      <v-col cols='2' class='pa-0 ma-0 d-flex flex-column justify-center align-self-center align-center'>
-        <v-avatar>
+  <div class='d-flex issueItem flex-column mt-1 pa-1'>
+    <div class='d-flex flex-row justify-space-between'>
+      <div class='pa-0 ma-0 d-flex flex-row justify-start flex-shrink-1 flex-grow-0' style='min-width: 100px'>
+        <v-avatar size="36">
           <img :src='"https://avatars.dicebear.com/api/" + issue.user.types + "/" + encodeURIComponent(issue.user.name + "@" + issue.user.unit) + ".svg"' />
         </v-avatar>
-        <div class='text-caption'>{{ issue.user.name }}</div>
-        <div class='text-caption'>{{ issue.user.unit }}</div>
-      </v-col>
-      <v-col cols="10" class='text-left ma-0 pa-1'>
+        <div class='d-flex flex-column align-start'>
+          <div class='text-caption'>{{ issue.user.name }}</div>
+          <div class='text-caption'>{{ issue.user.unit }}</div>
+        </div>
+      </div>
+      <div class='d-flex d-flex flex-row justify-end flex-grow-1'>
+        <div v-if='cUser.tick > 0'>
+          <v-chip
+            v-if='cUser.tick < issue.tick'
+            color="red darken-4"
+            class="text-caption pa-1 mr-1"
+            label
+            outlined
+            text-color="red darken-4"
+          >
+            <v-icon left>
+              fa-user-clock
+            </v-icon>
+            晚於上次登入
+          </v-chip>
+        </div>
+        <div v-if='compareCommit.tick > 0'>
+          <v-chip
+            v-if='cCommit.tick < issue.tick'
+            color="red darken-4"
+            class="text-caption pa-1 mr-1"
+            label
+            outlined
+            text-color="red darken-4"
+          >
+            <v-icon left>
+              fas fa-history
+            </v-icon>
+            晚於指定版本
+          </v-chip>
+        </div>
+        <v-menu
+          offset-y
+          attach
+          transition="slide-y-transition"
+          v-if='cStage.isPM || issue.user._id === currentUser._id'
+        >
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn
+              color='grey lighten-1'
+              class='black--text'
+              v-bind="attrs" v-on="on"
+            >
+              刪除
+            </v-btn>
+          </template>
+          <v-sheet class='d-flex flex-column pa-1'>
+            <div class='text-h6'>確認刪除Issue？</div>
+            <v-btn
+              class='white--text ma-1'
+              color='red darken-4'
+              @click='removeIssue(issue)'
+            >
+              是，我要刪除Issue！
+            </v-btn>
+            <div class='text-caption'>如果你只是誤觸，請隨意點擊其他地方即會關閉本對話框</div>
+          </v-sheet>
+        </v-menu>
+        <v-btn
+          v-if='eDiff'
+          @click='sendDiff'
+          color='grey lighten-1'
+          class='black--text'
+          v-show='issue.body !== undefined'
+        >
+          啟動對比
+        </v-btn>
+      </div>
+    </div>
+    <div class='d-flex flex-column flex-grow-1 flex-shrink-0 text-left text-body-1 pt-1 pb-1' v-html="HTMLConverter(issue.body)"></div>
+    <div class='d-flex justify-space-between'>
+      <div class='d-flex flex-column justify-start'>
         <div class='text-caption'>{{ dateConvert(issue.tick) }}</div>
-        <div class='text-body-2' v-html="HTMLConverter(issue.body)"></div>
-      </v-col>
-    </v-row>
-    <v-row class='d-flex flex-row flex-wrap pa-2'>
-      <v-chip
-        v-for='file in issue.attachments'
-        :key="file._id"
-        class="ma-2"
-        @click="downloadFile(file)"
-      >{{ filenameConvert(file) }}</v-chip>
-    </v-row>
-  </v-main>
+      </div>
+      <div class='d-flex flex-row flex-shrink-0 flex-grow-1 justify-end align-center'>
+        <v-chip
+          v-for='file in issue.attachments'
+          :key="file._id"
+          class="ma-2"
+          @click="downloadFile(file)"
+        >{{ filenameConvert(file) }}</v-chip>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>

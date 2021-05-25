@@ -122,8 +122,8 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn @click='compareCommit = { tick: 0 }'>取消版本標記</v-btn>
-          <v-btn v-if='issueFilter.commit' @click='issueFilter.commit = false'>我只是要標記，不要過濾</v-btn>
-          <v-btn v-if='!issueFilter.commit' @click='issueFilter.commit = true'>啟動版本過濾</v-btn>
+          <v-btn v-if='issueFilterCommit' @click='issueFilterCommit = false'>我只是要標記，不要過濾</v-btn>
+          <v-btn v-if='!issueFilterCommit' @click='issueFilterCommit = true'>啟動版本過濾</v-btn>
           <v-btn @click='commitFilterW = false'>關閉對話框</v-btn>
         </v-card-actions>
       </v-card>
@@ -358,6 +358,33 @@
               <div class='text-caption red--text'>如果你只是誤觸，請隨意點擊其他地方即會關閉本對話框，如果你發圖後想預覽，點選Issue附件區的檔案名稱即可</div>
             </v-sheet>
           </v-menu>
+          <div>如果您只要下載截圖，請點右邊兩顆按鈕</div>
+          <v-tooltip top v-if='cType === "video" || cType === "pdf"'>
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                v-bind="attrs" v-on="on"
+                icon
+                color="light-blue darken-4"
+                @click='captureDOM(0)'
+              >
+                <v-icon>fa-camera</v-icon>
+              </v-btn>
+            </template>
+            <span>擷取並下載當前版畫面</span>
+          </v-tooltip>
+          <v-tooltip top v-if='pType === "video" || pType === "pdf"'>
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                v-bind="attrs" v-on="on"
+                icon
+                color="red darken-4"
+                @click='captureDOM(1)'
+              >
+                <v-icon>fa-camera</v-icon>
+              </v-btn>
+            </template>
+            <span>擷取對照版畫面</span>
+          </v-tooltip>
         </v-card-actions>
         <v-card-text class='text-left'>
           <paintable
@@ -434,15 +461,15 @@
             dark
             small
             :color="filterColor('time')"
-            @click.stop='issueFilter.time = !issueFilter.time'
+            @click.stop='issueFilterTime = !issueFilterTime'
             v-bind="attrs" v-on="on"
           >
-            <v-icon v-if='issueFilter.time'>far fa-clock</v-icon>
-            <v-icon v-if='!issueFilter.time'>fas fa-clock</v-icon>
+            <v-icon v-if='issueFilterTime'>far fa-clock</v-icon>
+            <v-icon v-if='!issueFilterTime'>fas fa-clock</v-icon>
           </v-btn>
         </template>
-        <span v-if='issueFilter.time'>我要看所有的Issue</span>
-        <span v-if='!issueFilter.time'>我要目前秒數的Issue</span>
+        <span v-if='issueFilterTime'>我要看所有的Issue</span>
+        <span v-if='!issueFilterTime'>我要目前秒數的Issue</span>
       </v-tooltip>
       <v-tooltip top v-if='currentVersions.length > 0'>
         <template v-slot:activator="{ on, attrs }">
@@ -466,15 +493,15 @@
             dark
             small
             :color="filterColor('flag')"
-            @click.stop='issueFilter.flag = !issueFilter.flag'
+            @click.stop='issueFilterFlag = !issueFilterFlag'
             v-bind="attrs" v-on="on"
           >
-            <v-icon v-if='!issueFilter.flag'>far fa-flag</v-icon>
-            <v-icon v-if='issueFilter.flag'>fas fa-flag</v-icon>
+            <v-icon v-if='!issueFilterFlag'>far fa-flag</v-icon>
+            <v-icon v-if='issueFilterFlag'>fas fa-flag</v-icon>
           </v-btn>
         </template>
-        <span v-if='!issueFilter.flag'>去除0秒的Issue</span>
-        <span v-if='issueFilter.flag'>看0秒的Issue</span>
+        <span v-if='!issueFilterFlag'>去除0秒的Issue</span>
+        <span v-if='issueFilterFlag'>看0秒的Issue</span>
       </v-tooltip>
       <v-tooltip top>
         <template v-slot:activator="{ on, attrs }">
@@ -483,15 +510,15 @@
             dark
             small
             :color="filterColor('closed')"
-            @click.stop='issueFilter.closed = !issueFilter.closed'
+            @click.stop='issueFilterClosed = !issueFilterClosed'
             v-bind="attrs" v-on="on"
           >
-            <v-icon v-if='!issueFilter.closed'>far fa-comment</v-icon>
-            <v-icon v-if='issueFilter.closed'>fas fa-comment</v-icon>
+            <v-icon v-if='!issueFilterClosed'>far fa-comment</v-icon>
+            <v-icon v-if='issueFilterClosed'>fas fa-comment</v-icon>
           </v-btn>
         </template>
-        <span v-if='!issueFilter.closed'>不論Issue狀態都顯示</span>
-        <span v-if='issueFilter.closed'>只看沒被關閉的Issue</span>
+        <span v-if='!issueFilterClosed'>不論Issue狀態都顯示</span>
+        <span v-if='issueFilterClosed'>只看沒被關閉的Issue</span>
       </v-tooltip>
       <v-tooltip top>
         <template v-slot:activator="{ on, attrs }">
@@ -724,19 +751,6 @@
                     <span v-if="cType === 'video'">加速播放</span>
                     <span v-if="cType === 'pdf'">下一頁</span>
                   </v-tooltip>
-                  <!-- <v-tooltip top v-if='cType === "video" || cType === "pdf"'>
-                    <template v-slot:activator="{ on, attrs }">
-                      <v-btn
-                        v-bind="attrs" v-on="on"
-                        icon
-                        color="light-blue darken-4"
-                        @click='captureDOM(0)'
-                      >
-                        <v-icon>fa-camera</v-icon>
-                      </v-btn>
-                    </template>
-                    <span>擷取當前播放畫面</span>
-                  </v-tooltip>-->
                   <v-tooltip top>
                     <template v-slot:activator="{ on, attrs }">
                       <v-btn
@@ -845,19 +859,6 @@
                     <span v-if='pType === "video"'>加速播放</span>
                     <span v-if='pType === "pdf"'>下一頁</span>
                   </v-tooltip>
-                  <!-- <v-tooltip top v-if='pType === "video" || pType === "pdf"'>
-                    <template v-slot:activator="{ on, attrs }">
-                      <v-btn
-                        v-bind="attrs" v-on="on"
-                        icon
-                        color="red darken-4"
-                        @click='captureDOM(1)'
-                      >
-                        <v-icon>fa-camera</v-icon>
-                      </v-btn>
-                    </template>
-                    <span>擷取當前播放畫面</span>
-                  </v-tooltip>-->
                   <v-tooltip top>
                     <template v-slot:activator="{ on, attrs }">
                       <v-btn
@@ -963,11 +964,23 @@
             :key='issue._id'
           >
             <issue-list
+              :issues='issuesInView'
+              :cStage='currentStage'
+              :dDetect='diffDetect'
               :issue='issue'
               :compareCommit='compareCommit'
               :compareUser='compareUser'
               :currentVersion='currentVersion'
+              :rStatus='readedStatus'
+              @status='setStatus'
+              @star='setStar'
+              @back='backtoIssueList'
               @view='getIssue'
+              @edit='editIssue'
+              @sendDiff='addDiff'
+              @download='downloadFile'
+              @remove='removeIssue'
+              @add='addIssue'
             />
           </v-lazy>
         </v-sheet>
@@ -1029,115 +1042,6 @@
             </div>
           </v-card-actions>
         </v-card>
-        <v-sheet
-          class='ma-0 pa-0 issueListW'
-          ref='issueListW'
-          v-show='issueListW'
-        >
-          <div class="d-flex flex-column align-self-start">
-            <div class='ma-0 pa-0 text-h6'>
-              {{ issuesInView.main.title }}
-            </div>
-            <div class='text-right text-caption d-flex flex-row'>
-              <div class="versionSign">{{ versionConvert(issuesInView.main.version) }}</div>
-              <div v-if='issuesInView.main.version === undefined || !("tick" in issuesInView.main.version)'>{{ timeConvert(issuesInView.main.position) }}</div>
-              <div v-else>{{ timeConvert(issuesInView.main.position) }} @  {{ versionnameConvert(issuesInView.main.version.name) }}版</div>
-            </div>
-            <div class='d-flex flex-row justify-end align-self-end ma-0 pa-0'>
-              <v-menu
-                offset-y
-                attach
-                transition="slide-y-transition"
-                v-if='!currentStage.isFinal'
-                v-show='!issuesInView.main.status'
-              >
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn
-                    class='white--text ma-1'
-                    color='red darken-4'
-                    v-bind="attrs" v-on="on"
-                  >
-                    回復Issue
-                  </v-btn>
-                </template>
-                <v-sheet class='d-flex flex-column pa-1'>
-                  <div class='text-h6'>確認回復Issue？</div>
-                  <v-btn
-                    class='white--text ma-1'
-                    color='red darken-4'
-                    @click='addIssue(issuesInView.main)'
-                  >
-                    是，我要回復Issue！
-                  </v-btn>
-                  <div class='text-caption'>如果你只是誤觸，請隨意點擊其他地方即會關閉本對話框，請注意，只有PM、審查者才有權力刪除Issue</div>
-                </v-sheet>
-              </v-menu>
-              <v-btn
-                class='white--text ma-1'
-                color='light-blue darken-4'
-                v-if='currentStage.isReviewer || currentStage.isPM'
-                @click='setStatus()'
-              >
-                {{ statusConvert() }}
-              </v-btn>
-              <v-btn
-                class='black--text ma-1'
-                color='grey lighten-1'
-                v-if='currentStage.isReviewer || currentStage.isPM'
-                @click='setStar()'
-              >
-                將Issue置頂
-              </v-btn>
-              <v-btn
-                class='black--text ma-1'
-                color='grey lighten-1'
-                @click='backtoIssueList'
-              >
-                回到列表（上一層）
-              </v-btn>
-            </div>
-            <v-lazy
-              :options="{
-                threshold: 0.5
-              }"
-              min-height="100"
-              transition="fade-transition"
-            >
-              <issue-view
-                :issue='issuesInView.main'
-                :compareCommit='compareCommit'
-                :compareUser='compareUser'
-                :currentStage="currentStage"
-                :enableDiff='diffDetect'
-                @edit='editIssue'
-                @sendDiff='addDiff'
-                @download='downloadFile'
-                @remove='removeIssue'
-              />
-            </v-lazy>
-            <v-lazy
-              :options="{
-                threshold: 0.5
-              }"
-              min-height="100"
-              transition="fade-transition"
-              v-for="issue in issuesInView.collections"
-              :key="issue._id"
-            >
-              <issue-view
-                :issue='issue'
-                :enableDiff='diffDetect'
-                :compareCommit='compareCommit'
-                :compareUser='compareUser'
-                :currentStage="currentStage"
-                @sendDiff='addDiff'
-                @edit='editIssue'
-                @download='downloadFile'
-                @remove='removeIssue'
-              />
-            </v-lazy>
-          </div>
-        </v-sheet>
       </v-col>
     </v-row>
     <div class='shotBlock' v-show='snapShot'>
@@ -1163,7 +1067,7 @@
   .viewArea {
     position: static;
   }
-  .viewArea, .issueW, .issueListW {
+  .viewArea, .issueW {
     background-color: white;
   }
   div.versionSign {
@@ -1313,7 +1217,6 @@ export default {
   name: 'videoReview',
   components: { 
     TipTap: () => import(/* webpackPrefetch: true */ './modules/TipTap'),
-    IssueView: () => import(/* webpackPrefetch: true */ './modules/IssueView'),
     IssueList: () => import(/* webpackPrefetch: true */ './modules/IssueList')
   },
   methods: {
@@ -1323,8 +1226,6 @@ export default {
     backtoIssueList: function () {
       this.$emit('toastPop', '更新已讀取Issue清單');
       this.$socket.client.emit('getReadedIssue');
-      this.issueListW = false;
-      this.filteredListW = true;
     },
     addDiff: function (issue) {
       let tempDiff = this.diffIssues;
@@ -1349,14 +1250,14 @@ export default {
     },
     filterColor: function (type) {
       if(type === 'time') {
-        if(this.issueFilter.time) {
+        if(this.issueFilterTime) {
           return 'red accent-4';
         } else {
           return 'light-blue darken-4';
         }
       }
       if(type === 'commit') {
-        if(this.issueFilter.commit) {
+        if(this.issueFilterCommit) {
           return 'red accent-4';
         } else {
           return 'light-blue darken-4';
@@ -1370,21 +1271,21 @@ export default {
         }
       }
       if(type === 'flag') {
-        if(this.issueFilter.flag) {
+        if(this.issueFilterFlag) {
           return 'red accent-4';
         } else {
           return 'light-blue darken-4';
         }
       }
       if(type === 'closed') {
-        if(this.issueFilter.closed) {
+        if(this.issueFilterClosed) {
           return 'red accent-4';
         } else {
           return 'light-blue darken-4';
         }
       }
       if(type === 'all') {
-        if(this.issueFilter.flag || this.compareUser.tick > 0 || this.issueFilter.time || this.issueFilter.closed || this.issueFilter.commit) {
+        if(this.issueFilterFlag || this.compareUser.tick > 0 || this.issueFilterTime || this.issueFilterClosed || this.issueFilterCommit) {
           return 'red accent-4';
         } else {
           return 'light-blue darken-4';
@@ -1551,7 +1452,6 @@ export default {
     },
     socketremoveIssue: function () {
       this.$emit('toastPop', 'Issue刪除完成！');
-      this.issueListW = false;
       this.issueW = false;
       this.filteredListW = true;
     },
@@ -1578,7 +1478,7 @@ export default {
       let item = _find(this.loadingItems, { icon: 'fa-comments' });
       item.loaded = true;
       this.issueListPopulated = true;
-      this.issueList = data;
+      this.issueList = [];
       let loaded = _find(this.loadingItems, { loaded: false });
       if(loaded === undefined) {
         this.loadW = false;
@@ -1592,6 +1492,9 @@ export default {
         }
         this.firstRun = false;
       }
+      Vue.nextTick(() => {
+        oriobj.issueList = data;
+      });
     },
     socketgetReadedIssue: function (data) {
       this.$emit('timerOn', false);
@@ -1623,9 +1526,11 @@ export default {
       this.issue.attachments = [];
       this.issue.parent = data.parent;
       this.issueW = true;
-      this.issueListW = false;
       this.filteredListW = false;
       this.fabIssue = false;
+    },
+    socketsetReadedIssue: function (data) {
+      this.readedStatus = data;
     },
     socketeditIssue: function (data) {
       this.issue._id = data._id;
@@ -1634,7 +1539,6 @@ export default {
       this.issue.attachments = data.attachments;
       this.issue.parent = data.parent;
       this.issueW = true;
-      this.issueListW = false;
       this.filteredListW = false;
     },
     editIssue: function (issue) {
@@ -1684,8 +1588,6 @@ export default {
     },
     getIssue: function (issue) {
       this.issuePointer = issue._id;
-      this.issueListW = true;
-      this.filteredListW = false;
       this.$socket.client.emit('setReadedIssue', issue._id);
       if('version' in issue) {
         if(issue.version !== undefined) {
@@ -1736,14 +1638,11 @@ export default {
     tipConvert: function () {
       return this.tipW ? '隱藏細部說明' : '查看細部說明';
     },
-    statusConvert: function () {
-      return this.issuesInView.main.status ? '重新開放此Issue' : '關閉此Issue';
+    setStar: function (issue) {
+      this.$socket.client.emit('setissueStar', issue._id);
     },
-    setStar: function () {
-      this.$socket.client.emit('setissueStar', this.issuesInView.main._id);
-    },
-    setStatus: function () {
-      this.$socket.client.emit('setissueStatus', this.issuesInView.main._id);
+    setStatus: function (issue) {
+      this.$socket.client.emit('setissueStatus', issue._id);
     },
     downloadFile: function (file) {
       this.$emit('downloadFile', file);
@@ -2048,6 +1947,7 @@ export default {
         this.currentPlayer.dispose();
         this.previousPlayer.dispose();
     }
+    this.$socket.client.off('setReadedIssue', this.socketsetReadedIssue);
     this.$socket.client.off('editIssue', this.socketeditIssue);
     this.$socket.client.off('addIssue', this.socketaddIssue);
     this.$socket.client.off('setIssue', this.socketsetIssue);
@@ -2066,6 +1966,7 @@ export default {
     window.removeEventListener('scroll', this.scrollEvent);
   },
   created () {
+    this.$socket.client.on('setReadedIssue', this.socketsetReadedIssue);
     this.$socket.client.on('editIssue', this.socketeditIssue);
     this.$socket.client.on('addIssue', this.socketaddIssue);
     this.$socket.client.on('setIssue', this.socketsetIssue);
@@ -2111,43 +2012,16 @@ export default {
                         return issue._id === oriobj.issuePointer;
                       });
       if(mainThread !== undefined) {
-        return {
-          main: mainThread,
-          collections: _sortBy(_filter(this.issueList, (issue) => {
-                        return issue.parent === oriobj.issuePointer;
-                      }), ['tick'])
-        };
+        return  {
+          id: mainThread._id,
+          issues: _sortBy(_filter(this.issueList, (issue) => {
+            return issue.parent === oriobj.issuePointer;
+          }), ['tick'])
+        }
       }
       return {
-        main: {
-          title: '',
-          body: '**用戶未輸入任何內容**',
-          user: {
-            types: 'bottts',
-            name: 'test',
-            unit: 'test'
-          },
-          attachments: [],
-          star: false,
-          status: false,
-          version: {}
-        },
-        collections: [
-            {
-            title: '',
-            body: '**用戶未輸入任何內容**',
-            user:
-            {
-              types: 'bottts',
-              name: 'test',
-              unit: 'test'
-            },
-            attachments: [],
-            star: false,
-            status: false,
-            version: {}
-          }
-        ]
+        id: undefined,
+        issues: []
       };
     },
     statistics: function () {
@@ -2193,7 +2067,7 @@ export default {
         });
       } else {
         if(this.compareCommit.tick > 0) {
-          if(this.issueFilter.commit) {
+          if(this.issueFilterCommit) {
             filterList = _filter(filterList, (issue) => {
               if('_id' in issue.version) {
                 return issue.version._id === oriobj.compareCommit._id;
@@ -2205,10 +2079,10 @@ export default {
         }
         filterList = _filter(filterList, (issue) => {
           if(!('parent' in issue) || issue.parent === undefined) {
-            if(oriobj.issueFilter.flag) {
+            if(oriobj.issueFilterFlag) {
               if(issue.position === 0) { return true; }
             }
-            if(oriobj.issueFilter.time) {
+            if(oriobj.issueFilterTime) {
               return _inRange(issue.position, Math.floor(oriobj.currentData.position) - 0.01, Math.ceil(oriobj.currentData.position) + 0.01);
             } else {
               return true;
@@ -2216,7 +2090,7 @@ export default {
           }
           return false;
         });
-        if(!this.issueFilter.closed) {
+        if(!this.issueFilterClosed) {
           filterList = _filter(filterList, (issue) => {
             return !issue.status;
           });
@@ -2703,6 +2577,10 @@ export default {
   },
   data () {
     return {
+      readedStatus: {
+        _id: undefined,
+        numberOfIssues: 0
+      },
       hideAlert: true,
       issuekeywordFilter: '',
       fabIssue: false,
@@ -2722,12 +2600,10 @@ export default {
       firstReview: false,
       commitFilterW: false,
       previousGoto: 0,
-      issueFilter: {
-        time: false,
-        flag: true,
-        closed: true,
-        commit: false
-      },
+      issueFilterTime: false,
+      issueFilterFlag: true,
+      issueFilterClosed: true,
+      issueFilterCommit: false,
       snapShot: false,
       filteredListW: true,
       pinMode: false,
@@ -2808,7 +2684,6 @@ export default {
       },
       tipW: false,
       issuePointer: '',
-      issueListW: false,
       currentKB: {
         _id: '',
         currentStep: 0,

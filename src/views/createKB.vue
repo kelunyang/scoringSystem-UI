@@ -240,7 +240,7 @@
               <div class='text-subtitle-2 font-weight-blod'>本階段名稱</div>
               <v-text-field hint='請輸入本階段名稱' outlined clearable dense v-model='currentStage.name'/>
               <div class='text-subtitle-2 font-weight-blod'>編輯階段死線</div>
-              <VueCtkDateTimePicker v-model="currentStageDate" label='請選擇日期死線' locale='zh-tw' format='YYYY-MM-DD HH:mm:ss' class='ma-2' />
+              <VueCtkDateTimePicker :inline='true' v-model="currentStageDate" label='請選擇日期死線' locale='zh-tw' format='YYYY-MM-DD HH:mm:ss' class='ma-2' />
               <div class='text-subtitle-2 font-weight-blod'>編輯階段目標</div>
               <div class='d-flex flex-row'>
                 <v-text-field outlined clearable dense label="請輸入你想要加入的目標名稱" hint='輸入完之後請按右側加號增加目標，請務必最後再編輯目標，否則你輸入的用戶標籤都不會存檔（目標和標籤是分開存檔的）' v-model='objectiveAwaited'/>
