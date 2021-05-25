@@ -84,7 +84,7 @@
       <div class='d-flex flex-column justify-start'>
         <div class='text-caption'>{{ dateConvert(issue.tick) }}</div>
       </div>
-      <div class='d-flex flex-row flex-shrink-0 flex-grow-1 justify-end align-center'>
+      <div class='d-flex flex-row flex-shrink-0 flex-grow-1 justify-end align-center flex-wrap'>
         <v-chip
           v-for='file in issue.attachments'
           :key="file._id"

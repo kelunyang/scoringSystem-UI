@@ -96,7 +96,7 @@
       <div class='text-body-2' v-html="sliceBody(currentIssue.body)" v-if='!openList'></div>
     </div>
     <div class='d-flex justify-space-between'>
-      <div class='d-flex flex-column justify-start'>
+      <div class='d-flex flex-column justify-start align-start'>
         <div class='text-caption d-flex flex-row flex-shrink-1 flex-grow-0'>
           <v-tooltip top>
             <template v-slot:activator="{ on, attrs }">
@@ -322,7 +322,7 @@ export default {
   methods: {
     sliceBody: function (msg) {
       msg = msg === null || msg == undefined ? '**用戶未輸入任何內容**' : msg;
-      msg = msg.length <= 30 ? msg : (msg.slice(0, 30))+'……(點擊檢視討論看完整內容)';
+      msg = msg.length <= 30 ? msg : (msg.slice(0, 30))+'……(此為30字預覽，點擊右下角檢視討論看完整內容)';
       return marked(msg, { renderer });
     },
     addIssue: function () {
