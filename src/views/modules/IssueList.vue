@@ -242,17 +242,6 @@
 import moment from 'moment';
 import mime from 'mime-types';
 import momentDurationFormatSetup from 'moment-duration-format';
-import marked from 'marked';
-
-const renderer = new marked.Renderer();
-const linkRenderer = renderer.link;
-renderer.link = (href, title, text) => {
-  if(href !== undefined) { href = (decodeURIComponent(href)).replace(/\\/g, ''); }
-  if(title !== undefined) { title = (decodeURIComponent(title)).replace(/\\/g, ''); }
-  if(text !== undefined) { text = (decodeURIComponent(text)).replace(/\\/g, ''); }
-  const html = linkRenderer.call(renderer, href, title, text);
-  return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
-};
 
 momentDurationFormatSetup(moment);
 
@@ -271,20 +260,32 @@ export default {
   components: { 
     IssueView: () => import(/* webpackPrefetch: true */ './IssueView')
   },
-  watch: {
-    issues: function() {
+  computed: {
+    issuesInView: function() {
       if(this.issues.id === this.currentIssue._id) {
-        this.issuesInView = this.issues.issues;
+        return this.issues.issues;
       }
+      return [];
     },
-    rStatus: function() {
-      if(this.rStatus.id !== undefined) {
-        if(this.rStatus.id === this.currentIssue._id) {
-          this.readedCount = this.rStatus.numberOfIssues;
-          return;
+    readedCount: function() {
+      if(this.issues.id === this.currentIssue._id) {
+        if(this.rStatus.id !== undefined) {
+          if(this.rStatus.id === this.currentIssue._id) {
+            return this.rStatus.numberOfIssues;
+          }
         }
       }
-      this.readedCount = 0;
+      return 0;
+    }
+  },
+  watch: {
+    issues: {
+      deep: true,
+      handler () {
+        if(this.issues.id !== this.currentIssue._id) {
+          this.openList = false;
+        }
+      }
     }
   },
   mounted () {
@@ -294,11 +295,9 @@ export default {
   },
   data() {
     return {
-      readedCount: 0,
       openList: false,
       diffDetect: false,
       currentStage: {},
-      issuesInView: [],
       currentIssue: {
         readed: false,
         KB: '',
@@ -322,8 +321,8 @@ export default {
   methods: {
     sliceBody: function (msg) {
       msg = msg === null || msg == undefined ? '**用戶未輸入任何內容**' : msg;
-      msg = msg.length <= 30 ? msg : (msg.slice(0, 30))+'……(此為30字預覽，點擊右下角檢視討論看完整內容)';
-      return marked(msg, { renderer });
+      msg = msg.length <= 30 ? msg : (msg.slice(0, 30))+'……(此為30字預覽，點擊右下角「檢視討論」按鈕看完整內容)';
+      return msg;
     },
     addIssue: function () {
       this.$emit('add', this.currentIssue);
