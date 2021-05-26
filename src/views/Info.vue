@@ -86,8 +86,8 @@
                 >
                   <issue-view
                     :issue='feedbacksInView.main'
-                    @edit='editIssue'
                     @download='downloadFile'
+                    @remove='removeFeedback'
                   />
                 </v-lazy>
                 <v-lazy
@@ -103,6 +103,7 @@
                   <issue-view
                     :issue='feedback'
                     @download='downloadFile'
+                    @remove='removeFeedback'
                   />
                 </v-lazy>
               </div>
@@ -353,6 +354,13 @@
       </v-row>
   </v-main>
 </template>
+
+<style scoped>
+.issueItem {
+  background-color: #FFF;
+  border: 1px solid #666;
+}
+</style>
 
 <script>
 import Vue from 'vue';

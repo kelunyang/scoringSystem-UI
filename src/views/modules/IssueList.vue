@@ -184,7 +184,6 @@
           :compareUser='compareUser'
           :currentStage="currentStage"
           :enableDiff='diffDetect'
-          @edit='editIssue'
           @sendDiff='addDiff'
           @download='downloadFile'
           @remove='removeIssue'
@@ -206,7 +205,6 @@
               :compareUser='compareUser'
               :currentStage="currentStage"
               @sendDiff='addDiff'
-              @edit='editIssue'
               @download='downloadFile'
               @remove='removeIssue'
             />
@@ -367,9 +365,6 @@ export default {
     },
     addDiff: function (issue) {
       this.$emit('sendDiff', issue);
-    },
-    editIssue: function (issue) {
-      this.$emit('edit', issue);
     },
     downloadFile: function (file) {
       this.$emit('download', file);

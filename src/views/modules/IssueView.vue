@@ -26,7 +26,7 @@
             晚於上次登入
           </v-chip>
         </div>
-        <div v-if='compareCommit.tick > 0'>
+        <div v-if='cCommit.tick > 0'>
           <v-chip
             v-if='cCommit.tick < issue.tick'
             color="red darken-4"
@@ -183,9 +183,6 @@ export default {
     HTMLConverter: function (msg) {
       msg = msg === null || msg == undefined ? '**用戶未輸入任何內容**' : msg;
       return marked(msg, { renderer });
-    },
-    editIssue: function (issue) {
-      return this.$emit('edit', issue);
     },
     removeIssue: function (issue) {
       return this.$emit('remove', issue);
