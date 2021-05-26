@@ -258,7 +258,10 @@
           <v-btn icon dark @click='paintW = false'>
             <v-icon>fa-times</v-icon>
           </v-btn>
-          <v-toolbar-title>標記修改重點（已開啟繪圖模式，請在圖上畫記）</v-toolbar-title>
+          <v-toolbar-title>針對
+            <span v-if='snapType === 0'>當前版本</span>
+            <span v-if='snapType === 1'>對照版本</span>
+            標記修改重點（已開啟繪圖模式，請在圖上畫記）</v-toolbar-title>
         </v-toolbar>
         <v-card-actions class='d-flex flex-row'>
           <v-tooltip top>
@@ -337,11 +340,39 @@
             </template>
             <span>清空繪圖區</span>
           </v-tooltip>
+          <v-tooltip top v-if='cType === "video" || cType === "pdf"'>
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                v-bind="attrs" v-on="on"
+                icon
+                @click='captureDOM(0)'
+                v-if='snapType === 0'
+              >
+                <v-icon>fa-camera</v-icon>
+              </v-btn>
+            </template>
+            <span>擷取並下載當前版本畫面（不包括你的手繪結果）</span>
+          </v-tooltip>
+          <v-tooltip top v-if='pType === "video" || pType === "pdf"' v-show='snapType === 1'>
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                v-bind="attrs" v-on="on"
+                icon
+                @click='captureDOM(1)'
+                v-if='snapType === 1'
+              >
+                <v-icon>fa-camera</v-icon>
+              </v-btn>
+            </template>
+            <span>擷取對照版本畫面（不包括你的手繪結果）</span>
+          </v-tooltip>
           <v-menu offset-y>
             <template v-slot:activator="{ on, attrs }">
               <v-btn
                 v-bind="attrs"
                 v-on="on"
+                color='red accent-4'
+                class='white--text ma-1'
               >
                 我畫好了，送出！
               </v-btn>
@@ -358,33 +389,6 @@
               <div class='text-caption red--text'>如果你只是誤觸，請隨意點擊其他地方即會關閉本對話框，如果你發圖後想預覽，點選Issue附件區的檔案名稱即可</div>
             </v-sheet>
           </v-menu>
-          <div>如果您只要下載截圖，請點右邊兩顆按鈕</div>
-          <v-tooltip top v-if='cType === "video" || cType === "pdf"'>
-            <template v-slot:activator="{ on, attrs }">
-              <v-btn
-                v-bind="attrs" v-on="on"
-                icon
-                color="light-blue darken-4"
-                @click='captureDOM(0)'
-              >
-                <v-icon>fa-camera</v-icon>
-              </v-btn>
-            </template>
-            <span>擷取並下載當前版畫面</span>
-          </v-tooltip>
-          <v-tooltip top v-if='pType === "video" || pType === "pdf"'>
-            <template v-slot:activator="{ on, attrs }">
-              <v-btn
-                v-bind="attrs" v-on="on"
-                icon
-                color="red darken-4"
-                @click='captureDOM(1)'
-              >
-                <v-icon>fa-camera</v-icon>
-              </v-btn>
-            </template>
-            <span>擷取對照版畫面</span>
-          </v-tooltip>
         </v-card-actions>
         <v-card-text class='text-left'>
           <paintable
@@ -1854,6 +1858,7 @@ export default {
     snapshotPaint: async function (data) {
       if(this.currentVersions.length > 0) {
         this.$emit("toastPop", "螢幕截圖中，請稍後...");
+        this.snapType = data;
         this.snapShot = true;
         let oriobj = this;
         let DOM = null;
@@ -2577,6 +2582,7 @@ export default {
   },
   data () {
     return {
+      snapType: 0,
       readedStatus: {
         _id: undefined,
         numberOfIssues: 0

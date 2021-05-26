@@ -44,6 +44,8 @@
         <v-menu
           offset-y
           attach
+          left
+          bottom
           transition="slide-y-transition"
           v-if='cStage.isPM || issue.user._id === currentUser._id'
         >
