@@ -130,13 +130,13 @@
           <v-toolbar-title>管理知識點版本</v-toolbar-title>
         </v-toolbar>
         <v-card-text class='d-flex flex-column pa-0'>
-          <v-alert outlined type='info' v-if='currentKB.isVendor' icon='fa-info-circle' class='text-left'>
-            廠商請注意：基本上你只能上傳影片（H.264/VP9）、PDF檔案（分鏡圖使用），除非是最終階段需要上傳可編輯原始檔，否則請勿上傳zip檔，另外，你的檔名就會是版本代號，請謹慎命名（如「腳本第一版」）
+          <v-alert outlined type='info' v-if='currentKB.isVendor || currentKB.isPM' icon='fa-info-circle' class='text-left'>
+            廠商/PM請注意：基本上你只能上傳影片（H.264/VP9）、PDF檔案（分鏡圖使用），除非是最終階段需要上傳可編輯原始檔，否則請勿上傳zip檔，另外，你的檔名就會是版本代號，請謹慎命名（如「腳本第一版」）
           </v-alert>
           <v-alert outlined type='info' v-if='currentKB.isWriter' icon='fa-info-circle' class='text-left'>
             寫手請注意：你只能上傳PDF檔案，請把你的腳本都轉換成PDF再上傳，另外，你的檔名就會是版本代號，請謹慎命名（如「腳本第一版」）
           </v-alert>
-          <div v-if='currentKB.isWriter || currentKB.isVendor' class='d-felx flex-column'>
+          <div v-if='currentKB.isWriter || currentKB.isVendor || currentKB.isPM' class='d-felx flex-column'>
             <div class='text-subtitle-2 font-weight-blod'>版本發行說明（必填但不得超過30個字）</div>
             <v-text-field outlined placeholder='請輸入一些說明，上傳檔案選單才會出現喔！' clearable dense hint='請輸入這個新版本的註解，不得超過30個字' v-model='versionComment' />
             <div class='text-subtitle-2 font-weight-blod'>版本檔案</div>

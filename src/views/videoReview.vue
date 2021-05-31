@@ -241,7 +241,56 @@
               <v-list-item>
                 <v-list-item-content style='text-align: left'>
                   <v-list-item-title>[ {{ versionConvert(item) }} ] {{ dateConvert(item.tick) }}</v-list-item-title>
-                  <v-list-item-subtitle>{{ item.name }}</v-list-item-subtitle>
+                  <v-list-item-subtitle>
+                    <v-chip
+                      class="ma-1"
+                      color="indigo"
+                      label
+                      outlined
+                      v-if='item.status === 2'
+                    >
+                      <v-icon left color="indigo">
+                        fa-check
+                      </v-icon>
+                      格式檢查完成
+                    </v-chip>
+                    <v-chip
+                      class="ma-1"
+                      color="indigo"
+                      label
+                      outlined
+                      v-if='item.status === 3'
+                    >
+                      <v-icon left color="indigo">
+                        fa-check
+                      </v-icon>
+                      格式檢查完成並已轉換為VP9
+                    </v-chip>
+                    <v-chip
+                      class="ma-1"
+                      color="red accent-4"
+                      label
+                      outlined
+                      v-if='item.status === 1'
+                    >
+                      <v-icon left color="red accent-4">
+                        fa-times
+                      </v-icon>
+                      尚未格式檢查
+                    </v-chip>
+                    <v-chip
+                      class="ma-1"
+                      color="red accent-4"
+                      label
+                      outlined
+                      v-if='item.status === 0'
+                    >
+                      <v-icon left color="red accent-4">
+                        fa-skull
+                      </v-icon>
+                      格式檢查失敗
+                    </v-chip>
+                    {{ item.name }} {{ formatInfo(item) }}</v-list-item-subtitle>
                 </v-list-item-content>
                 <v-list-item-action>
                   <v-btn :disabled='historyConvert(item) !== "舊版"' @click='loadVersion(item)'>{{ historyConvert(item) }}</v-btn>
