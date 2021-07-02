@@ -567,7 +567,7 @@
           <div class='text-caption red--text text-left black--text text-body-1'>
             知識點匯入功能，請完全按照以下說明操作
             <ol>
-              <li><a href='/storages/importSample.zip' target='_blank'>請點這裡，下載範例檔，你也只能仿造範例檔的格式，上傳一個zip</a></li>
+              <li><a :href='require("../assets/importSample.zip")' target='_blank'>請點這裡，下載範例檔，你也只能仿造範例檔的格式，上傳一個zip</a></li>
               <li>請按照範例檔中的CSV修改資料，一個知識點一條</li>
               <li>每一個知識點你都得在CSV裡給一個流水號（隨意，不重複即可），如果你的知識點說明無法使用文字描述（例如有公式），請直接將說明存成圖片，圖片檔名必須是和流水號一模一樣的圖檔（如[1].jpg）</li>
               <li>寫匯入成功就是成功了，如果清單沒有載入，請嘗試重新整理網頁</li>

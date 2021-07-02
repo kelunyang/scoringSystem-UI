@@ -240,57 +240,48 @@
             <template v-slot='{ item }'>
               <v-list-item>
                 <v-list-item-content style='text-align: left'>
-                  <v-list-item-title>[ {{ versionConvert(item) }} ] {{ dateConvert(item.tick) }}</v-list-item-title>
+                  <v-list-item-title>
+                    <span v-if='item.readed' class='indigo--text darken-4'>[已看過]</span>
+                    <span v-else class='red--text darken-4'>[未看過]</span>
+                    [ {{ versionConvert(item) }} ] {{ dateConvert(item.tick) }}</v-list-item-title>
                   <v-list-item-subtitle>
-                    <v-chip
-                      class="ma-1"
-                      color="indigo"
-                      label
-                      outlined
-                      v-if='item.status === 2'
-                    >
-                      <v-icon left color="indigo">
-                        fa-check
-                      </v-icon>
-                      格式檢查完成
-                    </v-chip>
-                    <v-chip
-                      class="ma-1"
-                      color="indigo"
-                      label
-                      outlined
-                      v-if='item.status === 3'
-                    >
-                      <v-icon left color="indigo">
-                        fa-check
-                      </v-icon>
-                      格式檢查完成並已轉換為VP9
-                    </v-chip>
-                    <v-chip
-                      class="ma-1"
-                      color="red accent-4"
-                      label
-                      outlined
+                    <span v-if='item.status >= 2'>
+                      <span
+                        class="ma-1"
+                        :class='item.fileInfo.formatCheck ? "indigo--text" : "red--text"'
+                      >
+                        格式
+                        <span>{{ item.fileInfo.formatCheck ? '正確' : '錯誤' }}</span>
+                        <span>{{ item.fileInfo.hasAudio ? '🔊' : '' }}</span>
+                        <span>{{ item.validAudio ? '' : '❌' }}</span>
+                        <span>{{ item.fileInfo.width }}</span>
+                        <span>{{ item.validWidth ? '' : '❌' }}</span>
+                        <span>×{{ item.fileInfo.height }}</span>
+                        <span>{{ item.validHeight ? '' : '❌' }}</span>
+                        <span>@ {{ timeConvert(item.fileInfo.duration) }}</span>
+                        <span v-if='item.status === 2'>({{ dateConvert(item.fileInfo.checkTick) }})</span>
+                        <span v-if='item.status === 3'>({{ dateConvert(item.fileInfo.converisionDate) }}已轉換為VP9)</span>
+                      </span>
+                    </span>
+                    <span
+                      class="ma-1 red--text accent-4"
                       v-if='item.status === 1'
                     >
                       <v-icon left color="red accent-4">
                         fa-times
                       </v-icon>
                       尚未格式檢查
-                    </v-chip>
-                    <v-chip
-                      class="ma-1"
-                      color="red accent-4"
-                      label
-                      outlined
+                    </span>
+                    <span
+                      class="ma-1 red accent-4"
                       v-if='item.status === 0'
                     >
                       <v-icon left color="red accent-4">
                         fa-skull
                       </v-icon>
                       格式檢查失敗
-                    </v-chip>
-                    {{ item.name }} {{ formatInfo(item) }}</v-list-item-subtitle>
+                    </span>
+                    {{ item.name }}</v-list-item-subtitle>
                 </v-list-item-content>
                 <v-list-item-action>
                   <v-btn :disabled='historyConvert(item) !== "舊版"' @click='loadVersion(item)'>{{ historyConvert(item) }}</v-btn>
@@ -1273,6 +1264,26 @@ export default {
     IssueList: () => import(/* webpackPrefetch: true */ './modules/IssueList')
   },
   methods: {
+    socketdashboardUnreadedVersions: function (data) {
+      let readedVersions = _find(data, (item) => {
+        return item._id === this.KBid;
+      });
+      for(let i=0; i<this.currentVersions.length; i++) {
+        let currentVersion = this.currentVersions[i];
+        let version = readedVersions === undefined ? undefined : {}; //如果沒有回傳unreadedversion，代表整篇都讀過，不然預設值就是沒讀
+        if(readedVersions !== undefined) {
+          version = _find(readedVersions.versions, (item) => {
+            return item === currentVersion._id;
+          });
+        }
+        currentVersion.readed = version === undefined;
+        if('fileInfo' in currentVersion) {
+          currentVersion.validHeight = currentVersion.fileInfo.height >= this.siteSettings.validFormat.validHeight;
+          currentVersion.validWidth = currentVersion.fileInfo.width >= this.siteSettings.validFormat.validWidth;
+          currentVersion.validAudio = this.siteSettings.validFormat.withAudio ? currentVersion.fileInfo.hasAudio : true;
+        }
+      }
+    },
     cancalCompare: function () {
       this.disableCompareMode = !this.disableCompareMode;
     },
@@ -1675,7 +1686,7 @@ export default {
     },
     filenameConvert: function (file) {
       let str = file.name;
-      str += file.status !== 1 ? '(暫不可用)' : '';
+      str += file.status === 0 ? '(暫不可用)' : '';
       str += prettyBytes(file.size);
       return str;
     },
@@ -1837,6 +1848,7 @@ export default {
       this.$emit('timerOn', true);
       this.$emit('toastPop', '更新已讀取Issue清單');
       this.$socket.client.emit('getReadedIssue');
+      this.$socket.client.emit('dashboardUnreadedVersions', [this.KBid]);
     },
     authClass: function (item) {
       return item.loaded ? 'd-flex flex-column loadedItem' : 'd-flex flex-column loadingItem';
@@ -2016,10 +2028,12 @@ export default {
     this.$socket.client.off('getKBVersions', this.sockgetKBVersions);
     this.$socket.client.off('getStage', this.sockgetStage);
     this.$socket.client.off('getReadedIssue', this.socketgetReadedIssue);
+    this.$socket.client.off('dashboardUnreadedVersions', this.socketdashboardUnreadedVersions);
     this.$socket.client.emit('leaveKBEditing', this.KBid);
     window.removeEventListener('scroll', this.scrollEvent);
   },
   created () {
+    this.$socket.client.on('dashboardUnreadedVersions', this.socketdashboardUnreadedVersions);
     this.$socket.client.on('setReadedIssue', this.socketsetReadedIssue);
     this.$socket.client.on('editIssue', this.socketeditIssue);
     this.$socket.client.on('addIssue', this.socketaddIssue);
@@ -2035,9 +2049,11 @@ export default {
     this.$socket.client.on('getKBVersions', this.sockgetKBVersions);
     this.$socket.client.on('getStage', this.sockgetStage);
     this.$socket.client.on('getReadedIssue', this.socketgetReadedIssue);
+    this.$socket.client.on('getReadedIssue', this.socketgetReadedIssue);
     window.addEventListener('scroll', this.scrollEvent);
     let oriobj = this;
     Vue.nextTick(() => {
+      oriobj.$socket.client.emit('setreadedVersion', this.KBid);
       oriobj.$socket.client.emit('getKB', this.KBid);
       oriobj.$socket.client.emit('joinKBEditing', this.KBid);
     });

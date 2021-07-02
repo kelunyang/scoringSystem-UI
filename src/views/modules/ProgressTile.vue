@@ -80,6 +80,12 @@
     </v-row>
     <v-row no-gutters v-if='currentItem.currentStep > 0'>
       <v-col class='d-flex flex-row pa-1 align-center' :class='currentItem.remainTick < 86400 ? "red--text" : "black--text"'>
+        <span v-if='currentItem.unreadedVersion > 0'>
+          <v-icon  class='ma-1' small left color="red accent-4">
+            fas fa-upload
+          </v-icon>
+          {{ currentItem.unreadedVersion }}個新版本已上傳
+        </span>
         <span v-if='currentItem.unreaded > 0'>
           <v-icon  class='ma-1' small left color="red accent-4">
             fas fa-envelope-open-text

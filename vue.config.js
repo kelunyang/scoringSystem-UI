@@ -3,6 +3,15 @@ const zlib = require('zlib');
 const webpack = require('webpack');
 
 module.exports = {
+  chainWebpack: config => {
+    config.module.rule('zip')
+      .test(/\.(zip)(\?.*)?$/)
+      .use('file-loader')
+        .loader('file-loader')
+        .options({
+          name: 'assets/zip/[name].[hash:8].[ext]'
+        })
+  },
   productionSourceMap: false,
   transpileDependencies: [
     'vuetify'

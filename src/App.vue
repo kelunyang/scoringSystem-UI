@@ -342,7 +342,7 @@
       </v-tooltip>
       <v-spacer></v-spacer>
       <v-toolbar-title>
-        臺北市新課綱影片審查系統<span v-if='currentPage.show'>： {{ currentPage.text }}</span>
+        {{ siteSettings.systemName }}<span v-if='currentPage.show'>： {{ currentPage.text }}</span>
       </v-toolbar-title>
       <v-spacer></v-spacer>
       <v-menu open-on-hover offset-y v-if='currentUser._id !== ""'>
@@ -434,7 +434,7 @@
                 <v-icon>fa-code-branch</v-icon>
               </v-list-item-icon>
               <v-list-item-content class='text-left'>
-                <v-list-item-title>版本： {{ siteSettings.versionFrontend.substring(0, 7) }} / {{ siteSettings.versionBackend.substring(0, 7) }} <br/><a href="/#/Info"><span class='text-cpation cyan--text darken-4'>版本紀錄</span></a></v-list-item-title>
+                <v-list-item-title>版本： {{ siteSettings.version.frontend.substring(0, 7) }} / {{ siteSettings.version.backend.substring(0, 7) }} / {{ siteSettings.version.bot.substring(0, 7) }} <br/><a href="/#/Info"><span class='text-cpation cyan--text darken-4'>版本紀錄</span></a></v-list-item-title>
               </v-list-item-content>
             </v-list-item>
             <v-list-item style='background-color:white'>
@@ -467,7 +467,7 @@
 </template>
 
 <style>
-@import url('https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900&display=swap');
+@import url('https://fonts.googleapis.com/css?family=Noto+Sans+TC:100,300,400,500,700,900&display=swap');
 body { 
   position: relative !important;  /* paintable 會改寫body的position，導致卷軸失效，必須有important */
 }
@@ -716,7 +716,7 @@ export default {
         },
         {
           icon: 'fa-sign-out-alt',
-          title: '登出審查系統',
+          title: '登出系統',
           path: '/logout'
         }
       ];

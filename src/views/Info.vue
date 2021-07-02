@@ -209,7 +209,7 @@
           <div class='text-h5 font-weight-bold text-left'>系統版本</div>
           <div class='d-flex flex-row flex-wrap'>
             <div class='d-flex flex-column ma-1'>
-              <div class='text-h6 text-left'>前端版本：{{ siteSettings.versionFrontend.substring(0,7) }}</div>
+              <div class='text-h6 text-left'>前端版本：{{ siteSettings.version.frontend.substring(0,7) }}</div>
               <div class='text-caption text-left'>
                 <span v-if='frontendCommitInfo.latest'>[最新版]</span><br v-if='frontendCommitInfo.latest'/>
                 <span v-if='!frontendCommitInfo.latest' class='red--text darken-4'>不是最新版，請提醒管理員更新！</span><br v-if='!frontendCommitInfo.latest'/>
@@ -219,13 +219,23 @@
               </div>
             </div>
             <div class='d-flex flex-column ma-1'>
-              <div class='text-h6 text-left'>後端版本：{{ siteSettings.versionBackend.substring(0,7) }}</div>
+              <div class='text-h6 text-left'>後端版本：{{ siteSettings.version.backend.substring(0,7) }}</div>
               <div class='text-caption text-left'>
                 <span v-if='backendCommitInfo.latest'>[最新版]</span><br v-if='backendCommitInfo.latest'/>
                 <span v-if='!backendCommitInfo.latest' class='red--text darken-4'>不是最新版，請提醒管理員更新！</span><br v-if='!backendCommitInfo.latest'/>
                 <span>發布日期： {{ backendCommitInfo.date }} </span><br/>
                 <span>發布者： {{ backendCommitInfo.committer }} ({{ backendCommitInfo.email }}) </span><br/>
                 <span>發布訊息： </span><span v-html='HTMLConverter(backendCommitInfo.message)'></span>
+              </div>
+            </div>
+            <div class='d-flex flex-column ma-1'>
+              <div class='text-h6 text-left'>機器人版本：{{ siteSettings.version.bot.substring(0,7) }}</div>
+              <div class='text-caption text-left'>
+                <span v-if='botCommitInfo.latest'>[最新版]</span><br v-if='botCommitInfo.latest'/>
+                <span v-if='!botCommitInfo.latest' class='red--text darken-4'>不是最新版，請提醒管理員更新！</span><br v-if='!botCommitInfo.latest'/>
+                <span>發布日期： {{ botCommitInfo.date }} </span><br/>
+                <span>發布者： {{ botCommitInfo.committer }} ({{ botCommitInfo.email }}) </span><br/>
+                <span>發布訊息： </span><span v-html='HTMLConverter(botCommitInfo.message)'></span>
               </div>
             </div>
           </div>
@@ -452,8 +462,13 @@ export default {
       }
     },
     socketgetfeedbackList: function (data) {
-      this.$socket.client.emit('getGithubBackendCommit');
-      this.$socket.client.emit('getGithubFrontendCommit');
+      if(this.siteSettings.repos.frontend !== "") {
+        this.$socket.client.emit('getGithubCommit', this.siteSettings.repos.frontend);
+        this.$socket.client.emit('getGithubCommit', this.siteSettings.repos.backend);
+        this.$socket.client.emit('getGithubCommit', this.siteSettings.repos.bot);
+      } else {
+        this.$socket.client.emit('getsiteSetting');
+      }
       this.$socket.client.emit('getsiteAdminUsers', [
         'settingTags'
       ]);
@@ -591,11 +606,14 @@ export default {
     downloadFile: function (file) {
       this.$emit('downloadFile', file);
     },
-    socketgetGithubBackendCommit: function (data) {
-      this.backendCommits = data;
-    },
-    socketgetGithubFrontendCommit: function (data) {
-      this.frontendCommits = data;
+    socketgetGithubCommit: function (data) {
+      if(data.repo === this.siteSettings.repos.frontend) {
+        this.frontendCommits = data.commits;
+      } else if(data.repo === this.siteSettings.repos.backend) {
+        this.backendCommits = data.commits;
+      } else if(data.repo === this.siteSettings.repos.bot) {
+        this.botCommits = data.commits;
+      }
     },
     getCommit: function (commits, id) {
       let commit = _find(commits, (commit) => {
@@ -621,14 +639,19 @@ export default {
   },
   computed: {
     frontendCommitInfo: function () {
-      let frontendID = this.siteSettings.versionFrontend;
+      let frontendID = this.siteSettings.version.frontend;
       let commits = this.frontendCommits;
       return this.getCommit(commits, frontendID);
     },
     backendCommitInfo: function () {
-      let backendID = this.siteSettings.versionBackend;
+      let backendID = this.siteSettings.version.backend;
       let commits = this.backendCommits;
       return this.getCommit(commits, backendID);
+    },
+    botCommitInfo: function () {
+      let botID = this.siteSettings.version.bot;
+      let commits = this.botCommits;
+      return this.getCommit(commits, botID);
     },
     currentUser: function () {
       return this.$store.state.currentUser;
@@ -638,6 +661,13 @@ export default {
     }
   },
   watch: {
+    "siteSettings.repos.frontend": function() {
+      if(this.siteSettings.repos.frontend !== "") {
+        this.$socket.client.emit('getGithubCommit', this.siteSettings.repos.frontend);
+        this.$socket.client.emit('getGithubCommit', this.siteSettings.repos.backend);
+        this.$socket.client.emit('getGithubCommit', this.siteSettings.repos.bot);
+      }
+    },
     feedbackFile: {
       immediate: true,
       handler () {
@@ -671,6 +701,7 @@ export default {
       return {
         backendCommits: [],
         frontendCommits: [],
+        botCommits: [],
         feedbackW: false,
         feedbackListW: false,
         feedbackFile: undefined,
@@ -742,8 +773,7 @@ export default {
     this.$socket.client.off('feedbackFileUploadError', this.socketfeedbackFileUploadError);
     this.$socket.client.off('feedbackFileDeleteError', this.socketfeedbackfileDeleteError);
     this.$socket.client.off('requestfeedbackSlice', this.socketrequestfeedbackSlice);
-    this.$socket.client.off('getGithubBackendCommit', this.socketgetGithubBackendCommit);
-    this.$socket.client.off('getGithubFrontendCommit', this.socketgetGithubFrontendCommit);
+    this.$socket.client.off('getGithubCommit', this.socketgetGithubCommit);
   },
   created () {
     this.$emit('viewIn', {
@@ -753,8 +783,7 @@ export default {
       location: '/Info'
     });
     this.$socket.client.on('getsiteAdminUsers', this.socketgetsiteAdminUsers);
-    this.$socket.client.on('getGithubBackendCommit', this.socketgetGithubBackendCommit);
-    this.$socket.client.on('getGithubFrontendCommit', this.socketgetGithubFrontendCommit);
+    this.$socket.client.on('getGithubCommit', this.socketgetGithubCommit);
     this.$socket.client.on('sendLINEnotify', this.socketsendLINEnotify);
     this.$socket.client.on('editFeedback', this.socketeditFeedback);
     this.$socket.client.on('addFeedback', this.socketaddFeedback);

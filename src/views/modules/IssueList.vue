@@ -342,7 +342,7 @@ export default {
         if(version === undefined || !('_id' in version)) {
           return '無對應版本';
         } else {
-          return version._id === this.currentVersion._id ? '當前版本' : this.versionnameConvert(this.currentVersion.name) + '版';
+          return version._id === this.currentVersion._id ? '當前版本' : this.versionnameConvert(version.name) + '版';
         }
       } else {
         return '當前無任何已上傳版本'

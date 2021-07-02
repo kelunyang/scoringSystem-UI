@@ -26,13 +26,27 @@ const store = new Store({
       lineDate: 0
     },
     siteSettings: {
-      versionFrontend: '',
-      versionBackend: '',
+      version: {
+        frontend: '',
+        backend: '',
+        bot: ''
+      },
+      repos: {
+        frontend: '',
+        backend: '',
+        bot: ''
+      },
       userCheckTime: 0,
       lastCheckTime: 0,
       connectionTimeout: 1,
       siteLocation: '',
-      changeLog: '**test**'
+      changeLog: '**test**',
+      validFormat: {
+        validWidth: 1024,
+        validHeight: 768,
+        withAudio: false
+      },
+      systemName: ''
     },
     savedTags: [],
     siteColor: '#15858A'

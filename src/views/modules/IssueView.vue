@@ -178,7 +178,7 @@ export default {
     },
     filenameConvert: function (file) {
       let str = file.name;
-      str += file.status !== 1 ? '(暫不可用)' : '';
+      str += file.status === 0 ? '(暫不可用)' : '';
       str += prettyBytes(file.size);
       return str;
     },

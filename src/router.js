@@ -1,15 +1,15 @@
 import Vue from 'vue';
 import Router from 'vue-router';
-import Home from './views/Home.vue';
+import store from './vuex/store';
 
 Vue.use(Router);
-const DEFAULT_TITLE = '臺北市學科影片線上審查系統';
 const router = new Router({
   routes: [
     {
       path: '/',
       name: '首頁',
-      component: Home
+      component: () =>
+        import(/* webpackChunkName: 'home' */ './views/Home.vue')
     },
     {
       path: '/messageMgnt',
@@ -82,7 +82,9 @@ const router = new Router({
 });
 router.afterEach((to) => {
   Vue.nextTick(() => {
-    document.title = !('name' in to) ? DEFAULT_TITLE : to.name === null ? DEFAULT_TITLE : DEFAULT_TITLE + ' | ' + to.name;
+    let DEFAULT_TITLE = store.state.siteSettings.systemName;
+    let sepStr = DEFAULT_TITLE === "" ? "" : " | ";
+    document.title = !('name' in to) ? DEFAULT_TITLE : to.name === null ? DEFAULT_TITLE : DEFAULT_TITLE + sepStr + to.name;
   });
 });
 export default router;

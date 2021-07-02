@@ -244,7 +244,7 @@
           <v-alert type="info" icon="fa-info-circle" class='text-left'>
             這個功能是提供給匯入知識點於各個平台的統計數據使用，特別提醒，如果你發現匯入進度一直停在同一處，那可能是資料庫寫入的時間差，但實際上已經匯入完成了，如果有疑惑，可以重新整理網頁，再匯入一次
           </v-alert>
-          <a href='/storages/importData.csv' target='_blank'>請點這裡，下載範例檔，你也只能仿造範例檔的格式，上傳csv檔案</a>
+          <a :href='require("../assets/sampleStatistics.zip")' target='_blank'>請點這裡，下載範例檔，範例檔解壓縮後，請將你要匯入的內容填入解壓縮出來的csv檔案，請上傳該csv檔案即可</a>
           <v-switch
             v-model="importOverwrite"
             label="複寫重複的資料"

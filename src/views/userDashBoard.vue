@@ -170,7 +170,7 @@
                       狀態
                     </th>
                     <th class="text-left">
-                      版本發行紀錄
+                      版本發行紀錄（以及格式檢查紀錄）
                     </th>
                     <th class="text-left" style="width:25px">
                       &nbsp;
@@ -183,6 +183,8 @@
                     :key="'ver'+version._id"
                   >
                     <td class="text-left">
+                      <span v-if='version.readed' class='indigo--text darken-4'>[已看過]</span>
+                      <span v-else class='red--text darken-4'>[未看過]</span>
                       {{ dateConvert(version.tick) }}
                     </td>
                     <td class="text-left">
@@ -191,20 +193,51 @@
                     <td class="text-left">
                       <span v-if='version.status === 1'>尚未格式檢查</span>
                       <span v-if='version.status === 0'>格式檢查失敗</span>
-                      <span v-if='version.status === 2'>格式檢查完成</span>
-                      <span v-if='version.status === 3'>影片格式已轉換為VP9</span>
+                      <span v-if='version.status >= 2'>格式
+                        <span>{{ version.fileInfo.formatCheck ? '正確' : '錯誤' }}</span><br/>
+                        <span v-if='version.status === 2'>({{ dateConvert(version.fileInfo.checkTick) }})</span>
+                        <span v-if='version.status === 3'>({{ dateConvert(version.fileInfo.converisionDate) }}已轉換為VP9)</span>
+                      </span>
                     </td>
                     <td class="text-left">
-                      {{ version.comment }}
+                      {{ version.comment }}<br/>
+                      <span v-if='version.status >= 2'>{{ version.fileInfo.hasAudio ? '🔊' : '' }}</span>
+                      <span v-if='version.status >= 2'>{{ version.validAudio ? '' : '❌' }}</span>
+                      <span v-if='version.status >= 2'>{{ version.fileInfo.width }}</span>
+                      <span v-if='version.status >= 2'>{{ version.validWidth ? '' : '❌' }}</span>
+                      <span v-if='version.status >= 2'>×{{ version.fileInfo.height }}</span>
+                      <span v-if='version.status >= 2'>{{ version.validHeight ? '' : '❌' }}</span>
+                      <span v-if='version.status >= 2'>@ {{ timeConvert(version.fileInfo.duration) }}</span>
                     </td>
                     <td class='d-flex flex-row'>
-                      <v-btn
-                        outlined
-                        icon
-                        @click='deleteKBVersion(version._id)'
+                      <v-menu
+                        bottom
+                        left
+                        offset-y
+                        attach
+                        transition="slide-y-transition"
                       >
-                        <v-icon>fa-trash</v-icon>
-                      </v-btn>
+                        <template v-slot:activator="{ on, attrs }">
+                          <v-btn
+                            outlined
+                            icon
+                            v-bind="attrs" v-on="on"
+                          >
+                            <v-icon>fa-trash</v-icon>
+                          </v-btn>
+                        </template>
+                        <v-sheet class='d-flex flex-column pa-1'>
+                          <div class='text-h6'>確認刪除版本？</div>
+                          <v-btn
+                            color='red accent-4'
+                            class='white--text ma-1'
+                            @click='deleteKBVersion(version._id)'
+                          >
+                            是，我要刪除這個版本
+                          </v-btn>
+                          <div class='text-caption'>如果你只是誤觸，請隨意點擊其他地方即會關閉本對話框</div>
+                        </v-sheet>
+                      </v-menu>
                       <v-btn
                         @click='downloadFile(version)'
                         outlined
@@ -388,7 +421,7 @@
           <v-icon v-else>fa-toolbox</v-icon>
         </v-btn>
       </template>
-      <v-badge
+      <!-- <v-badge
         color="red"
         overlap
         :content='selectedpmKBs.length'
@@ -409,7 +442,7 @@
           </template>
           <span>上傳到Youtube（尚未開發）</span>
         </v-tooltip>
-      </v-badge>
+      </v-badge> 本功能棄置，Youtube點數不足-->
       <v-badge
         color="red"
         overlap
@@ -603,6 +636,7 @@
 <script>
 import Vue from 'vue';
 import moment from 'moment';
+import momentDurationFormatSetup from 'moment-duration-format';
 import { randomColor } from 'randomcolor';
 import _filter from 'lodash/filter';
 import _toString from 'lodash/toString';
@@ -623,6 +657,7 @@ import VueApexCharts from 'vue-apexcharts';
 import prettyBytes from 'pretty-bytes';
 Vue.use(VueApexCharts);
 Vue.component('apexchart', VueApexCharts);
+momentDurationFormatSetup(moment);
 let files = [];
 
 export default {
@@ -632,6 +667,9 @@ export default {
     ProgressTile: () => import(/* webpackPrefetch: true */ './modules/ProgressTile')
   },
   methods: {
+    timeConvert: function (time) {
+      return moment.duration(time, 'second').format('mm分ss秒SS');
+    },
     execSearch:async function() {
       if(this.initialized) {
         this.initialized = false;
@@ -647,6 +685,18 @@ export default {
       this.injectEvents(data);
       this.$emit('toastPop', '知識點編輯紀錄更新完成');
     },
+    socketdashboardUnreadedVersions: function(data) {
+      this.$emit('timerOn', false);
+      this.$emit('toastPop', '知識點檔案清單已下載，更新清單中');
+      this.unreadedVersions = data;
+      this.injectVersion(data);
+      if(this.currentVersions.length > 0) {
+        let currentList = this.currentVersions;
+        this.currentVersions = [];
+        this.injectVersionW(currentList);
+      }
+      this.$emit('toastPop', '知識點檔案清單更新完成');
+    },
     injectEvents: function(data) {
       for(let i=0; i<data.length; i++) {
         let event = data[i];
@@ -661,6 +711,23 @@ export default {
         });
         if(eventProgress !== undefined) {
           eventProgress.eventLog = event.events;
+        }
+      }
+    },
+    injectVersion: function(data) {
+      for(let i=0; i<data.length; i++) {
+        let version = data[i];
+        let versionRender = _find(this.renderList, (item) => {
+          return item._id === version._id;
+        });
+        if(versionRender !== undefined) {
+          versionRender.unreadedVersion = version.versions.length;
+        }
+        let versionProgress = _find(this.progressList, (item) => {
+          return item._id === version._id;
+        });
+        if(versionProgress !== undefined) {
+          versionProgress.unreadedVersion = version.versions.length;
         }
       }
     },
@@ -847,7 +914,9 @@ export default {
       });
       window.clearTimeout(this.issueTimer);
       window.clearTimeout(this.eventTimer);
+      window.clearTimeout(this.versionTimer);
       this.issueTimer = undefined;
+      this.versionTimer = undefined;
       this.eventTimer = undefined;
       this.$emit('toastPop', '清單整理完成，請稍後...');
       await Vue.nextTick(() => {
@@ -867,6 +936,14 @@ export default {
           }, 3000);
         } else {
           oriobj.injectEvents(oriobj.eventList);
+        }
+        if(oriobj.unreadedVersions.length === 0) {
+          oriobj.$emit('toastPop', '7秒後開始下載未讀取版本清單（完成後您會在每個知識點左下方看到數量）');
+          oriobj.versionTimer = setTimeout(() => {
+            oriobj.$socket.client.emit('dashboardUnreadedVersions', requestList);
+          }, 7000);
+        } else {
+          oriobj.injectVersion(oriobj.unreadedVersions);
         }
       });
     },
@@ -939,6 +1016,7 @@ export default {
       for(let i=0; i<data.length;i++) {
         data[i].unreaded = 0;
         data[i].eventLog = [];
+        data[i].unreadedVersion = 0;
       }
       this.progressList = data;
       await this.generateList();
@@ -1027,8 +1105,30 @@ export default {
     sockgetKBVersions: function (data) {
       this.versionPopulated = true;
       this.currentVersions = data;
+      this.$socket.client.emit('dashboardUnreadedVersions', [this.currentKB._id]);
       this.versionComment = '';
       this.versionW = true;
+    },
+    injectVersionW: function(data) {
+      let readedVersions = _find(this.unreadedVersions, (item) => {
+        return item._id === this.currentKB._id;
+      });
+      for(let i=0; i<data.length; i++) {
+        let currentVersion = data[i];
+        let version = readedVersions === undefined ? undefined : {}; //如果沒有回傳unreadedversion，代表整篇都讀過，不然預設值就是沒讀
+        if(readedVersions !== undefined) {
+          version = _find(readedVersions.versions, (item) => {
+            return item === currentVersion._id;
+          });
+        }
+        currentVersion.readed = version === undefined;
+        if('fileInfo' in currentVersion) {
+          currentVersion.validHeight = currentVersion.fileInfo.height >= this.siteSettings.validFormat.validHeight;
+          currentVersion.validWidth = currentVersion.fileInfo.width >= this.siteSettings.validFormat.validWidth;
+          currentVersion.validAudio = this.siteSettings.validFormat.withAudio ? currentVersion.fileInfo.hasAudio : true;
+        }
+      }
+      this.currentVersions = data;
     },
     getlatestVersions: function () {
       this.$socket.client.emit('getlatestVersions', {
@@ -1087,10 +1187,16 @@ export default {
         this.uploadstatus = '完成！';
         this.importW = false;
         this.statusMsg = '';
+        this.$socket.client.emit('dashboardUnreadedVersions', [data]);
         Vue.nextTick(() => {
           oriobj.uploadprogress = 0;
           oriobj.uploadstatus = '';
         });
+      }
+    },
+    socketdeleteKBVersion: function(data) {
+      if(data) {
+        this.$socket.client.emit('getKBVersions', this.currentKB._id);
       }
     },
     soketsetKBTag: function (data) {
@@ -1224,8 +1330,10 @@ export default {
   },
   data () {
     return {
+      unreadedVersions: [],
       issueTimer: undefined,
       eventTimer: undefined,
+      versionTimer: undefined,
       eventList: [],
       renderList: [],
       /*firstRun: true,
@@ -1340,11 +1448,15 @@ export default {
     this.$socket.client.off('KBVersionUploadDone', this.soketKBVersionUploadDone);
     this.$socket.client.off('getlatestVersions', this.soketgetlatestVersions);
     this.$socket.client.off('setKBTag', this.soketsetKBTag);
+    this.$socket.client.off('dashboardUnreadedVersions', this.socketdashboardUnreadedVersions);
+    this.$socket.client.off('deleteKBVersion', this.socketdeleteKBVersion);
     window.clearTimeout(this.queryTimer);
     this.queryTimer = null;
     window.clearTimeout(this.issueTimer);
+    window.clearTimeout(this.versionTimer);
     window.clearTimeout(this.eventTimer);
     this.issueTimer = undefined;
+    this.versionTimer = undefined;
     this.eventTimer = undefined;
   },
   mounted () {
@@ -1386,6 +1498,8 @@ export default {
     this.$socket.client.on('KBVersionUploadDone', this.soketKBVersionUploadDone);
     this.$socket.client.on('getlatestVersions', this.soketgetlatestVersions);
     this.$socket.client.on('setKBTag', this.soketsetKBTag);
+    this.$socket.client.on('dashboardUnreadedVersions', this.socketdashboardUnreadedVersions);
+    this.$socket.client.on('deleteKBVersion', this.socketdeleteKBVersion);
     let queriedChapters = window.localStorage.getItem('queriedChapters');
     if(queriedChapters) {
       this.queriedChapters = JSON.parse(queriedChapters);
