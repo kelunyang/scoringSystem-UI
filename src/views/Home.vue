@@ -1,6 +1,6 @@
 <template>
-  <v-sheet class='d-flex flex-column pa-0'>
-    <v-expansion-panels focusable accordion v-model='messageExpanded'>
+  <v-sheet class='d-flex flex-column pa-0 justify-center align-center'>
+    <v-expansion-panels focusable accordion v-model='messageExpanded' style='width: 95%'>
       <v-expansion-panel v-for='item in announcements' :key='item.id' :class='item.type === 2 ? "red--text darken-4" : ""'>
         <v-expansion-panel-header expand-icon="fa-chevron-down">
           <div>
@@ -26,7 +26,7 @@
         </v-expansion-panel-content>
       </v-expansion-panel>
     </v-expansion-panels>
-    <div class='d-flex flex-column flex-grow-1 justify-center align-center' v-if='currentUser._id === ""'>
+    <div class='d-flex flex-column flex-grow-1 justify-center align-center' style='width: 95%' v-if='currentUser._id === ""'>
       <v-btn
       elevation="3"
       x-large

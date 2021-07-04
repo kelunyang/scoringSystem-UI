@@ -199,7 +199,7 @@
             </div>
             <div class='text-h6' v-if='currentVersion._id !== ""'>[目前版本的機器格式檢查狀態]</div>
             <v-divider inset></v-divider>
-            <div class='text-body-1 font-weight-medium black--text text-left'>上傳時間： {{ dateConvert(currentVersion.tick) }} </div>
+            <div class='text-body-1 font-weight-medium black--text text-left' v-if='currentVersion._id !== ""'>上傳時間： {{ dateConvert(currentVersion.tick) }} </div>
             <div class='text-body-1 font-weight-medium black--text text-left' v-if='currentVersion._id !== ""'>
               <div v-if='/video/g.test(currentVersion.type)'>機器格式檢查狀態：
                 <span v-if='currentVersion.status === 0'>機器格式檢查失敗</span>
