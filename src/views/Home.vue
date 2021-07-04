@@ -30,7 +30,7 @@
       <v-btn
       elevation="3"
       x-large
-      style='min-width: 400px'
+      style='min-width: 90%'
       class='flex-grow-1 indigo darken-4 white--text ma-3 text-h6 font-weight-bold'
       link
       href="#/Login">
