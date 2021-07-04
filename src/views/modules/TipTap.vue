@@ -65,7 +65,7 @@
 
 <script>
 import { Editor, EditorContent } from '@tiptap/vue-2'
-import { defaultExtensions } from '@tiptap/starter-kit'
+import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 
 export default {
@@ -104,7 +104,7 @@ export default {
     let oriobj = this;
     this.editor = new Editor({
       extensions: [
-        ...defaultExtensions(),
+        StarterKit,
         Placeholder,
       ],
       content: this.value,

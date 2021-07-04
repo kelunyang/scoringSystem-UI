@@ -774,181 +774,185 @@ export default {
       this.renderChart();
     },
     generateList: async function() {
-      let now = moment().unix();
-      let list = [];
-      let oriobj = this;
-      this.$emit('toastPop', '整理清單中，請稍後...');
-      if(this.selectedFilterTags.length > 0) {
-        for (let i = 0; i < this.selectedFilterTags.length; i++) {
-          let tag = this.selectedFilterTags[i];
-          let found = _filter(this.progressList, (item) => {
-            return _includes(item.tag, tag);
-          });
-          if(found.length > 0) {
-            this.queriedChapters.push(this.selectedKBTag);
-            this.queriedChapters = _uniq(this.queriedChapters);
-            localStorage.setItem('queriedChapters', JSON.stringify(this.queriedChapters));
-            list.push(found);
+      if(this.currentUser.tags.length > 0) {
+        let now = moment().unix();
+        let list = [];
+        let oriobj = this;
+        this.$emit('toastPop', '整理清單中，請稍後...');
+        if(this.selectedFilterTags.length > 0) {
+          for (let i = 0; i < this.selectedFilterTags.length; i++) {
+            let tag = this.selectedFilterTags[i];
+            let found = _filter(this.progressList, (item) => {
+              return _includes(item.tag, tag);
+            });
+            if(found.length > 0) {
+              this.queriedChapters.push(this.selectedKBTag);
+              this.queriedChapters = _uniq(this.queriedChapters);
+              localStorage.setItem('queriedChapters', JSON.stringify(this.queriedChapters));
+              list.push(found);
+            }
           }
+          list = _flatten(list);
+        } else {
+          list = this.progressList;
         }
-        list = _flatten(list);
-      } else {
-        list = this.progressList;
-      }
-      if(this.queryTerm !== '') {
-        list = _filter(list, (item) => {
-          return (new RegExp(oriobj.queryTerm, 'g')).test(item.mainTag+item.mainChapter+item.sort+item.title + item.desc);
+        if(this.queryTerm !== '') {
+          list = _filter(list, (item) => {
+            return (new RegExp(oriobj.queryTerm, 'g')).test(item.mainTag+item.mainChapter+item.sort+item.title + item.desc);
+          });
+        }
+        let maxDig = 1;
+        if(list.length > 0) {
+          let sortList = _map(list, (item) => {
+            return item.sort;
+          });
+          let orderedSort = sortList.sort((a, b) => {
+            return b - a;
+          });
+          maxDig = orderedSort[0].toString().length;
+        }
+        for (let i = 0; i< list.length; i++) {
+          let KB = list[i];
+          KB.attention = 0;
+          KB.selected = false;
+          let chapter = _head(KB.chapter);
+          KB.mainChapter = chapter === undefined ? '' : chapter.title;
+          let mtag = _head(KB.tag);
+          let mainTag = undefined;
+          if(mtag !== undefined) {
+            mainTag = _find(this.savedTags, (tag) => {
+              return tag._id === mtag;
+            });
+          }
+          KB.mainTag = mainTag === undefined ? '' : mainTag.name;
+          KB.sortRanking = KB.tag.length > 0 ? KB.tag[0] : KB.title;
+          KB.sortRanking += KB.chapter.length > 0 ? KB.chapter[0]._id : KB.title;
+          let sort = _padStart(KB.sort, maxDig, '0');
+          KB.sortRanking += sort;
+          KB.currentStep = (_countBy(KB.stages, {
+            current: false
+          })) === KB.stages.length ? 0 : (_findIndex(KB.stages, {
+            current: true
+          })) + 1 ;
+          for (let k = 0; k < KB.stages.length; k++) {
+            let stage = KB.stages[k];
+            stage.special = false;
+            if(stage.current) {
+              if(stage.dueTick < moment().unix()) {
+                stage.special = true;
+              }
+              KB.attention = moment().unix() - stage.dueTick;
+            }
+          }
+          if(KB.currentStep > 0) {
+            KB.isPM = (_intersectionWith(KB.stages[KB.currentStep - 1].pmTags, this.currentUser.tags, (cTag, uTag) => {
+              return cTag === uTag._id;
+            })).length > 0;
+            KB.isVendor = (_intersectionWith(KB.stages[KB.currentStep - 1].vendorTags, this.currentUser.tags, (cTag, uTag) => {
+              return cTag === uTag._id;
+            })).length > 0;
+            KB.isFinal = (_intersectionWith(KB.stages[KB.currentStep - 1].finalTags, this.currentUser.tags, (cTag, uTag) => {
+              return cTag === uTag._id;
+            })).length > 0;
+            KB.isWriter = (_intersectionWith(KB.stages[KB.currentStep - 1].writerTags, this.currentUser.tags, (cTag, uTag) => {
+              return cTag === uTag._id;
+            })).length > 0;
+            KB.isReviewer = (_intersectionWith(KB.stages[KB.currentStep - 1].reviewerTags, this.currentUser.tags, (cTag, uTag) => {
+              return cTag === uTag._id;
+            })).length > 0;
+          }
+          KB.dueTick = 0;
+          let found = _find(this.selectedpmKBs, (item) => {
+            return KB._id === item;
+          });
+          if (found !== undefined) {
+            KB.selected = true;
+          }
+          KB.remainTick = KB.currentStep > 0 ? KB.stages[KB.currentStep - 1].dueTick - now: Number.MAX_SAFE_INTEGER ;
+        }
+        if(list.length > 0) {
+          if(!this.queryHistory) {
+            let result = [];
+            for (let i = 0; i < this.currentUser.tags.length; i++) {
+              let tag = this.currentUser.tags[i];
+              result.push(_filter(list, (item) => {
+                if(item.currentStep === 0) {
+                  return false;
+                } else {
+                  return _includes(_flatten([
+                          item.stages[item.currentStep - 1].pmTags,
+                          item.stages[item.currentStep - 1].reviewerTags,
+                          item.stages[item.currentStep - 1].vendorTags,
+                          item.stages[item.currentStep - 1].writerTags,
+                          item.stages[item.currentStep - 1].finalTags
+                        ]), tag._id);
+                }
+              }));
+            }
+            list = _flatten(result);
+          }
+          list = _uniqWith(list, (aKB, bKB) => {
+            return aKB._id === bKB._id;
+          });
+          list.sort((a, b) => {
+            let aTime = a.attention > 0 ? aTime * 100000 : Math.abs(aTime);
+            let bTime = b.attention > 0 ? bTime * 100000 : Math.abs(bTime);
+            return aTime - bTime;
+          });
+        }
+        this.convertedList = [];
+        this.renderList = [];
+        let convertedList = this.sortingRule ? _orderBy(list, ['remainTick'], ['asc']) : _orderBy(list, ['sortRanking'], ['asc']);
+        let steps = _map(convertedList, (item) => {
+          return item.stages.length;
         });
-      }
-      let maxDig = 1;
-      if(list.length > 0) {
-        let sortList = _map(list, (item) => {
-          return item.sort;
-        });
-        let orderedSort = sortList.sort((a, b) => {
+        let orderedSteps = steps.sort((a, b) => {
           return b - a;
         });
-        maxDig = orderedSort[0].toString().length;
-      }
-      for (let i = 0; i< list.length; i++) {
-        let KB = list[i];
-        KB.attention = 0;
-        KB.selected = false;
-        let chapter = _head(KB.chapter);
-        KB.mainChapter = chapter === undefined ? '' : chapter.title;
-        let mtag = _head(KB.tag);
-        let mainTag = undefined;
-        if(mtag !== undefined) {
-          mainTag = _find(this.savedTags, (tag) => {
-            return tag._id === mtag;
-          });
-        }
-        KB.mainTag = mainTag === undefined ? '' : mainTag.name;
-        KB.sortRanking = KB.tag.length > 0 ? KB.tag[0] : KB.title;
-        KB.sortRanking += KB.chapter.length > 0 ? KB.chapter[0]._id : KB.title;
-        let sort = _padStart(KB.sort, maxDig, '0');
-        KB.sortRanking += sort;
-        KB.currentStep = (_countBy(KB.stages, {
-          current: false
-        })) === KB.stages.length ? 0 : (_findIndex(KB.stages, {
-          current: true
-        })) + 1 ;
-        for (let k = 0; k < KB.stages.length; k++) {
-          let stage = KB.stages[k];
-          stage.special = false;
-          if(stage.current) {
-            if(stage.dueTick < moment().unix()) {
-              stage.special = true;
-            }
-            KB.attention = moment().unix() - stage.dueTick;
+        this.maxStep = orderedSteps.length > 0 ? orderedSteps[0] : 5;
+        this.initialized = true;
+        this.statisticSteps = this.maxStep;
+        this.convertedList = convertedList;
+        let requestList = _map(this.progressList, (item) => {
+          return item._id;
+        });
+        window.clearTimeout(this.issueTimer);
+        window.clearTimeout(this.eventTimer);
+        window.clearTimeout(this.versionTimer);
+        window.clearTimeout(this.renderTimer);
+        this.issueTimer = undefined;
+        this.versionTimer = undefined;
+        this.eventTimer = undefined;
+        this.renderTimer = undefined;
+        this.$emit('toastPop', '清單整理完成，請稍後...');
+        this.renderTimer = setTimeout(() => {
+          oriobj.renderList = convertedList;
+          if(oriobj.unreadedList.length === 0) {
+            oriobj.$emit('toastPop', '5秒後開始下載未讀取Issue清單（完成後您會在每個知識點左下方看到數量）');
+            oriobj.issueTimer = setTimeout(() => {
+              oriobj.$socket.client.emit('dashBoardUnreaded', requestList);
+            }, 5000);
+          } else {
+            oriobj.injectUnread(oriobj.unreadedList);
           }
-        }
-        if(KB.currentStep > 0) {
-          KB.isPM = (_intersectionWith(KB.stages[KB.currentStep - 1].pmTags, this.currentUser.tags, (cTag, uTag) => {
-            return cTag === uTag._id;
-          })).length > 0;
-          KB.isVendor = (_intersectionWith(KB.stages[KB.currentStep - 1].vendorTags, this.currentUser.tags, (cTag, uTag) => {
-            return cTag === uTag._id;
-          })).length > 0;
-          KB.isFinal = (_intersectionWith(KB.stages[KB.currentStep - 1].finalTags, this.currentUser.tags, (cTag, uTag) => {
-            return cTag === uTag._id;
-          })).length > 0;
-          KB.isWriter = (_intersectionWith(KB.stages[KB.currentStep - 1].writerTags, this.currentUser.tags, (cTag, uTag) => {
-            return cTag === uTag._id;
-          })).length > 0;
-          KB.isReviewer = (_intersectionWith(KB.stages[KB.currentStep - 1].reviewerTags, this.currentUser.tags, (cTag, uTag) => {
-            return cTag === uTag._id;
-          })).length > 0;
-        }
-        KB.dueTick = 0;
-        let found = _find(this.selectedpmKBs, (item) => {
-          return KB._id === item;
-        });
-        if (found !== undefined) {
-          KB.selected = true;
-        }
-        KB.remainTick = KB.currentStep > 0 ? KB.stages[KB.currentStep - 1].dueTick - now: Number.MAX_SAFE_INTEGER ;
-      }
-      if(list.length > 0) {
-        if(!this.queryHistory) {
-          let result = [];
-          for (let i = 0; i < this.currentUser.tags.length; i++) {
-            let tag = this.currentUser.tags[i];
-            result.push(_filter(list, (item) => {
-              if(item.currentStep === 0) {
-                return false;
-              } else {
-                return _includes(_flatten([
-                        item.stages[item.currentStep - 1].pmTags,
-                        item.stages[item.currentStep - 1].reviewerTags,
-                        item.stages[item.currentStep - 1].vendorTags,
-                        item.stages[item.currentStep - 1].writerTags,
-                        item.stages[item.currentStep - 1].finalTags
-                      ]), tag._id);
-              }
-            }));
+          if(oriobj.eventList.length === 0) {
+            oriobj.$emit('toastPop', '3秒後開始下載知識點編輯紀錄（完成後您會在每個知識點右上方看到最後一次的編輯紀錄）');
+            oriobj.eventTimer = setTimeout(() => {
+              oriobj.$socket.client.emit('dashBoardEventLog', requestList);
+            }, 3000);
+          } else {
+            oriobj.injectEvents(oriobj.eventList);
           }
-          list = _flatten(result);
-        }
-        list = _uniqWith(list, (aKB, bKB) => {
-          return aKB._id === bKB._id;
-        });
-        list.sort((a, b) => {
-          let aTime = a.attention > 0 ? aTime * 100000 : Math.abs(aTime);
-          let bTime = b.attention > 0 ? bTime * 100000 : Math.abs(bTime);
-          return aTime - bTime;
-        });
+          if(oriobj.unreadedVersions.length === 0) {
+            oriobj.$emit('toastPop', '7秒後開始下載未讀取版本清單（完成後您會在每個知識點左下方看到數量）');
+            oriobj.versionTimer = setTimeout(() => {
+              oriobj.$socket.client.emit('dashboardUnreadedVersions', requestList);
+            }, 7000);
+          } else {
+            oriobj.injectVersion(oriobj.unreadedVersions);
+          }
+        }, 10);
       }
-      this.convertedList = [];
-      this.renderList = [];
-      let convertedList = this.sortingRule ? _orderBy(list, ['remainTick'], ['asc']) : _orderBy(list, ['sortRanking'], ['asc']);
-      let steps = _map(convertedList, (item) => {
-        return item.stages.length;
-      });
-      let orderedSteps = steps.sort((a, b) => {
-        return b - a;
-      });
-      this.maxStep = orderedSteps.length > 0 ? orderedSteps[0] : 5;
-      this.initialized = true;
-      this.statisticSteps = this.maxStep;
-      this.convertedList = convertedList;
-      let requestList = _map(this.progressList, (item) => {
-        return item._id;
-      });
-      window.clearTimeout(this.issueTimer);
-      window.clearTimeout(this.eventTimer);
-      window.clearTimeout(this.versionTimer);
-      this.issueTimer = undefined;
-      this.versionTimer = undefined;
-      this.eventTimer = undefined;
-      this.$emit('toastPop', '清單整理完成，請稍後...');
-      await Vue.nextTick(() => {
-        oriobj.renderList = convertedList;
-        if(oriobj.unreadedList.length === 0) {
-          oriobj.$emit('toastPop', '5秒後開始下載未讀取Issue清單（完成後您會在每個知識點左下方看到數量）');
-          oriobj.issueTimer = setTimeout(() => {
-            oriobj.$socket.client.emit('dashBoardUnreaded', requestList);
-          }, 5000);
-        } else {
-          oriobj.injectUnread(oriobj.unreadedList);
-        }
-        if(oriobj.eventList.length === 0) {
-          oriobj.$emit('toastPop', '3秒後開始下載知識點編輯紀錄（完成後您會在每個知識點右上方看到最後一次的編輯紀錄）');
-          oriobj.eventTimer = setTimeout(() => {
-            oriobj.$socket.client.emit('dashBoardEventLog', requestList);
-          }, 3000);
-        } else {
-          oriobj.injectEvents(oriobj.eventList);
-        }
-        if(oriobj.unreadedVersions.length === 0) {
-          oriobj.$emit('toastPop', '7秒後開始下載未讀取版本清單（完成後您會在每個知識點左下方看到數量）');
-          oriobj.versionTimer = setTimeout(() => {
-            oriobj.$socket.client.emit('dashboardUnreadedVersions', requestList);
-          }, 7000);
-        } else {
-          oriobj.injectVersion(oriobj.unreadedVersions);
-        }
-      });
     },
     renderChart: function() {
       let steps = [];
@@ -1231,6 +1235,16 @@ export default {
     }
   },
   watch: {
+    "currentUser.tags": async function() {
+      if(this.currentUser.tags.length > 0) {
+        if(this.progressList.length > 0) {
+          await this.generateList();
+          this.renderChart();
+          this.initialized = true;
+          this.dashboardPopulated = true;
+        }
+      }
+    },
     showStatstics: async function () {
       if(this.showStatstics) {
         if(this.convertedList.length > 0) {
@@ -1337,6 +1351,7 @@ export default {
       issueTimer: undefined,
       eventTimer: undefined,
       versionTimer: undefined,
+      renderTimer: undefined,
       eventList: [],
       renderList: [],
       /*firstRun: true,

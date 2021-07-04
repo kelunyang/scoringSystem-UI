@@ -1586,9 +1586,7 @@ export default {
         }
         this.firstRun = false;
       }
-      Vue.nextTick(() => {
-        oriobj.issueList = data;
-      });
+      this.issueList = data;
     },
     socketgetReadedIssue: function (data) {
       this.$emit('timerOn', false);
@@ -2103,14 +2101,10 @@ export default {
     this.$socket.client.on('getKBVersions', this.sockgetKBVersions);
     this.$socket.client.on('getStage', this.sockgetStage);
     this.$socket.client.on('getReadedIssue', this.socketgetReadedIssue);
-    this.$socket.client.on('getReadedIssue', this.socketgetReadedIssue);
     window.addEventListener('scroll', this.scrollEvent);
-    let oriobj = this;
-    Vue.nextTick(() => {
-      oriobj.$socket.client.emit('setreadedVersion', this.KBid);
-      oriobj.$socket.client.emit('getKB', this.KBid);
-      oriobj.$socket.client.emit('joinKBEditing', this.KBid);
-    });
+    this.$socket.client.emit('setreadedVersion', this.KBid);
+    this.$socket.client.emit('getKB', this.KBid);
+    this.$socket.client.emit('joinKBEditing', this.KBid);
   },
   computed: {
     diffDetect: function () {

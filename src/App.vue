@@ -461,7 +461,7 @@
     <v-alert type="error" outlined icon='fas fa-mobile-alt' class='text-left' v-if='isPortrait'>請勿使用直立操作！</v-alert>
     <v-alert type="error" outlined icon='fas fa-safari' class='text-left' v-if='isSafari'>Safari瀏覽器可能會導致同步連線異常，建議不要使用！</v-alert>
     <v-alert outlined type="error" icon='fab fa-apple' class='text-left' v-if="isiOS">
-      請勿使用iOS裝置操作！iOS裝置可以看到影片，但<a href="https://developer.apple.com/documentation/webkitjs/canvasrenderingcontext2d/1630282-drawimage" target="_blank">本身限制</a>會導致「切換影片」／「手繪標記」等功能失效，使用體驗很差
+      iOS有限度支援通知：iOS裝置<a href="https://developer.apple.com/documentation/webkitjs/canvasrenderingcontext2d/1630282-drawimage" target="_blank">本身系統限制</a>會導致「切換影片」／「手繪標記」等功能失效，您還是可以審查，但使用者體驗不佳，請注意
     </v-alert>
     <div class='pa-5 ma-0' style='width: 100vw'>
       <router-view @updateTags='updateTags' @addTag='addTag' @viewIn='changePage' @toastPop='sendToast' @timerOn='timerOn' @preventReloadDetect='preventReloadDetect' @downloadFile='downloadFile'></router-view>
