@@ -191,7 +191,10 @@
                       {{ version.name }}
                     </td>
                     <td class="text-left">
-                      <span v-if='version.status === 1'>尚未格式檢查</span>
+                      <span v-if='version.status === 1'>
+                        <span v-if='/video\//g.test(version.type)'>尚未格式檢查</span>
+                        <span v-else>非影片不需檢查</span>
+                      </span>
                       <span v-if='version.status === 0'>格式檢查失敗</span>
                       <span v-if='version.status >= 2'>格式
                         <span>{{ version.fileInfo.formatCheck ? '正確' : '錯誤' }}</span><br/>

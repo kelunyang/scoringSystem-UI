@@ -460,6 +460,9 @@
     <v-alert type="error" outlined icon='fab fa-internet-explorer' class='text-left' v-if='isIE'>請勿使用Internet Explorer！</v-alert>
     <v-alert type="error" outlined icon='fas fa-mobile-alt' class='text-left' v-if='isPortrait'>請勿使用直立操作！</v-alert>
     <v-alert type="error" outlined icon='fas fa-safari' class='text-left' v-if='isSafari'>Safari瀏覽器可能會導致同步連線異常，建議不要使用！</v-alert>
+    <v-alert outlined type="error" icon='fab fa-apple' class='text-left' v-if="isiOS">
+      請勿使用iOS裝置操作！iOS裝置可以看到影片，但<a href="https://developer.apple.com/documentation/webkitjs/canvasrenderingcontext2d/1630282-drawimage" target="_blank">本身限制</a>會導致「切換影片」／「手繪標記」等功能失效，使用體驗很差
+    </v-alert>
     <div class='pa-5 ma-0' style='width: 100vw'>
       <router-view @updateTags='updateTags' @addTag='addTag' @viewIn='changePage' @toastPop='sendToast' @timerOn='timerOn' @preventReloadDetect='preventReloadDetect' @downloadFile='downloadFile'></router-view>
     </div>
@@ -534,7 +537,7 @@ export default {
       this.$socket.client.emit('getTags');
     },
     downloadFile: function (file) {
-      if (file.type.indexOf('image') === -1) {
+      if (!/image/g.test(file.type)) {
         this.forceDownload(file);
       } else {
         this.imgCache = file;
@@ -648,6 +651,9 @@ export default {
     currentUser: function () {
       return this.$store.state.currentUser;
     },
+    isPortrait: function () {
+      return this.$store.state.isPortrait;
+    },
     siteColor: function () {
       return this.$store.state.siteColor;
     },
@@ -656,6 +662,15 @@ export default {
     },
     savedTags: function () {
       return this.$store.state.savedTags;
+    },
+    isIE: function () {
+      return this.$store.state.isIE;
+    },
+    isSafari: function () {
+      return this.$store.state.isSafari;
+    },
+    isiOS: function () {
+      return this.$store.state.isiOS;
     },
     messageDialog: function () {
       if(this.receiver !== null) {
@@ -788,6 +803,8 @@ export default {
   },
   created () {
     let oriobj = this;
+    this.$store.commit('updateisIE', /MSIE|Trident/g.test(navigator.userAgent));
+    this.$store.commit('updateisiOS', /iPad|iPhone|iPod/g.test(navigator.platform) || (navigator.userAgent.includes("Mac") && "ontouchend" in document));
     document.addEventListener("visibilitychange", function() {
       if (document.visibilityState === 'visible') {
         oriobj.sendToast({
@@ -799,15 +816,14 @@ export default {
         leaveTick = moment().unix();
       }
     });
-    this.isIE = navigator.userAgent.indexOf("MSIE ") > -1 || navigator.userAgent.indexOf("Trident/") > -1;
     angleDetect.onchange = () => {
-      oriobj.isPortrait = angleDetect.matches;
+      this.$store.commit('updateisPortrait', angleDetect.matches);
     }
-    this.isPortrait = window.screen.width < window.screen.height;
+    this.$store.commit('updateisPortrait', window.screen.width < window.screen.height);
     if(!this.preventR) {
       let nav = performance.getEntriesByType("navigation");
       if(nav === undefined || nav == null || nav.length === 0) {
-        this.isSafari = true;
+        this.$store.commit('updateisSafari', true);
       } else {
         if (nav[0].type === 'reload' || nav[0].type === 1) {
           this.sendToast({
@@ -1009,8 +1025,6 @@ export default {
   },
   data () {
     return {
-      isIE: false,
-      isPortrait: false,
       imgCache: {
         name: '',
         _id: ''
@@ -1044,7 +1058,6 @@ export default {
       nextCheckTime : 0,
       authW: true,
       violationW: false,
-      isSafari: false,
       violation: {
         where: '',
         action: '',

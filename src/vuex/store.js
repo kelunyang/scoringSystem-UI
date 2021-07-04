@@ -49,9 +49,25 @@ const store = new Store({
       systemName: ''
     },
     savedTags: [],
-    siteColor: '#15858A'
+    siteColor: '#15858A',
+    isiOS: false,
+    isIE: false,
+    isSafari: false,
+    isPortrait: false
   },
   mutations: {
+    updateisIE(state, detect) {
+      state.isIE = detect;
+    },
+    updateisiOS(state, detect) {
+      state.isiOS = detect;
+    },
+    updateisPortrait(state, detect) {
+      state.isPortrait = detect;
+    },
+    updateisSafari(state, detect) {
+      state.isSafari = detect;
+    },
     updateSavedTags(state, tags) {
       state.savedTags = _orderBy(tags, ['name'], ['asc']);
     },

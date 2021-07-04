@@ -102,7 +102,7 @@
             <template v-slot:activator="{ on, attrs }">
               <div v-bind="attrs" v-on="on" class="versionSign">{{ versionConvert(currentIssue.version) }}</div>
             </template>
-            <span v-if='currentIssue.version === undefined || !("tick" in currentIssue.version)'>無對應版本</span>
+            <span v-if='currentIssue.version === undefined || currentIssue.version === null || !("tick" in currentIssue.version)'>無對應版本</span>
             <span v-else>{{ versionnameConvert(currentIssue.version.name) }}版</span>
           </v-tooltip>
           <div>{{ timeConvert(currentIssue) }}</div>
@@ -312,7 +312,8 @@ export default {
         status: false,
         star: false,
         sealed: false,
-        parent: undefined
+        parent: undefined,
+        _id: ''
       }
     }
   },
@@ -338,23 +339,29 @@ export default {
       return filename.replace(/\.[^/.]+$/, "");
     },
     versionConvert: function (version) {
-      if(this.currentVersion._id !== '') {
-        if(version === undefined || !('_id' in version)) {
-          return '無對應版本';
+      if(this.currentIssue._id !== '') {
+        if(this.currentVersion._id !== '') {
+          if(version === undefined || version === null || !('_id' in version)) {
+            return '無對應版本';
+          } else {
+            return version._id === this.currentVersion._id ? '當前版本' : this.versionnameConvert(version.name) + '版';
+          }
         } else {
-          return version._id === this.currentVersion._id ? '當前版本' : this.versionnameConvert(version.name) + '版';
+          return '當前無任何已上傳版本'
         }
-      } else {
-        return '當前無任何已上傳版本'
       }
     },
     timeConvert: function (issue) {
-      if('version' in issue && issue.version !== undefined) {
-        let type = mime.lookup(issue.version.name);
-        if(type.indexOf('video') > -1) {
-          return "@" + moment.duration(issue.position, 'second').format('mm分ss秒SS');
-        } else if(type.indexOf('pdf') > -1) {
-          return "@" + issue.position + '頁';
+      if(issue.version !== null) {
+        if(issue.version !== undefined) {
+          if('version' in issue) {
+            let type = mime.lookup(issue.version.name);
+            if(/video/g.test(type)) {
+              return "@" + moment.duration(issue.position, 'second').format('mm分ss秒SS');
+            } else if(/pdf/g.test(type)) {
+              return "@" + issue.position + '頁';
+            }
+          }
         }
       }
       return '';

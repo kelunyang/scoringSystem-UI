@@ -161,37 +161,64 @@
           <v-alert outlined type='info' icon='fa-info-circle' class='text-left'>這個對話框關閉之後，你可以在審查畫面右上角點一下i按鈕開啟</v-alert>
           <div v-if='currentKB.currentStep === 0'>專案目前沒啟動，你是怎麼到這裡的？</div>
           <div v-if='currentKB.currentStep > 0' class='pa-3'>
-            <div class='text-body-1'>目前進度（階段 {{ currentKB.currentStep }} / {{ currentKB.stages.length }}）</div>
-            <div class='text-h6 font-weight-medium black--text text-left'>{{ currentKB.stages[currentKB.currentStep - 1].name }}</div>
-            <div class='text-body-1'>進度日期</div>
-            <div class='text-h6 font-weight-medium black--text text-left d-flex flex-column'>
+            <div class='text-h6'>[目前進度]</div>
+            <v-divider inset></v-divider>
+            <div class='text-body-1 font-weight-medium black--text text-left'>{{ currentKB.stages[currentKB.currentStep - 1].name }}（階段 {{ currentKB.currentStep }} / {{ currentKB.stages.length }}）</div>
+            <div class='text-h6'>[進度日期]</div>
+            <v-divider inset></v-divider>
+            <div class='text-body-1 font-weight-medium black--text text-left d-flex flex-column'>
               <div>起：{{ dateConvert(currentKB.stages[currentKB.currentStep - 1].startTick) }}</div>
               <div>至：{{ dateConvert(currentKB.stages[currentKB.currentStep - 1].dueTick) }}</div>
             </div>
-            <div class='text-body-1'>你在目前進度中的角色</div>
+            <div class='text-h6'>[你在目前進度中的角色]</div>
+            <v-divider inset></v-divider>
             <div v-if='currentStage.isPM'>
-              <div class='text-h6 font-weight-medium black--text text-left'>
+              <div class='text-body-1 font-weight-medium black--text text-left'>
                 專案管理者：你可以關閉／開啟任何的Issue，並且在知識點編輯器中強制改變專案進度
               </div>
             </div>
             <div v-if='currentStage.isVendor'>
-              <div class='text-h6 font-weight-medium black--text text-left'>
+              <div class='text-body-1 font-weight-medium black--text text-left'>
                 廠商：你可以在DashBoard中上傳知識點的版本，並且回復Issue
               </div>
             </div>
             <div v-if='currentStage.isWriter'>
-              <div class='text-h6 font-weight-medium black--text text-left'>
+              <div class='text-body-1 font-weight-medium black--text text-left'>
                 寫手：你可以開啟Issue，上傳腳本，並回復Issue
               </div>
             </div>
             <div v-if='currentStage.isReviewer'>
-              <div class='text-h6 font-weight-medium black--text text-left'>
+              <div class='text-body-1 font-weight-medium black--text text-left'>
                 審查者：你可以開啟／關閉Issue，並且決定本階段是否結束
               </div>
             </div>
             <div v-if='currentStage.isFinal'>
-              <div class='text-h6 font-weight-medium black--text text-left'>
+              <div class='text-body-1 font-weight-medium black--text text-left'>
                 行政組：你只能看Issue，並在DashBoard中匯出專案統計
+              </div>
+            </div>
+            <div class='text-h6' v-if='currentVersion._id !== ""'>[目前版本的機器格式檢查狀態]</div>
+            <v-divider inset></v-divider>
+            <div class='text-body-1 font-weight-medium black--text text-left'>上傳時間： {{ dateConvert(currentVersion.tick) }} </div>
+            <div class='text-body-1 font-weight-medium black--text text-left' v-if='currentVersion._id !== ""'>
+              <div v-if='/video/g.test(currentVersion.type)'>機器格式檢查狀態：
+                <span v-if='currentVersion.status === 0'>機器格式檢查失敗</span>
+                <span v-if='currentVersion.status === 1'>尚未機器格式檢查</span>
+                <span v-if='currentVersion.status >= 2'>機器檢查
+                  <span>{{ currentVersion.fileInfo.formatCheck ? '正確' : '錯誤' }}</span>
+                  <span v-if='currentVersion.status === 2'>（{{ dateConvert(currentVersion.fileInfo.checkTick) }}已完成檢查）</span>
+                  <span v-if='currentVersion.status === 3'>（{{ dateConvert(currentVersion.fileInfo.converisionDate) }}已轉換為VP9/WebM）</span>
+                </span><br/>
+                <span v-if='currentVersion.status >= 2'>{{ currentVersion.fileInfo.hasAudio ? '🔊' : '' }}</span>
+                <span v-if='currentVersion.status >= 2'>{{ currentVersion.validAudio ? '' : '❌' }}</span>
+                <span v-if='currentVersion.status >= 2'>{{ currentVersion.fileInfo.width }}</span>
+                <span v-if='currentVersion.status >= 2'>{{ currentVersion.validWidth ? '' : '❌' }}</span>
+                <span v-if='currentVersion.status >= 2'>×{{ currentVersion.fileInfo.height }}</span>
+                <span v-if='currentVersion.status >= 2'>{{ currentVersion.validHeight ? '' : '❌' }}</span>
+                <span v-if='currentVersion.status >= 2'>@ {{ timeConvert(currentVersion.fileInfo.duration) }}</span>
+              </div>
+              <div class='text-body-1 font-weight-medium black--text text-left' v-else>
+                非影片不需進行機器檢查
               </div>
             </div>
           </div>
@@ -267,10 +294,13 @@
                       class="ma-1 red--text accent-4"
                       v-if='item.status === 1'
                     >
-                      <v-icon left color="red accent-4">
-                        fa-times
-                      </v-icon>
-                      尚未格式檢查
+                      <span v-if='/video/g.test(item.type)'>
+                        <v-icon left color="red accent-4">
+                          fa-question
+                        </v-icon>
+                        尚未格式檢查
+                      </span>
+                      <span v-else>非影片不需檢查</span>
                     </span>
                     <span
                       class="ma-1 red accent-4"
@@ -763,7 +793,7 @@
                     </template>
                     <span>停止影片</span>
                   </v-tooltip>
-                  <div class='tickArea' v-if='currentData.position !== undefined'>
+                  <div class='tickArea' v-if='currentData.position !== undefined || currentData.position > 0'>
                     <span v-if='cType === "pdf"'>{{ currentData.position }}</span>
                     <span v-if='cType === "video"'> {{ timeConvert(currentData.position) }}</span> / {{ currentData.total }}
                   </div>
@@ -858,7 +888,7 @@
                     </template>
                     <span>播放影片</span>
                   </v-tooltip>
-                  <div class='tickArea' v-if='previousData.position !== undefined'>
+                  <div class='tickArea' v-if='previousData.position !== undefined || previousData.position > 0'>
                     <span v-if='pType === "pdf"'>{{ previousData.position }}</span>
                     <span v-if='pType === "video"'> {{ timeConvert(previousData.position) }}</span> / {{ previousData.total }}
                   </div>
@@ -928,7 +958,7 @@
                   >
                     <v-list-item-icon>
                       <v-icon v-if='zipfile.file.dir'>fa-folder</v-icon>
-                      <v-icon v-if='!zipfile.file.dir'>fa-file-archive</v-icon>
+                      <v-icon v-if='!zipfile.file.dir'>{{ fileiconConvert(zipfile.file.name) }}</v-icon>
                     </v-list-item-icon>
                     <v-list-item-content>
                       <v-list-item-title>{{ zipfile.file.name }}</v-list-item-title>
@@ -1237,7 +1267,7 @@ import mime from 'mime-types';
 import Paintable from 'vue-paintable';
 import * as htmlToImage from 'html-to-image';
 import * as Diff from 'diff'
-import * as pdfjsLib from 'pdfjs-dist/es5/build/pdf';
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf';
 import PdfjsWorker from 'workerize-loader!pdfjs-dist/build/pdf.worker.js';
 pdfjsLib.GlobalWorkerOptions.workerPort = new PdfjsWorker();
 import 'pdfjs-dist/build/pdf.worker.entry';
@@ -1277,7 +1307,7 @@ export default {
           });
         }
         currentVersion.readed = version === undefined;
-        if('fileInfo' in currentVersion) {
+        if(currentVersion.status >= 2) {
           currentVersion.validHeight = currentVersion.fileInfo.height >= this.siteSettings.validFormat.validHeight;
           currentVersion.validWidth = currentVersion.fileInfo.width >= this.siteSettings.validFormat.validWidth;
           currentVersion.validAudio = this.siteSettings.validFormat.withAudio ? currentVersion.fileInfo.hasAudio : true;
@@ -1393,22 +1423,22 @@ export default {
     },
     fileiconConvert: function (name) {
       let type = mime.lookup(name);
-      if(type.indexOf("image") > -1) {
+      if(/image/g.test(type)) {
         return "fas fa-file-image";
       }
-      if(type.indexOf('word') > -1) {
+      if(/word/g.test(type)) {
         return "fas fa-file-word";
       }
-      if(type.indexOf('excel') > -1 || type.indexOf('sheet') > -1) {
+      if(/excel/g.test(type) || /sheet/g.test(type)) {
         return "fas fa-file-excel";
       }
-      if(type.indexOf('powerpoint') > -1 || type.indexOf('presentation') > -1) {
+      if(/powerpoint/g.test(type) || /presentation/g.test(type)) {
         return "fas fa-file-powerpoint";
       }
-      if(type.indexOf('video') > -1) {
+      if(/video/g.test(type)) {
         return "fas fa-file-video";
       }
-      if(type.indexOf('pdf') > -1) {
+      if(/pdf/g.test(type)) {
         return "far fa-file-pdf";
       }
       return "fas fa-file";
@@ -1657,17 +1687,23 @@ export default {
         if(issue.version !== undefined) {
           if('_id' in issue.version) {
             if(issue.version._id === this.currentVersion._id) {
-              if(this.cType.indexOf('video') > -1) {
+              if(/video/g.test(this.cType)) {
                 this.currentPlayer.currentTime(issue.position);
                 this.currentPlayer.pause();
-              } else if(this.cType.indexOf('pdf') > -1) {
+              } else if(/pdf/g.test(this.cType)) {
                 this.currentData.position = issue.position
               }
             } else {
+              if(this.isiOS) {
+                if(/webm/g.test(issue.version.type)) {
+                  issue.version.name.replace(/webm/g, 'mp4');
+                  issue.version.type = "video/mp4"
+                }
+              }
               this.previousVersion = issue.version;
-              if(issue.version.type.indexOf('video') > -1) {
+              if(/video/g.test(issue.version.type)) {
                 this.previousGoto = this.issue.position;
-              } else if(issue.version.type.indexOf('pdf') > -1) {
+              } else if(/pdf/g.test(issue.version.type)) {
                 this.previousGoto = issue.position
               }
               this.disableCompareMode = true;
@@ -1712,6 +1748,12 @@ export default {
       this.$emit('downloadFile', file);
     },
     loadVersion: function (item) {
+      if(this.isiOS) {
+        if(/webm/g.test(item.type)) {
+          item.name.replace(/webm/g, 'mp4');
+          item.type = "video/mp4"
+        }
+      }
       this.previousVersion = item;
     },
     checkDrag: function (event) {
@@ -1789,7 +1831,7 @@ export default {
     },
     versionConvert: function (version) {
       if(this.currentVersion._id !== '') {
-        if(version === undefined || !('_id' in version)) {
+        if(version === undefined || version === null || !('_id' in version)) {
           return '無對應版本';
         } else {
           return version._id === this.currentVersion._id ? '當前版本' : '舊版';
@@ -1867,11 +1909,17 @@ export default {
     },
     loadcurrentVideo: function () {
       let oriobj = this;
-      this.currentPlayer = videojs(this.$refs.currentPlayer, this.videoOptions, function onPlayerReady () {
-        this.src({
-          type: oriobj.currentVersion.type,
-          src: '/storages/' + oriobj.currentVersion._id
-        });
+      this.currentPlayer = videojs(this.$refs.currentPlayer,{
+        autoplay: false,
+        controls: true,
+        fluid: true,
+        sources: [
+          {
+            type: oriobj.currentVersion.type,
+            src: oriobj.isiOS ? '/backend/fetchStorage?id=' + oriobj.currentVersion._id + '&token=' + uuidv4() : '/storages/' + oriobj.currentVersion._id
+          }
+        ]
+      }, function onPlayerReady () {
         this.on('timeupdate', function () {
           oriobj.currentData.position = this.currentTime();
         });
@@ -1888,11 +1936,17 @@ export default {
     },
     loadpreviousVideo: function () {
       let oriobj = this;
-      this.previousPlayer = videojs(this.$refs.previousPlayer, this.videoOptions, function onPlayerReady () {
-        this.src({
-          type: oriobj.previousVersion.type,
-          src: '/storages/' + oriobj.previousVersion._id
-        });
+      this.previousPlayer = videojs(this.$refs.previousPlayer, {
+        autoplay: false,
+        controls: true,
+        fluid: true,
+        sources: [
+          {
+            type: oriobj.previousVersion.type,
+            src: oriobj.isiOS ? '/backend/fetchStorage?id=' + oriobj.previousVersion._id + '&token=' + uuidv4() : '/storages/' + oriobj.previousVersion._id
+          }
+        ]
+      }, function onPlayerReady () {
         this.on('loadedmetadata', function () {
           oriobj.previousData.total = oriobj.timeConvert(this.duration());
           Vue.nextTick(() => {
@@ -2116,6 +2170,9 @@ export default {
     savedTags: function () {
       return this.$store.state.savedTags;
     },
+    isiOS: function () {
+      return this.$store.state.isiOS;
+    },
     siteSettings: function () {
       return this.$store.state.siteSettings;
     },
@@ -2203,12 +2260,32 @@ export default {
     },
     currentVersion: function () {
       if(this.currentVersions.length > 0) {
-        return _head(this.currentVersions);
+        let currentVersion = _head(this.currentVersions);
+        if(this.isiOS) {
+          if(/webm/g.test(currentVersion.type)) {
+            currentVersion.name.replace(/webm/g, 'mp4');
+            currentVersion.type = "video/mp4"
+          }
+        }
+        return currentVersion;
       } else {
         return {
           _id: '',
           type: '',
-          name: ''
+          name: '',
+          status: 0,
+          tick: 0,
+          fileInfo: {
+            videoCodec: '',
+            width: 0,
+            height: 0,
+            duration: 0,
+            hasAudio: false,
+            formatCheck: false,
+            checkTick: 0,
+            converisionDate: 0,
+            converisionDuration: 0
+          }
         };
       }
     },
@@ -2421,7 +2498,7 @@ export default {
             this.currentData.position = undefined;
             this.currentData.total = undefined;
             this.previousVersion = this.currentVersion;
-            if(this.currentVersion.type.indexOf('video') > -1) {
+            if(/video/g.test(this.currentVersion.type)) {
               this.cType = 'video';
               if(!this.currentPlayer) {
                 Vue.nextTick(() => {
@@ -2433,14 +2510,12 @@ export default {
                   src: '/storages/' + oriobj.currentVersion._id
                 });
               }
-            } else if(this.currentVersion.type.indexOf('pdf') > -1) {
+            } else if(/pdf/g.test(this.currentVersion.type)) {
               let oriobj = this;
               this.cType = 'pdf';
               this.$emit("toastPop", "最新版本為PDF，開始下載PDF檔案");
               Vue.nextTick(async () => {
-                let result = await axios.get('/storages/' + oriobj.currentVersion._id, {
-                                          responseType: 'blob'    
-                                    });
+                let result = await axios.get(oriobj.isiOS ? '/backend/fetchStorage?id=' + oriobj.currentVersion._id + '&token=' + uuidv4() : '/storages/' + oriobj.currentVersion._id, { responseType: 'blob' });
                 oriobj.$emit("toastPop", "PDF下載完成，開始繪製PDF");
                 let pdf = await (pdfjsLib.getDocument({data: await result.data.arrayBuffer() })).promise;
                 oriobj.currentData.position = 1;
@@ -2452,7 +2527,7 @@ export default {
               this.cType = 'zip';
               this.$emit("toastPop", "最新版本為Zip，開始下載Zip檔案");
               Vue.nextTick(async () => {
-                let result = await axios.get('/storages/' + oriobj.currentVersion._id, { responseType: 'blob' });
+                let result = await axios.get(oriobj.isiOS ? '/backend/fetchStorage?id=' + oriobj.currentVersion._id + '&token=' + uuidv4() : '/storages/' + oriobj.currentVersion._id, { responseType: 'blob' });
                 let zipFile = new JSZip();
                 oriobj.currentZipFile = await zipFile.loadAsync(result.data);
                 oriobj.$emit("toastPop", "Zip檔案載入完成");
@@ -2470,7 +2545,7 @@ export default {
           if(this.previousVersion._id !== '') {
             this.previousData.position = undefined;
             this.previousData.total = undefined;
-            if(this.previousVersion.type.indexOf('video') > -1) {
+            if(/video/g.test(this.previousVersion.type)) {
               this.pType = "video";
               if(!this.previousPlayer) {
                 Vue.nextTick(() => {
@@ -2482,14 +2557,12 @@ export default {
                   src: '/storages/' + this.previousVersion._id
                 });
               }
-            } else if(this.previousVersion.type.indexOf('pdf') > -1) {
+            } else if(/pdf/g.test(this.previousVersion.type)) {
               let oriobj = this;
               this.pType = 'pdf';
               this.$emit("toastPop", "對照版本為PDF，開始下載PDF檔案");
               Vue.nextTick(async () => {
-                let result = await axios.get('/storages/' + oriobj.previousVersion._id, {
-                                          responseType: 'blob'    
-                                    });
+                let result = await axios.get(oriobj.isiOS ? '/backend/fetchStorage?id=' + oriobj.previousVersion._id + '&token=' + uuidv4() : '/storages/' + oriobj.previousVersion._id, { responseType: 'blob' });
                 oriobj.$emit("toastPop", "PDF下載完成，開始繪製PDF");
                 let pdf = await (pdfjsLib.getDocument({data: await result.data.arrayBuffer() })).promise;
                 oriobj.previousData.position = oriobj.previousGoto > 0 ? oriobj.previousGoto : 1;
@@ -2501,7 +2574,7 @@ export default {
               this.pType = "zip";
               this.$emit("toastPop", "對照版本為Zip，開始下載Zip檔案");
               Vue.nextTick(async () => {
-                let result = await axios.get('/storages/' + oriobj.previousVersion._id, { responseType: 'blob' });
+                let result = await axios.get(oriobj.isiOS ? '/backend/fetchStorage?id=' + oriobj.previousVersion._id + '&token=' + uuidv4() : '/storages/' + oriobj.previousVersion._id, { responseType: 'blob' });
                 let zipFile = new JSZip();
                 oriobj.previousZipFile = await zipFile.loadAsync(result.data);
                 this.$emit("toastPop", "對照版本Zip檔案下載完成");
@@ -2548,7 +2621,7 @@ export default {
           let slice = this.issueCite.slice(0, 100000);
           let uuid = uuidv4();
           this.issueCite.lastModifiedDate = new Date();
-          this.issueCite.name = this.currentVersion.type.indexOf('pdf') > -1 ? this.versionnameConvert(this.currentVersion.name)+'版/'+this.currentData.position+'頁.png' : this.versionnameConvert(this.currentVersion.name)+'版/時間'+this.currentPosD+'.png';
+          this.issueCite.name = /pdf/g.test(this.currentVersion.type) ? this.versionnameConvert(this.currentVersion.name)+'版/'+this.currentData.position+'頁.png' : this.versionnameConvert(this.currentVersion.name)+'版/時間'+this.currentPosD+'.png';
           files[uuid] = {
             _id: this.issue._id,
             file: this.issueCite,
@@ -2665,7 +2738,7 @@ export default {
       disableCompareMode: true,
       previousPDF: null,
       currentPDF: null,
-      currentZipFIle: null,
+      currentZipFile: null,
       previousZipFile: null,
       configW: false,
       firstReview: false,
@@ -2769,7 +2842,20 @@ export default {
       previousVersion: {
         _id: '',
         type: '',
-        name: ''
+        name: '',
+        tick: 0,
+        status: 0,
+        fileInfo: {
+          videoCodec: '',
+          width: 0,
+          height: 0,
+          duration: 0,
+          hasAudio: false,
+          formatCheck: false,
+          checkTick: 0,
+          converisionDate: 0,
+          converisionDuration: 0
+        }
       },
       readedIssueList: [],
       filterBtn: false,
@@ -2783,11 +2869,6 @@ export default {
       editlogw: false,
       issueareaWidth: 0,
       issuelistViewer: [],
-      videoOptions: {
-        autoplay: false,
-        controls: true,
-        fluid: true,
-      },
       currentData: {
         position: undefined,
         total: undefined
