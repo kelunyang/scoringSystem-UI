@@ -30,10 +30,10 @@
       <v-btn
       elevation="3"
       x-large
-      style='width: 50%'
+      style='min-width: 400px'
       class='flex-grow-1 indigo darken-4 white--text ma-3 text-h6 font-weight-bold'
       link
-      href="#/Login" >
+      href="#/Login">
         按此登入系統
       </v-btn>
     </div>
