@@ -410,30 +410,38 @@
       轉檔機器人疑似沒有在執行了（記憶體不足？），你按下存檔時，系統會重設轉檔機器人（但建議你還是SSH進去轉檔機看一看）
     </v-alert>
     <v-slider
-      label='轉檔頻率（天）'
+      label='轉檔/格式檢查頻率（天）'
       min='1'
       max='7'
       v-model="converisionDuration"
       thumb-label
     ></v-slider>
     <v-slider
-      label='影片高度'
+      label='影片許可高度'
       min='720'
       max='2160'
       v-model="converisionHeight"
       thumb-label
     ></v-slider>
     <v-slider
-      label='影片寬度'
+      label='影片許可寬度'
       min='1280'
       max='4096'
       v-model="converisionWidth"
       thumb-label
     ></v-slider>
+    <v-range-slider
+      label='影片許可秒數區間'
+      min='300'
+      max='900'
+      v-model="converisionDurationLimit"
+      thumb-label
+    ></v-range-slider>
     <v-switch
       v-model="converisionAudio"
       label="檢查是否有音軌（檔案中存有第二軌）"
     ></v-switch>
+    <v-switch v-model="enableConverision" label="是否啟動轉檔（不啟動就是純檢查）"></v-switch>
     <v-text-field outlined clearable dense label='影片檔轉換暫存檔位置' v-model='converisionLocation' hint='請注意，這裡的位置是NFS主機上的位置，不知道別亂調，最後不用加上/'></v-text-field>
     <v-text-field outlined clearable dense label='轉檔後的原MP4存放位置' v-model='originalVideos' hint='這裡指的是轉檔完之後的舊影片檔備份地'></v-text-field>
     <v-text-field outlined clearable dense label='轉檔機的暫存資料夾' v-model='converisionDropzoneB' hint='轉檔前會先將影片複製到轉檔機的暫存位置，再進行轉檔'></v-text-field>
@@ -669,6 +677,8 @@ export default {
       this.converisionWidth = data.converisionWidth;
       this.converisionAudio = data.converisionAudio;
       this.converisionDuration = data.converisionDuration;
+      this.enableConverision = data.enableConverision;
+      this.converisionDurationLimit = data.converisionDurationLimit;
     },
     socketgetGlobalSettings: function (data) {
       this.defaultPassword = data.defaultPassword;
@@ -756,6 +766,8 @@ export default {
         converisionDuration: this.converisionDuration,
         systemName: this.systemName,
         botRepo: this.botRepo,
+        enableConverision: this.enableConverision,
+        converisionDurationLimit: this.converisionDurationLimit,
         changeLog: turndownService.turndown(this.changeLog)
       });
     },
@@ -819,6 +831,8 @@ export default {
   },
   data () {
     return {
+      enableConverision: false,
+      converisionDurationLimit: [ 360, 600 ],
       systemName: '',
       botRepo: '',
       converisionDuration: 1,

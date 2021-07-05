@@ -204,6 +204,7 @@
                     </td>
                     <td class="text-left">
                       {{ version.comment }}<br/>
+                      <span v-if='version.status >= 2' class='codecSign'>{{ version.fileInfo.videoCodec }}</span>
                       <span v-if='version.status >= 2'>{{ version.fileInfo.hasAudio ? '🔊' : '' }}</span>
                       <span v-if='version.status >= 2'>{{ version.validAudio ? '' : '❌' }}</span>
                       <span v-if='version.status >= 2'>{{ version.fileInfo.width }}</span>
@@ -211,6 +212,7 @@
                       <span v-if='version.status >= 2'>×{{ version.fileInfo.height }}</span>
                       <span v-if='version.status >= 2'>{{ version.validHeight ? '' : '❌' }}</span>
                       <span v-if='version.status >= 2'>@ {{ timeConvert(version.fileInfo.duration) }}</span>
+                      <span v-if='version.status >= 2'>{{ version.validRange ? '' : '❌' }}</span>
                     </td>
                     <td class='d-flex flex-row'>
                       <v-menu
@@ -636,6 +638,13 @@
   </v-sheet>
 </template>
 
+<style scoped>
+  .codecSign {
+    border: 1px solid black;
+    padding: 1px;
+  }
+</style>
+
 <script>
 import Vue from 'vue';
 import moment from 'moment';
@@ -655,6 +664,7 @@ import _countBy from 'lodash/countBy';
 import _findIndex from 'lodash/findIndex';
 import _intersectionWith from 'lodash/intersectionWith';
 import _head from 'lodash/head';
+import _inRange from 'lodash/inRange';
 import { v4 as uuidv4 } from 'uuid';
 import VueApexCharts from 'vue-apexcharts';
 import prettyBytes from 'pretty-bytes';
@@ -1133,6 +1143,7 @@ export default {
           currentVersion.validHeight = currentVersion.fileInfo.height >= this.siteSettings.validFormat.validHeight;
           currentVersion.validWidth = currentVersion.fileInfo.width >= this.siteSettings.validFormat.validWidth;
           currentVersion.validAudio = this.siteSettings.validFormat.withAudio ? currentVersion.fileInfo.hasAudio : true;
+          currentVersion.validRange = _inRange(currentVersion.fileInfo.duration, this.siteSettings.validFormat.validRange[0], this.siteSettings.validFormat.validRange[1]) || currentVersion.fileInfo.duration === this.siteSettings.validFormat.validRange[1];
         }
       }
       this.currentVersions = data;

@@ -208,7 +208,8 @@
                   <span>{{ currentVersion.fileInfo.formatCheck ? '正確' : '錯誤' }}</span>
                   <span v-if='currentVersion.status === 2'>（{{ dateConvert(currentVersion.fileInfo.checkTick) }}已完成檢查）</span>
                   <span v-if='currentVersion.status === 3'>（{{ dateConvert(currentVersion.fileInfo.converisionDate) }}已轉換為VP9/WebM）</span>
-                </span><br/>
+                </span><br/>檔案格式相關資訊：
+                <span v-if='currentVersion.status >= 2' class='codecSign'>{{ currentVersion.fileInfo.videoCodec }}</span>
                 <span v-if='currentVersion.status >= 2'>{{ currentVersion.fileInfo.hasAudio ? '🔊' : '' }}</span>
                 <span v-if='currentVersion.status >= 2'>{{ currentVersion.validAudio ? '' : '❌' }}</span>
                 <span v-if='currentVersion.status >= 2'>{{ currentVersion.fileInfo.width }}</span>
@@ -216,6 +217,7 @@
                 <span v-if='currentVersion.status >= 2'>×{{ currentVersion.fileInfo.height }}</span>
                 <span v-if='currentVersion.status >= 2'>{{ currentVersion.validHeight ? '' : '❌' }}</span>
                 <span v-if='currentVersion.status >= 2'>@ {{ timeConvert(currentVersion.fileInfo.duration) }}</span>
+                <span v-if='currentVersion.status >= 2'>{{ currentVersion.validRange ? '' : '❌' }}</span>
               </div>
               <div class='text-body-1 font-weight-medium black--text text-left' v-else>
                 非影片不需進行機器檢查
@@ -279,6 +281,7 @@
                       >
                         格式
                         <span>{{ item.fileInfo.formatCheck ? '正確' : '錯誤' }}</span>
+                        <span v-if='item.status >= 2' class='codecSign'>{{ item.fileInfo.videoCodec }}</span>
                         <span>{{ item.fileInfo.hasAudio ? '🔊' : '' }}</span>
                         <span>{{ item.validAudio ? '' : '❌' }}</span>
                         <span>{{ item.fileInfo.width }}</span>
@@ -286,6 +289,7 @@
                         <span>×{{ item.fileInfo.height }}</span>
                         <span>{{ item.validHeight ? '' : '❌' }}</span>
                         <span>@ {{ timeConvert(item.fileInfo.duration) }}</span>
+                        <span>{{ item.validRange ? '' : '❌' }}</span>
                         <span v-if='item.status === 2'>({{ dateConvert(item.fileInfo.checkTick) }})</span>
                         <span v-if='item.status === 3'>({{ dateConvert(item.fileInfo.converisionDate) }}已轉換為VP9)</span>
                       </span>
@@ -1125,6 +1129,10 @@
 </template>
 
 <style scoped>
+  .codecSign {
+    border: 1px solid black;
+    padding: 1px;
+  }
   .floatControl {
     position: fixed !important;
     top: 70px !important;
@@ -1311,6 +1319,7 @@ export default {
           currentVersion.validHeight = currentVersion.fileInfo.height >= this.siteSettings.validFormat.validHeight;
           currentVersion.validWidth = currentVersion.fileInfo.width >= this.siteSettings.validFormat.validWidth;
           currentVersion.validAudio = this.siteSettings.validFormat.withAudio ? currentVersion.fileInfo.hasAudio : true;
+          currentVersion.validRange = _inRange(currentVersion.fileInfo.duration, this.siteSettings.validFormat.validRange[0], this.siteSettings.validFormat.validRange[1]) || currentVersion.fileInfo.duration === this.siteSettings.validFormat.validRange[1];
         }
       }
     },

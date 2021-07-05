@@ -37,12 +37,12 @@
         按此登入系統
       </v-btn>
     </div>
-    <div v-if='currentUser._id !== ""' class='d-flex flex-column flex-grow-1 justify-center align-center'>
+    <div v-if='currentUser._id !== ""' class='d-flex flex-column flex-grow-1 justify-center align-center' style='width: 95%'>
       <div>{{ currentUser.name }} 已登入 </div>
       <v-btn 
         elevation="3"
         x-large
-        style='width: 50%'
+        style='min-width: 90%'
         class='flex-grow-1 indigo darken-4 white--text ma-3 text-h6 font-weight-bold'
         link
         href="#/userDashBoard"

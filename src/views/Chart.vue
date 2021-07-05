@@ -580,7 +580,7 @@
       width="100%"
     ></v-skeleton-loader>
     <div v-if='statisticsPopulated' class='d-flex flex-row flex-wrap justify-space-between'>
-      <div class='flex-grow-1'>過濾條件：自{{ querystartTick }}至{{ queryendTick }}，來自
+      <div class='flex-grow-1'>過濾條件：自{{ tempstartTick }}至{{ tempendTick }}，來自
       <span v-if='selectedKB === undefined'>
         <span class="text-decoration-underline ml-1" v-for='tag in querysourceTags' :key='tag'>
           {{ tagConverter(tag) }}
@@ -1083,8 +1083,6 @@ export default {
       importSW: false,
       importLogs: [],
       range: 1,
-      querystartTick: moment().format("YYYY-MM-DD"),
-      queryendTick: moment().format("YYYY-MM-DD"),
       queryType: '',
       queryKBTags: [],
       querysourceTags: [],

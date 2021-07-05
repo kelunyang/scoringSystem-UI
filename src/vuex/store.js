@@ -44,7 +44,8 @@ const store = new Store({
       validFormat: {
         validWidth: 1024,
         validHeight: 768,
-        withAudio: false
+        withAudio: false,
+        validRange: [300, 600]
       },
       systemName: ''
     },
