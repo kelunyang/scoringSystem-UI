@@ -608,8 +608,8 @@
             <v-icon>fa-sort-numeric-down-alt</v-icon>
           </v-btn>
         </template>
-        <span v-if='sortingRule'>按照知識點時間排序</span>
-        <span v-if='!sortingRule'>按照死線名稱排序</span>
+        <span v-if='sortingRule'>按照死線時間排序</span>
+        <span v-if='!sortingRule'>按照知識點名稱排序</span>
       </v-tooltip>
       <v-tooltip bottom>
         <template v-slot:activator="{ on, attrs }">
@@ -994,7 +994,7 @@ export default {
         }
         this.convertedList = [];
         this.renderList = [];
-        let convertedList = this.sortingRule ? _orderBy(list, ['remainTick'], ['asc']) : _orderBy(list, ['sort'], ['asc']);
+        let convertedList = this.sortingRule ? _orderBy(list, ['remainTick'], ['asc']) : _orderBy(list, ['mainTag', 'sort'], ['asc', 'asc']);
         let steps = _map(convertedList, (item) => {
           return item.stages.length;
         });
