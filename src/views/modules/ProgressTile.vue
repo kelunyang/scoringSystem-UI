@@ -7,7 +7,7 @@
     </v-row>
     <v-row no-gutters  class='d-flex justify-space-between text-caption pa-1'>
       <v-col class='text-left'>
-        [{{currentItem.mainTag}}-{{ currentItem.mainChapter }}-{{ (currentItem.sort+1) }}]
+        [{{currentItem.mainTag}}][{{ currentItem.mainChapter }}] 編號：{{ (currentItem.sort) }}
       </v-col>
       <v-col class='text-right'>
         <v-icon small>fas fa-paw</v-icon>{{ announceEvent.desc }}[{{ announceEvent.user.name }} @ {{ dateConvert(announceEvent.tick) }}]

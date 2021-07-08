@@ -1,6 +1,61 @@
 <template>
   <v-sheet class='d-flex flex-column'>
     <v-dialog
+      v-model="priviledgeVW"
+      persistent
+      max-width="50vw"
+    >
+      <v-card>
+        <v-toolbar
+          color="primary"
+          dark
+        >按照您的權限檢視知識點
+        </v-toolbar>
+        <v-card-text class='d-flex flex-column pa-0 text-left black--text text-body-1'>
+          <v-alert outlined type='info' icon='fa-info-circle' class='text-left'>您可以在此按照您的角色／權限篩選知識點</v-alert>
+          <div class='d-flex flex-column pa-1'>
+            <v-switch
+              v-model="viewReviewer"
+              v-if='countReviewer > 0'
+              :label="'查看我有審查者權限的' + countReviewer + '支影片'"
+            ></v-switch>
+            <v-switch
+              v-model="viewPM"
+              v-if='countPM > 0'
+              :label="'查看我有PM權限的' + countPM + '支影片'"
+            ></v-switch>
+            <v-switch
+              v-model="viewWriter"
+              v-if='countWriter > 0'
+              :label="'查看我有寫手權限的' + countWriter + '支影片'"
+            ></v-switch>
+            <v-switch
+              v-model="viewFinal"
+              v-if='countFinal > 0'
+              :label="'查看我有行政端權限的' + countFinal + '支影片'"
+            ></v-switch>
+          </div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            color='indigo darken-4'
+            class='white--text'
+            @click='generateList'
+          >
+            啟動權限/角色過濾器
+          </v-btn>
+          <v-btn
+            color='red'
+            class='white--text'
+            @click='priviledgeVW = false'
+          >
+            關閉對話框
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog
       v-model="initW"
       persistent
       max-width="50vw"
@@ -21,6 +76,10 @@
             <v-switch
               v-model="initHistory"
               label="打開所有和我有關的知識點，就算當前階段與我無關我也要看到（通常是PM、行政才會需要打開）"
+            ></v-switch>
+            <v-switch
+              v-model="initSorting"
+              label="按照完成時間排序，如果關掉的話就會按照知識點順序排序"
             ></v-switch>
           </div>
           <div class='text-caption red--text'>統計圖表的開關在右下角折線圖圖示，您就算不開啟此設定，平時也可以自己點擊叫出統計圖</div>
@@ -552,6 +611,21 @@
         <span v-if='sortingRule'>按照知識點時間排序</span>
         <span v-if='!sortingRule'>按照死線名稱排序</span>
       </v-tooltip>
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn
+            v-bind="attrs" v-on="on"
+            fab
+            dark
+            small
+            color="pink darken-4"
+            @click.stop='priviledgeVW = !priviledgeVW'
+          >
+            <v-icon>fa-user-tag</v-icon>
+          </v-btn>
+        </template>
+        開啟權限/角色過濾器
+      </v-tooltip>
     </v-speed-dial>
     <div v-show='showStatstics'>
       <div class='d-flex flex-row'>
@@ -656,7 +730,6 @@ import _find from 'lodash/find';
 import _uniq from 'lodash/uniq';
 import _orderBy from 'lodash/orderBy';
 import _uniqWith from 'lodash/uniqWith';
-import _padStart from 'lodash/padStart';
 import _map from 'lodash/map';
 import _includes from 'lodash/includes';
 import _flatten from 'lodash/flatten';
@@ -789,6 +862,10 @@ export default {
         let list = [];
         let oriobj = this;
         this.$emit('toastPop', '整理清單中，請稍後...');
+        this.countReviewer = 0;
+        this.countWriter = 0;
+        this.countPM = 0;
+        this.countFinal = 0;
         if(this.selectedFilterTags.length > 0) {
           for (let i = 0; i < this.selectedFilterTags.length; i++) {
             let tag = this.selectedFilterTags[i];
@@ -811,16 +888,6 @@ export default {
             return (new RegExp(oriobj.queryTerm, 'g')).test(item.mainTag+item.mainChapter+item.sort+item.title + item.desc);
           });
         }
-        let maxDig = 1;
-        if(list.length > 0) {
-          let sortList = _map(list, (item) => {
-            return item.sort;
-          });
-          let orderedSort = sortList.sort((a, b) => {
-            return b - a;
-          });
-          maxDig = orderedSort[0].toString().length;
-        }
         for (let i = 0; i< list.length; i++) {
           let KB = list[i];
           KB.attention = 0;
@@ -835,10 +902,6 @@ export default {
             });
           }
           KB.mainTag = mainTag === undefined ? '' : mainTag.name;
-          KB.sortRanking = KB.tag.length > 0 ? KB.tag[0] : KB.title;
-          KB.sortRanking += KB.chapter.length > 0 ? KB.chapter[0]._id : KB.title;
-          let sort = _padStart(KB.sort, maxDig, '0');
-          KB.sortRanking += sort;
           KB.currentStep = (_countBy(KB.stages, {
             current: false
           })) === KB.stages.length ? 0 : (_findIndex(KB.stages, {
@@ -870,6 +933,10 @@ export default {
             KB.isReviewer = (_intersectionWith(KB.stages[KB.currentStep - 1].reviewerTags, this.currentUser.tags, (cTag, uTag) => {
               return cTag === uTag._id;
             })).length > 0;
+            if(KB.isPM) this.countPM++;
+            if(KB.isReviewer) this.countReviewer++;
+            if(KB.isFinal) this.countFinal++;
+            if(KB.isWriter) this.countWriter++;
           }
           KB.dueTick = 0;
           let found = _find(this.selectedpmKBs, (item) => {
@@ -904,6 +971,21 @@ export default {
           list = _uniqWith(list, (aKB, bKB) => {
             return aKB._id === bKB._id;
           });
+          list = _filter(list, (KB) => {
+            if(oriobj.viewReviewer) {
+              if(KB.isReviewer) return true;
+            }
+            if(oriobj.viewPM) {
+              if(KB.isPM) return true;
+            }
+            if(oriobj.viewFinal) {
+              if(KB.isFinal) return true;
+            }
+            if(oriobj.viewWriter) {
+              if(KB.isWriter) return true;
+            }
+            return false;
+          });
           list.sort((a, b) => {
             let aTime = a.attention > 0 ? aTime * 100000 : Math.abs(aTime);
             let bTime = b.attention > 0 ? bTime * 100000 : Math.abs(bTime);
@@ -912,7 +994,7 @@ export default {
         }
         this.convertedList = [];
         this.renderList = [];
-        let convertedList = this.sortingRule ? _orderBy(list, ['remainTick'], ['asc']) : _orderBy(list, ['sortRanking'], ['asc']);
+        let convertedList = this.sortingRule ? _orderBy(list, ['remainTick'], ['asc']) : _orderBy(list, ['sort'], ['asc']);
         let steps = _map(convertedList, (item) => {
           return item.stages.length;
         });
@@ -1303,6 +1385,12 @@ export default {
       }
       this.queryHistory = this.initHistory;
     },
+    initSorting: function () {
+      if(this.localLoaded) {
+        window.localStorage.setItem('initSorting', JSON.stringify(this.initSorting));
+      }
+      this.sortingRule = this.initSorting;
+    },
     versionFile: {
       immediate: true,
       handler () {
@@ -1358,6 +1446,15 @@ export default {
   },
   data () {
     return {
+      priviledgeVW: false,
+      viewReviewer: true,
+      viewPM: true,
+      viewFinal: true,
+      viewWriter: true,
+      countReviewer: 0,
+      countPM: 0,
+      countFinal: 0,
+      countWriter: 0,
       unreadedVersions: [],
       issueTimer: undefined,
       eventTimer: undefined,
@@ -1426,6 +1523,7 @@ export default {
       statisticSteps: 1,
       initStatstics: false,
       initHistory: false,
+      initSorting: true,
       initW: false,
       dashBoardFirstUse: true,
       localLoaded: false,
@@ -1500,6 +1598,10 @@ export default {
     let initHistory = window.localStorage.getItem('initHistory');
     if(initHistory) {
       this.initHistory = JSON.parse(initHistory);
+    }
+    let initSorting = window.localStorage.getItem('initSorting');
+    if(initSorting) {
+      this.initSorting = JSON.parse(initSorting);
     }
     if(this.dashBoardFirstUse) {
       this.initW = true;

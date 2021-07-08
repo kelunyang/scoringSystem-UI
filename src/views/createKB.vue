@@ -16,7 +16,7 @@
           >
             <v-icon>fa-times</v-icon>
           </v-btn>
-          <v-toolbar-title>快速指派用戶標籤</v-toolbar-title>
+          <v-toolbar-title>快速大量指派知識點</v-toolbar-title>
         </v-toolbar>
         <v-card-actions>
           <v-btn class='ma-1' @click='tagUserW = true'>快速建立新的用戶群組標籤</v-btn>
@@ -34,6 +34,14 @@
               v-model="pointerStage"
               thumb-label
             ></v-slider>
+            <div class='text-subtitle-2 font-weight-blod'>新增到該階段的審查目標</div>
+            <v-btn @click='addpointerObj'>新增審查目標</v-btn>
+            <div v-for='item in pointerObjs' :key='item.id' class='d-flex flex-row'>
+              <v-text-field class='flex-grow-1' v-model="item.text" hint="請輸入審查目標" outlined clearable dense></v-text-field>
+              <v-btn class='flex-shrink-1' icon @click='removepointerObj(item.id)'>
+                <v-icon>fa-trash</v-icon>
+              </v-btn>
+            </div>
             <div class='text-subtitle-2 font-weight-blod'>新增到該階段的PM群組標籤</div>
             <tag-filter
               :mustSelected='false'
@@ -815,10 +823,10 @@
               color="blue darken-4"
               @click.stop='scanPointerKB'
             >
-              <v-icon>fa-users</v-icon>
+              <v-icon>fa-shipping-fast</v-icon>
             </v-btn>
           </template>
-          <span>大量指派用戶標籤到選定知識點</span>
+          <span>快速大量指派知識點</span>
         </v-tooltip>
       </v-badge>
     </v-speed-dial>
@@ -1101,6 +1109,7 @@ import _findIndex from 'lodash/findIndex';
 import _flatten from 'lodash/flatten';
 import _orderBy from 'lodash/orderBy';
 import _slice from 'lodash/slice';
+import _filter from 'lodash/filter';
 import moment from 'moment';
 import 'vue-ctk-date-time-picker/dist/vue-ctk-date-time-picker.css';
 
@@ -1189,6 +1198,19 @@ export default {
     }
   },
   methods: {
+    addpointerObj: function() {
+      this.pointerObjs.push({
+        id: uuidv4(),
+        text: '',
+        tick: moment().unix()
+      });
+      this.pointerObjs = _orderBy(this.pointerObjs, ['tick'], ['desc'])
+    },
+    removepointerObj: function(id) {
+      this.pointerObjs = _filter(this.pointerObjs, (item) => {
+        return item.id !== id;
+      });
+    },
     socketpointerStageTags: function () {
       this.$emit('toastPop', '快速指派操作完成...');
       this.pointerW = false;
@@ -1203,7 +1225,8 @@ export default {
         vendorTags: this.pointervendorTags,
         reviewerTags: this.pointerreviewerTags,
         pmTags: this.pointerpmTags,
-        finalTags: this.pointerfinalTags
+        finalTags: this.pointerfinalTags,
+        objectives: this.pointerObjs
       });
     },
     scanPointerKB: function () {
@@ -1233,6 +1256,7 @@ export default {
       this.pointervendorTags = [];
       this.pointerreviewerTags = [];
       this.pointerpmTags = [];
+      this.pointerObjs = [];
       this.pointerStage = this.pointerMin;
       this.pointerW = true;
     },
@@ -1835,6 +1859,7 @@ export default {
   },
   data () {
     return {
+      pointerObjs: [],
       scanPointerKBs: [],
       pointerfinalTags: [],
       pointerwriterTags: [],

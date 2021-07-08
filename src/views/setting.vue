@@ -442,6 +442,7 @@
       label="檢查是否有音軌（檔案中存有第二軌）"
     ></v-switch>
     <v-switch v-model="enableConverision" label="是否啟動轉檔（不啟動就是純檢查）"></v-switch>
+    <v-switch v-model="failedRecheck" label="是否複查之前檢查失敗的檔案（不啟動就是只查新的）"></v-switch>
     <v-text-field outlined clearable dense label='影片檔轉換暫存檔位置' v-model='converisionLocation' hint='請注意，這裡的位置是NFS主機上的位置，不知道別亂調，最後不用加上/'></v-text-field>
     <v-text-field outlined clearable dense label='轉檔後的原MP4存放位置' v-model='originalVideos' hint='這裡指的是轉檔完之後的舊影片檔備份地'></v-text-field>
     <v-text-field outlined clearable dense label='轉檔機的暫存資料夾' v-model='converisionDropzoneB' hint='轉檔前會先將影片複製到轉檔機的暫存位置，再進行轉檔'></v-text-field>
@@ -678,6 +679,7 @@ export default {
       this.converisionAudio = data.converisionAudio;
       this.converisionDuration = data.converisionDuration;
       this.enableConverision = data.enableConverision;
+      this.failedRecheck = data.failedRecheck;
       this.converisionDurationLimit = data.converisionDurationLimit;
     },
     socketgetGlobalSettings: function (data) {
@@ -767,6 +769,7 @@ export default {
         systemName: this.systemName,
         botRepo: this.botRepo,
         enableConverision: this.enableConverision,
+        failedRecheck: this.failedRecheck,
         converisionDurationLimit: this.converisionDurationLimit,
         changeLog: turndownService.turndown(this.changeLog)
       });
@@ -831,6 +834,7 @@ export default {
   },
   data () {
     return {
+      failedRecheck: false,
       enableConverision: false,
       converisionDurationLimit: [ 360, 600 ],
       systemName: '',
