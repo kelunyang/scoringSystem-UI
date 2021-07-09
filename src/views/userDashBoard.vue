@@ -991,6 +991,9 @@ export default {
             if(oriobj.viewWriter) {
               if(KB.isWriter) return true;
             }
+            if(oriobj.viewVendor) {
+              if(KB.isVendor) return true;
+            }            
             return false;
           });
           list.sort((a, b) => {
