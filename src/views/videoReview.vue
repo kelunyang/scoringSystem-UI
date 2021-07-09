@@ -454,7 +454,7 @@
             <v-sheet class='d-flex flex-column pa-1'>
               <div class='text-h6'>確認送出手繪標記？</div>
               <v-btn
-                @click="citetoIssue"
+                @click="saveIMG"
                 color='red accent-4'
                 class='white--text ma-1'
               >
@@ -465,7 +465,7 @@
           </v-menu>
         </v-card-actions>
         <v-card-text class='text-left'>
-          <paintable
+          <Paintable
             alwaysOnTop
             :width="paintWidth"
             :height="paintHeight"
@@ -476,9 +476,10 @@
             :useEraser="citeEraser"
             :color="citeColor"
             ref="paintable"
+            @save="saveCanvas"
           >
             <canvas ref='paintBase'></canvas>
-          </paintable>
+          </Paintable>
         </v-card-text>
       </v-card>
     </v-dialog>
@@ -1272,13 +1273,13 @@ import prettyBytes from 'pretty-bytes';
 import axios from 'axios';
 import JSZip from 'jszip';
 import mime from 'mime-types';
-import Paintable from 'vue-paintable';
 import * as htmlToImage from 'html-to-image';
 import * as Diff from 'diff'
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf';
 import PdfjsWorker from 'workerize-loader!pdfjs-dist/build/pdf.worker.js';
 pdfjsLib.GlobalWorkerOptions.workerPort = new PdfjsWorker();
 import 'pdfjs-dist/build/pdf.worker.entry';
+import { Paintable } from 'paintablejs/vue';
 
 const renderer = new marked.Renderer();
 const linkRenderer = renderer.link;
@@ -1293,15 +1294,18 @@ renderer.link = (href, title, text) => {
 let files = [];
 
 momentDurationFormatSetup(moment);
-Vue.use(Paintable);
 
 export default {
   name: 'videoReview',
   components: { 
     TipTap: () => import(/* webpackPrefetch: true */ './modules/TipTap'),
-    IssueList: () => import(/* webpackPrefetch: true */ './modules/IssueList')
+    IssueList: () => import(/* webpackPrefetch: true */ './modules/IssueList'),
+    Paintable
   },
   methods: {
+    saveCanvas: function(data) {
+      this.paintIMG = data;
+    },
     socketdashboardUnreadedVersions: function (data) {
       let readedVersions = _find(data, (item) => {
         return item._id === this.KBid;
@@ -1405,30 +1409,37 @@ export default {
         this.hideAlert = true;
       }
     },
+    saveIMG: function() {
+      let oriobj = this;
+      this.$refs.paintable.active = false;
+      Vue.nextTick(() => {
+        oriobj.citetoIssue();
+      });
+    },
     citetoIssue: async function () {
       let oriobj = this;
-      let activeCanvas = document.getElementsByClassName("canvas back active");
-      if(activeCanvas.length > 0) {
-        let active = activeCanvas[0];
-        let canvas = document.createElement('canvas');
-        canvas.height = active.height;
-        canvas.width = active.width;
-        canvas.getContext('2d').drawImage(this.$refs.paintBase, 0, 0);
-        canvas.getContext('2d').drawImage(active, 0, 0);
+      let img = new Image();
+      let canvas = document.createElement('canvas');
+      canvas.height = this.$refs.paintBase.height;
+      canvas.width = this.$refs.paintBase.width;
+      canvas.getContext('2d').drawImage(this.$refs.paintBase, 0, 0);
+      img.src = this.paintIMG;
+      img.onload = function() {
+        canvas.getContext('2d').drawImage(img, 0, 0);
         canvas.toBlob(function(blob) {
           oriobj.issueCite = blob;
         });
-        this.paintW = false;
+        oriobj.paintW = false;
       }
     },
     undoCanvas: function () {
-      this.$refs.paintable.undoDrawingStep();
+      this.$refs.paintable.undo();
     },
     redoCanvas: function () {
-      this.$refs.paintable.redoDrawingStep();
+      this.$refs.paintable.redo();
     },
     clearCanvas: function () {
-      this.$refs.paintable.clearCanvas();
+      this.$refs.paintable.clear();
     },
     fileiconConvert: function (name) {
       let type = mime.lookup(name);
@@ -2037,7 +2048,9 @@ export default {
           oriobj.paintHeight = canvasHeight;
           oriobj.paintW = true;
           Vue.nextTick(() => {
-            oriobj.$refs.paintable.clearCanvas();
+            oriobj.$refs.paintable.active = true;
+            oriobj.paintIMG = null;
+            oriobj.$refs.paintable.clear();
             oriobj.$refs.paintBase.height = canvasHeight;
             oriobj.$refs.paintBase.width = canvasWidth;
             oriobj.$refs.paintBase.getContext('2d').drawImage(img, 0, canvasOffsetTop, canvasWidth, canvasHeight, 0, 0, canvasWidth, canvasHeight);
@@ -2723,6 +2736,7 @@ export default {
   },
   data () {
     return {
+      paintIMG: null,
       snapType: 0,
       readedStatus: {
         _id: undefined,

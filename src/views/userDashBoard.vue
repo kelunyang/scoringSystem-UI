@@ -34,6 +34,11 @@
               v-if='countFinal > 0'
               :label="'查看我有行政端權限的' + countFinal + '支影片'"
             ></v-switch>
+            <v-switch
+              v-model="viewVendor"
+              v-if='countVendor > 0'
+              :label="'查看我有廠商權限的' + countVendor + '支影片'"
+            ></v-switch>
           </div>
         </v-card-text>
         <v-card-actions>
@@ -863,6 +868,7 @@ export default {
         let oriobj = this;
         this.$emit('toastPop', '整理清單中，請稍後...');
         this.countReviewer = 0;
+        this.countVendor = 0;
         this.countWriter = 0;
         this.countPM = 0;
         this.countFinal = 0;
@@ -935,6 +941,7 @@ export default {
             })).length > 0;
             if(KB.isPM) this.countPM++;
             if(KB.isReviewer) this.countReviewer++;
+            if(KB.isVendor) this.countVendor++;
             if(KB.isFinal) this.countFinal++;
             if(KB.isWriter) this.countWriter++;
           }
@@ -1451,7 +1458,9 @@ export default {
       viewPM: true,
       viewFinal: true,
       viewWriter: true,
+      viewVendor: true,
       countReviewer: 0,
+      countVendor: 0,
       countPM: 0,
       countFinal: 0,
       countWriter: 0,

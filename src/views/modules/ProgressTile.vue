@@ -81,19 +81,19 @@
     <v-row no-gutters v-if='currentItem.currentStep > 0'>
       <v-col class='d-flex flex-row pa-1 align-center' :class='currentItem.remainTick < 86400 ? "red--text" : "black--text"'>
         <span v-if='currentItem.unreadedVersion > 0'>
-          <v-icon  class='ma-1' small left color="red accent-4">
+          <v-icon  class='ma-1' small left :color='currentItem.remainTick < 86400 ? "red" : "black"'>
             fas fa-upload
           </v-icon>
           {{ currentItem.unreadedVersion }}個新版本已上傳
         </span>
         <span v-if='currentItem.unreaded > 0'>
-          <v-icon  class='ma-1' small left color="red accent-4">
+          <v-icon  class='ma-1' small left :color='currentItem.remainTick < 86400 ? "red" : "black"'>
             fas fa-envelope-open-text
           </v-icon>
           {{ currentItem.unreaded }}則Issue未讀
         </span>
         <span>
-          <v-icon  class='ma-1' small left color="red accent-4">
+          <v-icon  class='ma-1' small left :color='currentItem.remainTick < 86400 ? "red" : "black"'>
             fas fa-chess-rook
           </v-icon>
           目前階段：{{ stageConvert(currentItem.currentStep) }}
