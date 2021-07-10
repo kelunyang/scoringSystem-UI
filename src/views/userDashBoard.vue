@@ -352,7 +352,7 @@
           <div v-if='participantsDB.statistics.length === 0'>
             你不具備你勾選的知識點的行政管理權，回傳的知識點數量為0
           </div>
-          <div v-if='participantsDB.statistics.length > 0'>
+          <div v-if='participantsDB.statistics.length > 0' class='ma-1'>
             <div class='text-left' v-for='participant in participantsDB.statistics' :key='"uid"+participant._id'>
               <div class='text-h6 indigo darken-4 font-weight-black white--text'>{{participant.name}} @ {{participant.unit}}</div>
               <v-divider></v-divider>
@@ -787,6 +787,7 @@ import _countBy from 'lodash/countBy';
 import _findIndex from 'lodash/findIndex';
 import _intersectionWith from 'lodash/intersectionWith';
 import _head from 'lodash/head';
+import _unionWith from 'lodash/unionWith';
 import _inRange from 'lodash/inRange';
 import { v4 as uuidv4 } from 'uuid';
 import VueApexCharts from 'vue-apexcharts';
@@ -1198,6 +1199,7 @@ export default {
       this.authDetailW = true;
     },
     participantStatstics: function () {
+      this.$emit('toastPop', '參與者清單產生中，請稍後...');
       this.$socket.client.emit('participantStatstics', this.selectedpmKBs);
     },
     KBupdated:  function (data) {
@@ -1255,6 +1257,24 @@ export default {
       return time === null || time === undefined ? moment().format('YYYY/MM/DD HH:mm:ss') : moment.unix(time).format('YYYY/MM/DD HH:mm:ss');
     },
     sockparticipantStatstics: function (data) {
+      data.proceedUsers = _uniq(data.proceedUsers);
+      let newuserData = [];
+      for(let i=0; i<data.statistics.length; i++) {
+        let userData = data.statistics[i];
+        let existuserData = _find(newuserData, (item) => {
+          return item._id === userData._id;
+        });
+        if(existuserData === undefined) {
+          newuserData.push(userData);
+        } else {
+          existuserData.finalStages = _unionWith(existuserData.finalStages, userData.finalStages);
+          existuserData.reviewerStages = _unionWith(existuserData.reviewerStages, userData.reviewerStages);
+          existuserData.pmStages = _unionWith(existuserData.pmStages, userData.pmStages);
+          existuserData.vendorStages = _unionWith(existuserData.vendorStages, userData.vendorStages);
+          existuserData.writerStages = _unionWith(existuserData.writerStages, userData.writerStages);
+        }
+      }
+      data.statistics = newuserData;
       this.participantsDB = data;
       this.participantW = true;
     },
@@ -1262,6 +1282,7 @@ export default {
       return this.randomColors[n];
     },
     exportParticipant: function () {
+      this.$emit('toastPop', '參與者清單產生完成！');
       let output = [];
       for (let i = 0; i < this.participantsDB.statistics.length; i++) {
         let user = this.participantsDB.statistics[i];
