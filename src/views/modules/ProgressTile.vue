@@ -63,7 +63,7 @@
           標籤
         </v-btn>
         <div class='d-flex flex-row'>
-          <v-checkbox class='ma-0' v-if='currentItem.isPM || currentItem.isFinal' off-icon="far fa-square" on-icon="fa-check-square" v-model='selectedItem'></v-checkbox>
+          <v-checkbox class='ma-0' v-if='currentItem.isPM || currentItem.isFinal' off-icon="far fa-square" on-icon="fa-check-square" v-model='selected'></v-checkbox>
           <v-tooltip top v-if='currentItem.isPM'>
             <template v-slot:activator="{ on, attrs }">
               <v-btn
@@ -169,6 +169,7 @@
 import moment from 'moment';
 import _head from 'lodash/head';
 import _inRange from 'lodash/inRange';
+import _find from 'lodash/find'
 import momentDurationFormatSetup from 'moment-duration-format';
 
 momentDurationFormatSetup(moment);
@@ -176,7 +177,8 @@ momentDurationFormatSetup(moment);
 export default {
     name: 'ProgressTile',
     props: {
-      progressItem: Object
+      progressItem: Object,
+      selectedItems: Array
     },
     methods: {
       stageConvert: function (step) {
@@ -220,13 +222,35 @@ export default {
       }
     },
     watch: {
-      selectedItem: function () {
-        this.$emit('KBselected', this.currentItem);
+      selectedItems: function() {
+        let oriobj = this;
+        let found = _find(this.selectedItems, (item) => {
+          return item === oriobj.currentItem._id;
+        });
+        if(found !== undefined) {
+          this.selected = true;
+        } else {
+          this.selected = false;
+        }
+      },
+      selected: function () {
+        let oriobj = this;
+        let found = _find(this.selectedItems, (item) => {
+          return item === oriobj.currentItem._id;
+        });
+        if(found === undefined) {
+          if(this.selected) {
+            this.$emit('KBselected', this.currentItem);
+          }
+        } else {
+          if(!this.selected) {
+            this.$emit('KBselected', this.currentItem);
+          }
+        }
       }
     },
     created () {
       this.currentItem = this.progressItem;
-      this.selectedItem = this.currentItem.selected;
       this.currentStep = this.currentItem.currentStep;
     },
     data () {
@@ -257,7 +281,7 @@ export default {
           eventLog: [],
           stages: []
         },
-        selectedItem: false,
+        selected: false,
         expand: false,
         currentStep: 0
       };

@@ -490,6 +490,30 @@
           <v-icon v-else>fa-toolbox</v-icon>
         </v-btn>
       </template>
+      <v-badge
+        color="red"
+        overlap
+        :content='selectedpmKBs.length'
+        :value='selectedpmKBs.length'
+      >
+        <v-tooltip bottom>
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn
+              v-bind="attrs" v-on="on"
+              fab
+              dark
+              small
+              color="deep-orange darken-4"
+              @click.stop='selectAllKBs'
+            >
+              <v-icon v-if='selectedpmKBs.length > 0'>far fa-circle</v-icon>
+              <v-icon v-if='selectedpmKBs.length === 0'>far fa-check-circle</v-icon>
+            </v-btn>
+          </template>
+          <span v-if='selectedpmKBs.length > 0'>清除全部選擇的知識點</span>
+          <span v-if='selectedpmKBs.length === 0'>選擇全部的知識點</span>
+        </v-tooltip>
+      </v-badge>
       <!-- <v-badge
         color="red"
         overlap
@@ -554,6 +578,28 @@
             </v-btn>
           </template>
           <span>參與者名單</span>
+        </v-tooltip>
+      </v-badge>
+      <v-badge
+        color="red"
+        overlap
+        :content='selectedpmKBs.length'
+        :value='selectedpmKBs.length'
+      >
+        <v-tooltip bottom>
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn
+              v-bind="attrs" v-on="on"
+              fab
+              dark
+              small
+              color="deep-orange darken-4"
+              @click.stop='exportKBCSV'
+            >
+              <v-icon>fa-table</v-icon>
+            </v-btn>
+          </template>
+          <span>知識點報表（就你現在篩選的知識點結果匯出成報表）</span>
         </v-tooltip>
       </v-badge>
       <v-tooltip bottom>
@@ -697,7 +743,7 @@
     ></v-skeleton-loader>
     <v-sheet v-if='dashboardPopulated' class='pa-0 ma-0 d-flex flex-column'>
       <div v-if='progressList.length === 0'>您目前沒有待處理的項目</div>
-      <div class='d-flex flex-row' v-if='progressList.length > 0'>
+      <div class='d-flex flex-row' v-if='KBLoaded'>
         <v-text-field outlined clearable dense class='flex-grow-1' label='搜尋知識點關鍵字，可以搜科目、章節、排序、標題，輸入部分關鍵字即可' hint='支援正規表達式（可上網查詢語法），例如你可以使用 | 串聯兩個字詞查詢交集' prepend-icon="fa-search" v-model="queryTerm"></v-text-field>
         <v-btn color='indigo darken-4' class='white--text ma-1' @click="execSearch">搜尋</v-btn>
         <v-btn color="brown darken-4" class='white--text ma-1' @click="clearQueryTerm">清除</v-btn>
@@ -711,7 +757,7 @@
         transition="fade-transition"
         v-for="(item,n) in renderList" :key="'KB'+n"
       >
-        <progress-tile @tags='openTagW' @requestUpload='openUploadW' @viewDetail='openauthDetail' @KBselected='KBupdated' :progressItem='item' />
+        <progress-tile @tags='openTagW' @requestUpload='openUploadW' @viewDetail='openauthDetail' @KBselected='KBupdated' :progressItem='item' :selectedItems='selectedpmKBs' />
       </v-lazy>
     </v-sheet>
   </v-sheet>
@@ -730,7 +776,6 @@ import moment from 'moment';
 import momentDurationFormatSetup from 'moment-duration-format';
 import { randomColor } from 'randomcolor';
 import _filter from 'lodash/filter';
-import _toString from 'lodash/toString';
 import _find from 'lodash/find';
 import _uniq from 'lodash/uniq';
 import _orderBy from 'lodash/orderBy';
@@ -746,6 +791,7 @@ import _inRange from 'lodash/inRange';
 import { v4 as uuidv4 } from 'uuid';
 import VueApexCharts from 'vue-apexcharts';
 import prettyBytes from 'pretty-bytes';
+import Papa from 'papaparse';
 Vue.use(VueApexCharts);
 Vue.component('apexchart', VueApexCharts);
 momentDurationFormatSetup(moment);
@@ -758,6 +804,60 @@ export default {
     ProgressTile: () => import(/* webpackPrefetch: true */ './modules/ProgressTile')
   },
   methods: {
+    exportKBCSV: function() {
+      let oriobj = this;
+      let queryTerm = '無';
+      if(this.queryTerm !== '') {
+        queryTerm = queryTerm === '無' ? '關鍵字:' + this.queryTerm : queryTerm + '關鍵字:' + this.queryTerm;
+      }
+      if(this.selectedFilterTags.length > 0) {
+        let tags = _map(this.selectedFilterTags, (tag) => {
+          return oriobj.tagQuery(tag)+',';
+        })
+        queryTerm = queryTerm === '無' ? '過濾標籤:' + tags : queryTerm + '/過濾標籤:' + tags;
+      }
+      let output = [];
+      for(let i=0; i< this.renderList.length; i++) {
+        let item = this.renderList[i];
+        let csName = item.currentStep > 0 ? '[' + item.stages[item.currentStep - 1].name + ']' : "無";
+        let outputItem = {
+          '標題': item.title,
+          '隸屬科目': item.mainTag,
+          '隸屬章節': item.mainChapter,
+          '目前步驟編號（-1表示未啟動）': item.currentStep,
+          '目前步驟名稱': csName,
+        };
+        for(let k=0; k<this.maxStep; k++) {
+          let otStatus = '無此階段';
+          let osTime = '無此階段'
+          let oeTime = '無此階段'
+          let opTime = '無此階段'
+          if(item.stages.length > k) {
+            otStatus = item.currentStep - 1 === k ? '進行中' : item.currentStep - 1 < k ? '尚未發生' : '已完成';
+            osTime = 'startTick' in item.stages[k] ? moment.unix(item.stages[k].startTick).format('YYYY/MM/DD HH:mm:ss') : '未設定開始時間';
+            oeTime = 'dueTick' in item.stages[k] ? moment.unix(item.stages[k].dueTick).format('YYYY/MM/DD HH:mm:ss') : '未設定死線時間';
+            opTime = 'passTick' in item.stages[k] ? moment.unix(item.stages[k].passTick).format('YYYY/MM/DD HH:mm:ss') : '未設定完成時間';
+          }
+          outputItem['第' + (k+1) + '階段執行狀態'] = otStatus;
+          outputItem['第' + (k+1) + '階段開始時間'] = osTime;
+          outputItem['第' + (k+1) + '階段死線時間'] = oeTime;
+          outputItem['第' + (k+1) + '階段完成時間'] = opTime;
+        }
+        output.push(outputItem);
+      }
+      var element = document.createElement('a');
+      element.setAttribute('href', 'data:text/plain;charset=utf-8,' + "\ufeff"+ Papa.unparse(output));
+      element.setAttribute('download', moment().format('YYYY/MM/DD HH:mm:ss') + "知識點狀態報表，過濾條件：" + queryTerm + ".csv");
+      element.style.display = 'none';
+      element.click();
+    },
+    selectAllKBs: function() {
+      if(this.selectedpmKBs.length > 0) {
+        this.selectedpmKBs = [];
+      } else {
+        this.selectedpmKBs = _map(this.renderList, '_id');
+      }
+    },
     timeConvert: function (time) {
       return moment.duration(time, 'second').format('mm分ss秒SS');
     },
@@ -857,7 +957,7 @@ export default {
       this.renderChart();
     },
     clearFilterTag:async function() {
-      this.selectedFilterTags = '';
+      this.selectedFilterTags = [];
       await this.generateList();
       this.renderChart();
     },
@@ -1146,6 +1246,7 @@ export default {
         oriobj.$emit('toastPop', 'DashBoard更新中');
         oriobj.$socket.client.emit('listDashBoard');
       }, this.siteSettings.userCheckTime * 60 * 1000);
+      this.KBLoaded = true;
     },
     updateFilterTag: function (value) {
       this.selectedFilterTags = value;
@@ -1161,53 +1262,63 @@ export default {
       return this.randomColors[n];
     },
     exportParticipant: function () {
-      let exportCSV = '\ufeff';
-      exportCSV += '你所勾選的知識點數量：' + this.participantsDB.proceedKBs.length + '\n';
-      exportCSV += '參與這些知識點的使用者：' + this.participantsDB.proceedUsers.length + '\n';
-      exportCSV += '各知識點的參與狀況：\n';
+      let output = [];
       for (let i = 0; i < this.participantsDB.statistics.length; i++) {
         let user = this.participantsDB.statistics[i];
-        exportCSV += user.name + '@' + user.unit + '\n';
-        exportCSV += '參與PM工作：\n';
-        for (let k = 0; k < user.pmStages.length; k++) {
-          let stageParticipants = _map(user.pmStages[k], (item) => {
-            return item.KBtitle + '|' + item.name
-          });
-          exportCSV += _toString(stageParticipants) + '\n';
-        }
-        exportCSV += '參與審查者工作：\n';
-        for (let k = 0; k < user.reviewerStages.length; k++) {
-          let stageParticipants = _map(user.reviewerStages[k], (item) => {
-            return item.KBtitle + '|' + item.name
-          });
-          exportCSV += _toString(stageParticipants) + '\n';
-        }
-        exportCSV += '參與寫手工作：\n';
-        for (let k = 0; k < user.writerStages.length; k++) {
-          let stageParticipants = _map(user.writerStages[k], (item) => {
-            return item.KBtitle + '|' + item.name
-          });
-          exportCSV += _toString(stageParticipants) + '\n';
-        }
-        exportCSV += '參與行政組工作：\n';
-        for (let k = 0; k < user.finalStages.length; k++) {
-          let stageParticipants = _map(user.finalStages[k], (item) => {
-            return item.KBtitle + '|' + item.name
-          });
-          exportCSV += _toString(stageParticipants) + '\n';
-        }
-        exportCSV += '參與廠商工作：\n';
-        for (let k = 0; k < user.vendorStages.length; k++) {
-          let stageParticipants = _map(user.vendorStages[k], (item) => {
-            return item.KBtitle + '|' + item.name
-          });
-          exportCSV += _toString(stageParticipants) + '\n';
-        }
+        let pmKB = _map(user.pmStages, (item) => {
+          return item.KBID;
+        });
+        pmKB = _uniq(pmKB);
+        let reviewerKB = _map(user.reviewerStages, (item) => {
+          return item.KBID;
+        });
+        reviewerKB = _uniq(reviewerKB);
+        let writerKB = _map(user.writerStages, (item) => {
+          return item.KBID;
+        });
+        writerKB = _uniq(writerKB);
+        let vendorKB = _map(user.vendorStages, (item) => {
+          return item.KBID;
+        });
+        vendorKB = _uniq(vendorKB);
+        let finalKB = _map(user.finalStages, (item) => {
+          return item.KBID;
+        });
+        finalKB = _uniq(finalKB);
+        let outputItem = {
+          '參與者': user.name,
+          '服務單位': user.unit,
+          '擔任PM次數(階段別)': user.pmStages.length,
+          '擔任PM次數(知識點別)': pmKB.length,
+          '擔任審查者次數(階段別)': user.reviewerStages.length,
+          '擔任審查者次數(知識點別)': reviewerKB.length,
+          '擔任寫手次數(階段別)': user.writerStages.length,
+          '擔任寫手次數(知識點別)': writerKB.length,
+          '擔任廠商次數(階段別)': user.vendorStages.length,
+          '擔任廠商次數(知識點別)': vendorKB.length,
+          '擔任行政組次數(階段別)': user.finalStages.length,
+          '擔任行政組次數(知識點別)': finalKB.length,
+          '參與PM階段清單': _map(user.pmStages, (item) => {
+            return '[' + item.KBtitle + '|' + item.name + ']';
+          }),
+          '參與審查者階段清單': _map(user.reviewerStages, (item) => {
+            return '[' + item.KBtitle + '|' + item.name + ']';
+          }),
+          '參與寫手階段清單': _map(user.writerStages, (item) => {
+            return '[' + item.KBtitle + '|' + item.name + ']';
+          }),
+          '參與廠商階段清單': _map(user.vendorStages, (item) => {
+            return '[' + item.KBtitle + '|' + item.name + ']';
+          }),
+          '參與行政組階段清單': _map(user.finalStages, (item) => {
+            return '[' + item.KBtitle + '|' + item.name + ']';
+          }),
+        };
+        output.push(outputItem);
       }
-      exportCSV += '\n';
-      let element = document.createElement('a');
-      element.setAttribute('href', 'data:text/csv;base64,' + window.btoa(exportCSV));
-      element.setAttribute('download', '參與者統計匯出.csv');
+      var element = document.createElement('a');
+      element.setAttribute('href', 'data:text/plain;charset=utf-8,' + "\ufeff"+ Papa.unparse(output));
+      element.setAttribute('download', moment().format('YYYY/MM/DD HH:mm:ss') + "參與者統計匯出報表.csv");
       element.style.display = 'none';
       element.click();
     },
@@ -1456,6 +1567,7 @@ export default {
   },
   data () {
     return {
+      KBLoaded: false,
       priviledgeVW: false,
       viewReviewer: true,
       viewPM: true,

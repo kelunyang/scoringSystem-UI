@@ -709,7 +709,7 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn @click='loadKB()' :disabled='selectedKBTag === ""'>載入科目</v-btn>
+          <v-btn @click='loadKB' :disabled='selectedKBTag === ""'>載入科目</v-btn>
           <v-btn @click='tagW = false'>關閉對話框</v-btn>
         </v-card-actions>
       </v-card>
@@ -746,6 +746,30 @@
           <v-icon v-else>fa-pencil-alt</v-icon>
         </v-btn>
       </template>
+      <v-badge
+        color="red"
+        overlap
+        :content='selectedKBs.length'
+        :value='selectedKBs.length'
+      >
+        <v-tooltip bottom>
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn
+              v-bind="attrs" v-on="on"
+              fab
+              dark
+              small
+              color="blue darken-4"
+              @click.stop='selectAllKBs'
+            >
+              <v-icon v-if='selectedKBs.length > 0'>far fa-circle</v-icon>
+              <v-icon v-if='selectedKBs.length === 0'>far fa-check-circle</v-icon>
+            </v-btn>
+          </template>
+          <span v-if='selectedKBs.length > 0'>清除全部選擇的知識點</span>
+          <span v-if='selectedKBs.length === 0'>選擇全部的知識點</span>
+        </v-tooltip>
+      </v-badge>
       <v-tooltip bottom>
         <template v-slot:activator="{ on, attrs }">
           <v-btn
@@ -877,7 +901,12 @@
       <v-btn class='white--text text-h5 indigo darken-4' @click='tagW = true'>請點這裡載入科目標籤</v-btn>
       <div class='text-caption'>你之後可以從右下角工具箱按鈕切換至其他的科目標籤，或者是由鉛筆按鈕新增本標簽下的章節知識點</div>
     </div>
-    <div v-if='DB.length > 0' class='blue-grey--text darken-1 text-caption'>目前編輯的知識點標籤是「{{ tagQuery(selectedKBTag) }}」，已篩選出{{ DB.length }}個章節，為節省資源，不會全部展現出來，往下滑會載入更多</div>
+    <div class='d-flex flex-row' v-if='KBLoaded'>
+      <v-text-field outlined clearable dense class='flex-grow-1' label='搜尋知識點標題關鍵字，輸入部分關鍵字即可' hint='支援正規表達式（可上網查詢語法），例如你可以使用 | 串聯兩個字詞查詢交集' prepend-icon="fa-search" v-model="queryTerm"></v-text-field>
+      <v-btn color='indigo darken-4' class='white--text ma-1' @click="loadKB">搜尋</v-btn>
+      <v-btn color="brown darken-4" class='white--text ma-1' @click="clearQueryTerm">清除</v-btn>
+    </div>
+    <div v-if='DB.length > 0' class='blue-grey--text darken-1 text-caption'>目前編輯的知識點標籤是「{{ tagQuery(selectedKBTag) }}」，已篩選出{{ DB.length }}個章節，{{ flattenKBs.length }}個知識點，為節省資源，不會全部展現出來，往下滑會載入更多</div>
     <draggable group="Mitems" v-model="DB" style="min-height: 10px" handle='.handle'>
       <template v-for="mitem in DB">
         <v-lazy
@@ -1198,6 +1227,17 @@ export default {
     }
   },
   methods: {
+    clearQueryTerm: function() {
+      this.queryTerm = '';
+      this.loadKB();
+    },
+    selectAllKBs: function() {
+      if(this.selectedKBs.length > 0) {
+        this.selectedKBs = [];
+      } else {
+        this.selectedKBs = _map(this.flattenKBs, '_id');
+      }
+    },
     addpointerObj: function() {
       this.pointerObjs.push({
         id: uuidv4(),
@@ -1572,6 +1612,11 @@ export default {
       for(let i=0; i< data.length; i++) {
         let chapter = data[i];
         chapter.collapse = false;
+        if(this.queryTerm !== '') {
+          chapter.KBs = _filter(chapter.KBs, (Kitem) => {
+            return (new RegExp(this.queryTerm, 'g')).test(Kitem.title);
+          });
+        }
         KBs.push(chapter.KBs);
         for(let k=0; k<chapter.KBs.length; k++) {
           let KB = chapter.KBs[k];
@@ -1590,9 +1635,9 @@ export default {
         return a.sort - b.sort;
       })
       this.DB = data;
+      this.flattenKBs = _flatten(KBs);
       if(this.currentKB._id !== '') {
-        let flattenKBs = _flatten(KBs);
-        let currentKB = _find(flattenKBs, (KB) => {
+        let currentKB = _find(this.flattenKBs, (KB) => {
           return KB._id === this.currentKB._id;
         });
         if(currentKB === undefined) {
@@ -1601,6 +1646,7 @@ export default {
           this.currentKB = currentKB;
         }
       }
+      this.KBLoaded = true;
     },
     socketgetKB: function (data) {
       data.desc = marked(data.desc, { renderer });
@@ -1859,6 +1905,9 @@ export default {
   },
   data () {
     return {
+      KBLoaded: false,
+      queryTerm: '',
+      flattenKBs: [],
       pointerObjs: [],
       scanPointerKBs: [],
       pointerfinalTags: [],
