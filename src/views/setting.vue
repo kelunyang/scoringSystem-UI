@@ -6,9 +6,18 @@
           <v-btn icon dark @click='logW = false'>
             <v-icon>fa-times</v-icon>
           </v-btn>
-          <v-toolbar-title>機器人執行記錄檔</v-toolbar-title>
+          <v-toolbar-title>{{ botName }}執行記錄檔</v-toolbar-title>
         </v-toolbar>
-        <v-card-text class='text-left black--text text-body-1 pa-0'>
+        <v-card-text class='text-left black--text text-body-1 pa-1 d-flex flex-column'>
+          <v-text-field label='搜尋關鍵字' hint='支援正規表達式' outlined clearable dense v-model='botAction'></v-text-field>
+          <v-slider
+            label='下載條目數量'
+            min='10'
+            max='50'
+            v-model="botNum"
+            thumb-label
+          ></v-slider>
+          <v-btn class='ma-1' @click='filterbotLog'>篩選機器人執行紀錄</v-btn>
           <v-simple-table v-if="botLog.length > 0" class='black--text'>
             <template v-slot:default>
               <thead>
@@ -341,7 +350,7 @@
       v-model="reportDuration"
       thumb-label
     ></v-slider>
-    <v-btn @click="getrobotLog('通知機器人')">查看通知機器人執行紀錄</v-btn>
+    <v-btn class='ma-1' @click="getrobotLog('通知機器人')">查看通知機器人執行紀錄</v-btn>
     <v-simple-table v-if="ntemplateList.length > 0" class='black--text'>
       <template v-slot:default>
         <thead>
@@ -390,7 +399,7 @@
         </tbody>
       </template>
     </v-simple-table>
-    <v-btn @click='addNTemplate'>新增定時通知範本</v-btn>
+    <v-btn class='ma-1' @click='addNTemplate'>新增定時通知範本</v-btn>
     <v-text-field outlined clearable dense label='備份檔案位置' v-model='backupLocation' hint='請注意，這裡的位置是NFS主機上的位置，不知道別亂調，最後不用加上/，另外，檔案備份是直接複寫舊備份檔，沒有版本問題'></v-text-field>
     <v-slider
       label='檔案備份頻率（天）'
@@ -414,7 +423,7 @@
       v-model="backupHour"
       thumb-label
     ></v-slider>
-    <v-btn @click="getrobotLog('存檔備份機器人')">查看檔案備份機器人執行紀錄</v-btn>
+    <v-btn class='ma-1' @click="getrobotLog('存檔備份機器人')">查看檔案備份機器人執行紀錄</v-btn>
     <v-text-field outlined clearable dense label='資料庫備份檔案位置' v-model='dbbackupLocation' hint='請注意，這裡的位置是NFS主機上的位置，不知道別亂調，最後不用加上/'></v-text-field>
     <v-slider
       label='資料庫檔案備份頻率（天）'
@@ -430,7 +439,7 @@
       v-model="dbbackupCopies"
       thumb-label
     ></v-slider>
-    <v-btn @click="getrobotLog('資料庫備份機器人')">查看資料庫備份機器人執行紀錄</v-btn>
+    <v-btn class='ma-1' @click="getrobotLog('資料庫備份機器人')">查看資料庫備份機器人執行紀錄</v-btn>
     <v-slider
       label='格式檢查／轉檔頻率（天）'
       min='0.1'
@@ -516,7 +525,6 @@ import _find from 'lodash-es/find';
 import _map from 'lodash-es/map';
 import _last from 'lodash-es/last';
 import _head from 'lodash-es/head';
-import _takeRight from 'lodash-es/takeRight';
 import Decimal from 'decimal.js';
 import VueApexCharts from 'vue-apexcharts';
 
@@ -559,17 +567,17 @@ export default {
       };
     },
     chartData: function() {
-      let memdata = _takeRight(_map(this.vmStatus, (item) => {
+      let memdata = _map(this.vmStatus, (item) => {
         let ram = item.totalRAM === 0 ? 0 : parseInt(((item.totalRAM - item.ramStatus) / item.totalRAM) * 100);
         return [ moment.unix(item.reportTick).format("YYYY-MM-DDTHH:mm:ss+0800"), ram ];
-      }), 100);
-      let cpudata = _takeRight(_map(this.vmStatus, (item) => {
+      });
+      let cpudata = _map(this.vmStatus, (item) => {
         return [ moment.unix(item.reportTick).format("YYYY-MM-DDTHH:mm:ss+0800"), parseInt(item.cpuStatus) ];
-      }), 100);
-      let storagedata = _takeRight(_map(this.vmStatus, (item) => {
+      });
+      let storagedata = _map(this.vmStatus, (item) => {
         let storage = item.totalStorage === 0 ? 0 : parseInt(((item.totalStorage - item.storageStatus) / item.totalStorage) * 100);
         return [ moment.unix(item.reportTick).format("YYYY-MM-DDTHH:mm:ss+0800"), storage ];
-      }), 100);
+      });
       return [{ 
         name: '記憶體用量',
         data: memdata
@@ -717,11 +725,26 @@ export default {
     this.$socket.client.on('checkbotVM', this.socketcheckbotVM);
   },
   methods: {
+    filterbotLog: function() {
+      this.$socket.client.emit('listRobotLog', {
+        botName: this.botName,
+        action: this.botAction,
+        logNum: this.botNum
+      });
+      this.botLog = [];
+    },
     socketcheckbotVM: function(data) {
       this.vmStatus.push(data);
     },
     getrobotLog: function(data) {
-      this.$socket.client.emit('listRobotLog', data);
+      this.botNum = 10;
+      this.botAction = '';
+      this.botName = data;
+      this.$socket.client.emit('listRobotLog', {
+        botName: data,
+        action: '',
+        logNum: 10
+      });
       this.botLog = [];
     },
     resetcnTemplate: function() {
@@ -998,6 +1021,9 @@ export default {
   },
   data () {
     return {
+      botNum: 10,
+      botAction: '',
+      botName: '',
       showChart: false,
       vmCheck: null,
       parallelRAM: 4,

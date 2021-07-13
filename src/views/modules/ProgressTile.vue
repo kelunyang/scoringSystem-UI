@@ -94,14 +94,16 @@
         </span>
         <span>
           <v-icon  class='ma-1' small left :color='currentItem.remainTick < 86400 ? "red" : "black"'>
-            fas fa-chess-rook
+            fas fa-stopwatch
           </v-icon>
           目前階段：{{ stageConvert(currentItem.currentStep) }}
         </span>
-        <span v-if='currentItem.remainTick < Number.MAX_SAFE_INTEGER'>
-          <v-icon class='ma-1' small :color='currentItem.remainTick < 86400 ? "red" : "black"'>fa-stopwatch</v-icon>
+        <span v-if='currentItem.remainTick < Number.MAX_SAFE_INTEGER'>，
           <span v-if='rangeConvert(currentItem.remainTick,0, 864000)'>距離死線約有：{{ timeConvert(currentItem.remainTick) }}</span>
           <span v-if='currentItem.remainTick < 0'>超過死線約有：{{ timeConvert(currentItem.remainTick) }}</span>
+        </span>
+        <span :color='currentItem.remainTick < 86400 ? "red" : "black"'>，
+          審查目標已完成：{{ currentItem.finishedObjs }} / {{ currentItem.currentObjs }}
         </span>
         <v-icon class='ma-1' small :color='currentItem.remainTick < 86400 ? "red" : "black"'>fa-user</v-icon>
         <span>你的角色為</span>
@@ -256,6 +258,8 @@ export default {
     data () {
       return {
         currentItem: {
+          finishedObjs: 0,
+          currentObjs: 0,
           _id: '',
           mainChapter: '',
           mainTag: '',

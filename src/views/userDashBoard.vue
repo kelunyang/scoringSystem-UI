@@ -1,6 +1,46 @@
 <template>
   <v-sheet class='d-flex flex-column'>
     <v-dialog
+      v-model="stageFW"
+      persistent
+      max-width="50vw"
+    >
+      <v-card>
+        <v-toolbar
+          color="primary"
+          dark
+        >按照流程檢視知識點
+        </v-toolbar>
+        <v-card-text class='d-flex flex-column pa-1 text-left black--text text-body-1'>
+          <v-alert outlined type='info' icon='fa-info-circle' class='text-left'>這個功能是提供給您篩選目前階段已經在您指定的位置的知識點</v-alert>
+          <v-slider
+            label='請指定階段（0代表不過濾，-1代表未啟動）'
+            min='-1'
+            :max='maxStep'
+            v-model="stageFilter"
+            thumb-label
+          ></v-slider>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            color='indigo darken-4'
+            class='white--text'
+            @click='generateList'
+          >
+            啟動流程過濾器
+          </v-btn>
+          <v-btn
+            color='red'
+            class='white--text'
+            @click='stageFW = false'
+          >
+            關閉對話框
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog
       v-model="priviledgeVW"
       persistent
       max-width="50vw"
@@ -678,6 +718,21 @@
         </template>
         開啟權限/角色過濾器
       </v-tooltip>
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn
+            v-bind="attrs" v-on="on"
+            fab
+            dark
+            small
+            color="pink darken-4"
+            @click.stop='stageFW = !stageFW'
+          >
+            <v-icon>fa-map-marker</v-icon>
+          </v-btn>
+        </template>
+        開啟流程過濾器
+      </v-tooltip>
     </v-speed-dial>
     <div v-show='showStatstics'>
       <div class='d-flex flex-row'>
@@ -833,6 +888,8 @@ export default {
           '隸屬章節': item.mainChapter,
           '目前步驟編號': item.currentStep === -1 ? '未啟動' : item.currentStep,
           '目前步驟名稱': csName,
+          '目前步驟審查目標數量': item.currentObjs,
+          '目前步驟完成審查目標數': item.finishedObjs
         };
         for(let k=0; k<this.maxStep; k++) {
           let otStatus = '無此階段';
@@ -883,6 +940,13 @@ export default {
       this.injectEvents(data);
       this.$emit('toastPop', '知識點編輯紀錄更新完成');
     },
+    socketdashboardObjectives: function(data) {
+      this.$emit('timerOn', false);
+      this.$emit('toastPop', '知識點審查目標已下載，更新清單中');
+      this.objectiveStats = data;
+      this.injectObjective(data);
+      this.$emit('toastPop', '知識點審查目標更新完成');
+    },
     socketdashboardUnreadedVersions: function(data) {
       this.$emit('timerOn', false);
       this.$emit('toastPop', '知識點檔案清單已下載，更新清單中');
@@ -909,6 +973,29 @@ export default {
         });
         if(eventProgress !== undefined) {
           eventProgress.eventLog = event.events;
+        }
+      }
+    },
+    injectObjective: function(data) {
+      for(let i=0; i<data.length; i++) {
+        let objective = data[i];
+        let objRender = _find(this.renderList, (item) => {
+          return item._id === objective._id;
+        });
+        if(objRender !== undefined) {
+          objRender.finishedObjs = (_filter(objective.objectives, (item) => {
+                                        return ('signUser' in item)
+                                      })).length;
+          objRender.currentObjs = objective.objectives.length
+        }
+        let objProgress = _find(this.progressList, (item) => {
+          return item._id === objective._id;
+        });
+        if(objProgress !== undefined) {
+          objProgress.finishedObjs = (_filter(objective.objectives, (item) => {
+                                        return ('signUser' in item)
+                                      })).length;
+          objProgress.currentObjs = objective.objectives.length
         }
       }
     },
@@ -1103,6 +1190,12 @@ export default {
             }            
             return false;
           });
+          if(this.stageFilter !== 0) {
+            list = _filter(list, (KB) => {
+              let filter = this.stageFilter === -1 ? 0 : this.stageFilter;
+              return KB.currentStep === filter;
+            });
+          }
           list.sort((a, b) => {
             let aTime = a.attention > 0 ? aTime * 100000 : Math.abs(aTime);
             let bTime = b.attention > 0 ? bTime * 100000 : Math.abs(bTime);
@@ -1125,12 +1218,24 @@ export default {
         let requestList = _map(this.progressList, (item) => {
           return item._id;
         });
+        let requestStages = _map(this.progressList, (item) => {
+          if(item.currentStep === 0) { return false; }
+          if(item.currentStep > 0) {
+            if(item.stages.length < item.currentStep) { return false; }
+            return item.stages[item.currentStep - 1]._id;
+          }
+        });
+        requestStages = _filter(requestStages, (item) => {
+          return item !== false;
+        });
         window.clearTimeout(this.issueTimer);
         window.clearTimeout(this.eventTimer);
         window.clearTimeout(this.versionTimer);
+        window.clearTimeout(this.objectiveTimer);
         window.clearTimeout(this.renderTimer);
         this.issueTimer = undefined;
         this.versionTimer = undefined;
+        this.objectiveTimer = undefined;
         this.eventTimer = undefined;
         this.renderTimer = undefined;
         this.$emit('toastPop', '清單整理完成，請稍後...');
@@ -1159,6 +1264,14 @@ export default {
             }, 7000);
           } else {
             oriobj.injectVersion(oriobj.unreadedVersions);
+          }
+          if(oriobj.objectiveStats.length === 0) {
+            oriobj.$emit('toastPop', '10秒後開始下載階段目標統計（完成後您會在每個知識點左下方看到數量）');
+            oriobj.objectiveTimer = setTimeout(() => {
+              oriobj.$socket.client.emit('dashboardObjectives', requestStages);
+            }, 10000);
+          } else {
+            oriobj.injectObjective(oriobj.objectiveStats);
           }
         }, 10);
       }
@@ -1234,6 +1347,8 @@ export default {
         data[i].unreaded = 0;
         data[i].eventLog = [];
         data[i].unreadedVersion = 0;
+        data[i].currentObjs = 0;
+        data[i].finishedObjs = 0;
       }
       this.progressList = data;
       await this.generateList();
@@ -1595,6 +1710,8 @@ export default {
   },
   data () {
     return {
+      stageFilter: 0,
+      stageFW: false,
       KBLoaded: false,
       priviledgeVW: false,
       viewReviewer: true,
@@ -1611,7 +1728,9 @@ export default {
       issueTimer: undefined,
       eventTimer: undefined,
       versionTimer: undefined,
+      objectiveTimer: undefined,
       renderTimer: undefined,
+      objectiveStats: [],
       eventList: [],
       renderList: [],
       /*firstRun: true,
@@ -1715,6 +1834,7 @@ export default {
     };
   },
   beforeDestroy () {
+    this.$socket.client.off('dashboardObjectives', this.socketdashboardObjectives);
     this.$socket.client.off('dashBoardEventLog', this.socketdashBoardEventLog);
     this.$socket.client.off('dashBoardUnreaded', this.socketdashBoardUnreaded);
     this.$socket.client.off('createUsersReport', this.socketcreateUsersReport);
@@ -1733,9 +1853,11 @@ export default {
     this.queryTimer = null;
     window.clearTimeout(this.issueTimer);
     window.clearTimeout(this.versionTimer);
+    window.clearTimeout(this.objectiveTimer);
     window.clearTimeout(this.eventTimer);
     this.issueTimer = undefined;
     this.versionTimer = undefined;
+    this.objectiveTimer = undefined;
     this.eventTimer = undefined;
   },
   mounted () {
@@ -1769,6 +1891,7 @@ export default {
     });
     this.$emit('timerOn', true);
     this.$emit('toastPop', 'DashBoard更新中');
+    this.$socket.client.on('dashboardObjectives', this.socketdashboardObjectives);
     this.$socket.client.on('dashBoardEventLog', this.socketdashBoardEventLog);
     this.$socket.client.on('dashBoardUnreaded', this.socketdashBoardUnreaded);
     this.$socket.client.on('createUsersReport', this.socketcreateUsersReport);
