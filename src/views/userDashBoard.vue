@@ -263,7 +263,8 @@
                       <span v-if='version.status >= 2'>格式
                         <span>{{ version.fileInfo.formatCheck ? '正確' : '錯誤' }}</span><br/>
                         <span v-if='version.status === 2'>({{ dateConvert(version.fileInfo.checkTick) }})</span>
-                        <span v-if='version.status === 3'>({{ dateConvert(version.fileInfo.converisionDate) }}已轉換為VP9)</span>
+                        <span v-if='version.status === 4'>({{ dateConvert(version.fileInfo.queueDate) }}已排入轉檔佇列)</span>
+                        <span v-if='version.status === 3'>({{ dateConvert(version.fileInfo.converisionDate) }}已轉換為VP9/WebM)</span>
                       </span>
                     </td>
                     <td class="text-left">
@@ -820,12 +821,17 @@ export default {
       let output = [];
       for(let i=0; i< this.renderList.length; i++) {
         let item = this.renderList[i];
+        let inSelected = _find(this.selectedpmKBs, (sItem) => {
+          return sItem === item._id;
+        });
+        if(inSelected === undefined) { continue; }
         let csName = item.currentStep > 0 ? '[' + item.stages[item.currentStep - 1].name + ']' : "無";
         let outputItem = {
-          '標題': item.title,
+          '知識點ID': item._id,
+          '知識點標題': item.title,
           '隸屬科目': item.mainTag,
           '隸屬章節': item.mainChapter,
-          '目前步驟編號（-1表示未啟動）': item.currentStep,
+          '目前步驟編號': item.currentStep === -1 ? '未啟動' : item.currentStep,
           '目前步驟名稱': csName,
         };
         for(let k=0; k<this.maxStep; k++) {
@@ -1307,6 +1313,7 @@ export default {
         });
         finalKB = _uniq(finalKB);
         let outputItem = {
+          '使用者ID': user._id,
           '參與者': user.name,
           '服務單位': user.unit,
           '擔任PM次數(階段別)': user.pmStages.length,

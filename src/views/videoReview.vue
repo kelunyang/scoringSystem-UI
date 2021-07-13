@@ -207,6 +207,7 @@
                 <span v-if='currentVersion.status >= 2'>機器檢查
                   <span>{{ currentVersion.fileInfo.formatCheck ? '正確' : '錯誤' }}</span>
                   <span v-if='currentVersion.status === 2'>（{{ dateConvert(currentVersion.fileInfo.checkTick) }}已完成檢查）</span>
+                  <span v-if='currentVersion.status === 4'>（{{ dateConvert(currentVersion.fileInfo.queueDate) }}已排入轉檔佇列）</span>
                   <span v-if='currentVersion.status === 3'>（{{ dateConvert(currentVersion.fileInfo.converisionDate) }}已轉換為VP9/WebM）</span>
                 </span><br/>檔案格式相關資訊：
                 <span v-if='currentVersion.status >= 2' class='codecSign'>{{ currentVersion.fileInfo.videoCodec }}</span>
@@ -291,6 +292,7 @@
                         <span>@ {{ timeConvert(item.fileInfo.duration) }}</span>
                         <span>{{ item.validRange ? '' : '❌' }}</span>
                         <span v-if='item.status === 2'>({{ dateConvert(item.fileInfo.checkTick) }})</span>
+                        <span v-if='item.status === 4'>({{ dateConvert(item.fileInfo.queueDate) }}已排入轉檔佇列)</span>
                         <span v-if='item.status === 3'>({{ dateConvert(item.fileInfo.converisionDate) }}已轉換為VP9)</span>
                       </span>
                     </span>

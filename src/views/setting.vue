@@ -258,11 +258,37 @@
     />
     <div class='text-h5 text-center pt-5 font-weight-black'>機器人巡邏參數</div>
     <v-divider inset></v-divider>
+    <v-alert type='info' icon="fa-robot" outlined class='text-left'>
+      <v-row align="center">
+        <v-col class="grow">
+          轉檔機器人<span v-if='vmBot.ffmpegStatus'>執行中</span><span v-if='!vmBot.ffmpegStatus'>未執行</span>
+          ，CPU使用：{{ decimalConvert(vmBot.cpuStatus) }} %
+          ／剩餘記憶體： {{ decimalConvert(vmBot.ramStatus) }} GB
+          ／剩餘硬碟：{{ decimalConvert(vmBot.storageStatus) }} GB
+          ({{ dateConvert(vmBot.reportTick) }})
+        </v-col>
+        <v-col class="shrink">
+          <v-btn @click="showChart = !showChart">
+            <span v-if='showChart'>隱藏轉檔機資訊圖表</span>
+            <span v-if='!showChart'>顯示轉檔機資訊圖表</span>
+          </v-btn>
+        </v-col>
+      </v-row>
+    </v-alert>
+    <apexchart height="250" v-show='showChart' type="area" :options="chartOptions" :series="chartData"></apexchart>
     <v-slider
-      label='機器人定期執行時間（小時）'
+      label='機器人定時於每天幾點執行（小時）'
       min='0'
       max='23'
       v-model="patrolHour"
+      thumb-label
+    ></v-slider>
+    <v-slider
+      label='機器人啟動後，一天執行幾次？'
+      min='1'
+      max='48'
+      v-model="patrolTimes"
+      hint="就算機器人一天跑24次，目前也只有格式檢查功能支援喔，而且還要在格式檢查裡面設定好頻率"
       thumb-label
     ></v-slider>
     <div class='text-subtitle-2 font-weight-blod'>機器人代表帳號</div>
@@ -405,15 +431,19 @@
       thumb-label
     ></v-slider>
     <v-btn @click="getrobotLog('資料庫備份機器人')">查看資料庫備份機器人執行紀錄</v-btn>
-    <div>轉檔機器人執行時間： {{ converisionTick === 0 ? '未啟動' : dateConvert(converisionTick) }}</div>
-    <v-alert outlined type="error" icon='fa-skull' class='text-left' v-if='resetFFmpegBot'>
-      轉檔機器人疑似沒有在執行了（記憶體不足？），你按下存檔時，系統會重設轉檔機器人（但建議你還是SSH進去轉檔機看一看）
-    </v-alert>
     <v-slider
-      label='轉檔/格式檢查頻率（天）'
-      min='1'
+      label='格式檢查／轉檔頻率（天）'
+      min='0.1'
       max='7'
+      step='0.1'
       v-model="converisionDuration"
+      thumb-label
+    ></v-slider>
+    <v-slider
+      label='平行處理轉檔最低允許記憶體量(GB)'
+      min='2'
+      :max='vmBot.totalRAM > 8 ? Math.floor(vmBot.totalRAM) : 8'
+      v-model="parallelRAM"
       thumb-label
     ></v-slider>
     <v-slider
@@ -458,7 +488,8 @@
       :createable='true'
       label='請輸入轉檔或格式檢查失敗時會得到通知的使用者標籤'
     />
-    <v-btn @click="getrobotLog('轉檔機器人')">查看轉檔機器人執行紀錄</v-btn>
+    <v-btn @click="getrobotLog('格式檢查機器人')" class='ma-1'>查看格式檢查機器人執行紀錄</v-btn>
+    <v-btn @click="getrobotLog('轉檔機器人')" class='ma-1'>查看轉檔機器人執行紀錄</v-btn>
     <div class='text-h5 text-center pt-5 font-weight-black'>啟動／關閉v2ray</div>
     <v-switch
       :disabled='!v2RayChecked'
@@ -482,6 +513,15 @@ import TurndownService from 'turndown';
 import marked from 'marked';
 import moment from 'moment';
 import _find from 'lodash-es/find';
+import _map from 'lodash-es/map';
+import _last from 'lodash-es/last';
+import _head from 'lodash-es/head';
+import _takeRight from 'lodash-es/takeRight';
+import Decimal from 'decimal.js';
+import VueApexCharts from 'vue-apexcharts';
+
+Vue.use(VueApexCharts);
+Vue.component('apexchart', VueApexCharts);
 
 const renderer = new marked.Renderer();
 const linkRenderer = renderer.link;
@@ -506,6 +546,118 @@ export default {
     },
     siteSettings: function () {
       return this.$store.state.siteSettings;
+    },
+    vmBot: function() {
+      return this.vmStatus.length > 0 ? _last(this.vmStatus) : {
+        ffmpegStatus: false,
+        ramStatus: 0,
+        cpuStatus: 0,
+        storageStatus: 0,
+        totalStorage: 0,
+        totalRAM: 0,
+        reportTick: 0
+      };
+    },
+    chartData: function() {
+      let memdata = _takeRight(_map(this.vmStatus, (item) => {
+        let ram = item.totalRAM === 0 ? 0 : parseInt(((item.totalRAM - item.ramStatus) / item.totalRAM) * 100);
+        return [ moment.unix(item.reportTick).format("YYYY-MM-DDTHH:mm:ss+0800"), ram ];
+      }), 100);
+      let cpudata = _takeRight(_map(this.vmStatus, (item) => {
+        return [ moment.unix(item.reportTick).format("YYYY-MM-DDTHH:mm:ss+0800"), parseInt(item.cpuStatus) ];
+      }), 100);
+      let storagedata = _takeRight(_map(this.vmStatus, (item) => {
+        let storage = item.totalStorage === 0 ? 0 : parseInt(((item.totalStorage - item.storageStatus) / item.totalStorage) * 100);
+        return [ moment.unix(item.reportTick).format("YYYY-MM-DDTHH:mm:ss+0800"), storage ];
+      }), 100);
+      return [{ 
+        name: '記憶體用量',
+        data: memdata
+      },{ 
+        name: 'CPU用量',
+        data: cpudata
+      },{ 
+        name: '硬碟用量',
+        data: storagedata
+      }]
+    },
+    chartOptions: function() {
+      let startTick = this.vmStatus.length === 0 ? 0 : (_head(this.vmStatus)).reportTick * 1000;
+      let annotationFFMPEG = [];
+      for(let i=0; i<this.vmStatus.length; i++) {
+        let vmItem = this.vmStatus[i];
+        let plus = false;
+        let annoItem = {
+          x: moment.unix(vmItem.reportTick).valueOf(),
+          borderColor: '#999',
+          yAxisIndex: 0,
+          label: {
+            show: true,
+            style: {
+              color: "#fff",
+              background: '#775DD0'
+            }
+          }
+        }
+        if(vmItem.ffmpegOn) {
+          annoItem.label.text = '轉檔機器人啟動';
+          plus = true;
+        }
+        if(vmItem.ffmpegOff) {
+          annoItem.label.text = '轉檔機器人結束';
+          plus = true;
+        }
+        if(plus) {
+          annotationFFMPEG.push(annoItem);
+        }
+      }
+      return {
+        chart: {
+          id: 'area-datetime',
+          type: 'area',
+          height: 350,
+          zoom: {
+            autoScaleYaxis: true
+          }
+        },
+        annotations: {
+          xaxis: annotationFFMPEG
+        },
+        dataLabels: {
+          enabled: false
+        },
+        markers: {
+          size: 0,
+          style: 'hollow',
+        },
+        xaxis: {
+          type: 'datetime',
+          min: startTick,
+          labels: {
+              datetimeUTC: false
+          }
+        },
+        yaxis: {
+          type: 'numeric',
+          min: 0,
+          max: 100,
+          tickAmount: 2,
+        },
+        tooltip: {
+          x: {
+            format: 'yyyy/MM/dd HH:mm:ss'
+          }
+        },
+        fill: {
+          type: 'gradient',
+          gradient: {
+            shadeIntensity: 1,
+            opacityFrom: 0.7,
+            opacityTo: 0.9,
+            stops: [0, 100]
+          }
+        },
+      }
     }
   },
   beforeDestroy () {
@@ -522,8 +674,11 @@ export default {
     this.$socket.client.off('removeNTemplate', this.socketremoveNTemplate);
     this.$socket.client.off('addNTemplate', this.socketaddNTemplate);
     this.$socket.client.off('listRobotLog', this.socketlistRobotLog);
+    this.$socket.client.off('checkbotVM', this.socketcheckbotVM);
+    this.vmCheck = null;
   },
   created () {
+    let oriobj = this;
     this.$emit('viewIn', {
       text: '系統設定',
       icon: 'fa-cogs',
@@ -534,8 +689,8 @@ export default {
     this.$socket.client.emit('getGlobalSettings');
     this.$socket.client.emit('getRobotSetting');
     this.$socket.client.emit('checkV2ray');
-    this.$socket.client.emit('checkFFmpeg');
     this.$socket.client.emit('listNTemplate');
+    this.$socket.client.emit('checkbotVM');
     if(this.siteSettings.repos.frontend !== "") {
       this.$socket.client.emit('getGithubCommit', this.siteSettings.repos.frontend);
       this.$socket.client.emit('getGithubCommit', this.siteSettings.repos.backend);
@@ -543,6 +698,9 @@ export default {
     } else {
       this.$socket.client.emit('getsiteSetting');
     }
+    this.vmCheck = setInterval(() => {
+      oriobj.$socket.client.emit('checkbotVM');
+    }, 60000);
     this.$socket.client.on('addNTemplate', this.socketaddNTemplate);
     this.$socket.client.on('removeNTemplate', this.socketremoveNTemplate);
     this.$socket.client.on('listNTemplate', this.socketlistNTemplate);
@@ -555,10 +713,13 @@ export default {
     this.$socket.client.on('getRobotSetting', this.socketgetRobotSetting);
     this.$socket.client.on('getGithubCommit', this.socketgetGithubCommit);
     this.$socket.client.on('v2rayReport', this.socketv2rayReport);
-    this.$socket.client.on('checkFFmpeg', this.socketcheckFFmpeg);
     this.$socket.client.on('listRobotLog', this.socketlistRobotLog);
+    this.$socket.client.on('checkbotVM', this.socketcheckbotVM);
   },
   methods: {
+    socketcheckbotVM: function(data) {
+      this.vmStatus.push(data);
+    },
     getrobotLog: function(data) {
       this.$socket.client.emit('listRobotLog', data);
       this.botLog = [];
@@ -613,11 +774,12 @@ export default {
         return tag.name;
       }
     },
-    socketcheckFFmpeg: function(status) {
-      this.resetFFmpegBot = status;
-    },
     updateTags: function() {
       this.$emit('updateTags');
+    },
+    decimalConvert: function(num) {
+      let dec = new Decimal(num);
+      return dec.toFixed(2);
     },
     dateConvert: function (time) {
       return time === 0 ? '尚未發生' : moment.unix(time).format('YYYY/MM/DD HH:mm:ss');
@@ -630,7 +792,7 @@ export default {
     },
     socketcheckV2ray: function (data) {
       let oriobj = this;
-      this.v2Ray = data > -1;
+      this.v2Ray = data;
       Vue.nextTick(() => {
         oriobj.v2RayChecked = true;
       });
@@ -652,6 +814,7 @@ export default {
       this.mailPassword = data.mailPassword;
       this.robotDeadLine = data.robotDeadLine;
       this.patrolHour = data.patrolHour;
+      this.patrolTimes = data.patrolTimes;
       this.reportDuration = data.reportDuration;
       this.LINENotifyKey = data.LINENotifyKey;
       this.LINESecretKey = data.LINESecretKey;
@@ -668,7 +831,6 @@ export default {
       this.backupCopies = data.backupCopies;
       this.backupHour = data.backupHour;
       this.converisionLocation = data.converisionLocation;
-      this.converisionTick = data.converisionTick;
       this.notifyHour = data.notifyHour;
       this.originalVideos = data.originalVideos;
       this.converisionDropzoneB = data.converisionDropzoneB;
@@ -678,6 +840,7 @@ export default {
       this.converisionWidth = data.converisionWidth;
       this.converisionAudio = data.converisionAudio;
       this.converisionDuration = data.converisionDuration;
+      this.parallelRAM = data.parallelRAM;
       this.enableConverision = data.enableConverision;
       this.failedRecheck = data.failedRecheck;
       this.converisionDurationLimit = data.converisionDurationLimit;
@@ -737,6 +900,7 @@ export default {
         mailAccount: this.mailAccount,
         mailPassword: this.mailPassword,
         patrolHour: this.patrolHour,
+        patrolTimes: this.patrolTimes,
         nobodyAccount: this.nobodyAccount,
         LINENotifyKey: this.LINENotifyKey,
         LINESecretKey: this.LINESecretKey,
@@ -760,12 +924,12 @@ export default {
         converisionDropzoneA: this.converisionDropzoneA,
         converisionDropzoneB: this.converisionDropzoneB,
         originalVideos: this.originalVideos,
-        converisionTick: this.resetFFmpegBot ? 0 : this.converisionTick,
         converisionFailTag: this.converisionFailTag,
         converisionHeight: this.converisionHeight,
         converisionWidth: this.converisionWidth,
         converisionAudio: this.converisionAudio,
         converisionDuration: this.converisionDuration,
+        parallelRAM: this.parallelRAM,
         systemName: this.systemName,
         botRepo: this.botRepo,
         enableConverision: this.enableConverision,
@@ -834,6 +998,10 @@ export default {
   },
   data () {
     return {
+      showChart: false,
+      vmCheck: null,
+      parallelRAM: 4,
+      vmStatus: [],
       failedRecheck: false,
       enableConverision: false,
       converisionDurationLimit: [ 360, 600 ],
@@ -857,12 +1025,10 @@ export default {
         status: false,
         sendTick: 0
       },
-      resetFFmpegBot: false,
       converisionDropzoneA: '',
       converisionDropzoneB: '',
       originalVideos: '',
       notifyHour: 7,
-      converisionTick: 0,
       converisionLocation: '',
       backupCopies: 3,
       backupHour: 3,
@@ -913,7 +1079,8 @@ export default {
       robotDeadLine: 60,
       mailAccount: '',
       mailPassword: '',
-      patrolHour: 7
+      patrolHour: 7,
+      patrolTimes: 1
     };
   }
 };
