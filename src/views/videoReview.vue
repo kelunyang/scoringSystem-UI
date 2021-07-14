@@ -340,6 +340,40 @@
             標記修改重點（已開啟繪圖模式，請在圖上畫記）</v-toolbar-title>
         </v-toolbar>
         <v-card-actions class='d-flex flex-row'>
+          <v-menu v-model="textInputW" :close-on-content-click="false"  :close-on-click="false" offset-y>
+            <template v-slot:activator="{ on: menu, attrs }">
+              <v-tooltip bottom>
+                <template v-slot:activator="{ on: tooltip }">
+                  <v-btn
+                    icon
+                    v-bind="attrs"
+                    v-on="{ ...tooltip, ...menu }"
+                  >
+                    <v-icon>fa-font</v-icon>
+                  </v-btn>
+                </template>
+                <span>留下文字訊息</span>
+              </v-tooltip>
+            </template>
+            <v-sheet class='d-flex flex-column pa-1'>
+              <v-alert outlined type="info" icon='fa-info-circle'>輸入完文字之後隨意點擊畫布任一位置就會插入文字，但請注意刪除文字只能用橡皮擦（隔壁按鈕的畫筆點一下）塗掉，復原是無效的喔！</v-alert>
+              <v-text-field
+                outlined clearable dense
+                label="請輸入文字說明"
+                hint='輸入完後隨意點擊畫布任一位置就會插入囉'
+                v-model="canvasText"
+              ></v-text-field>
+              <v-slider
+                label='字體大小'
+                min='25'
+                max='50'
+                step="5"
+                v-model="canvasfontSize"
+                thumb-label
+              ></v-slider>
+              <v-btn @click='textInputW = false'>關閉插入文字對話框</v-btn>
+            </v-sheet>
+          </v-menu>
           <v-tooltip top>
             <template v-slot:activator="{ on, attrs }">
               <v-btn
@@ -354,7 +388,7 @@
             <span v-if='!citeEraser'>使用橡皮擦</span>
             <span v-if='citeEraser'>使用筆</span>
           </v-tooltip>
-          <div>畫筆顏色</div>
+          <div>使用顏色</div>
           <v-btn
             icon
             @click='citeColor = "#D00000"'>
@@ -466,6 +500,7 @@
             </v-sheet>
           </v-menu>
         </v-card-actions>
+        <v-alert outlined v-if='citeEraser' type="info" icon='fa-info-circle'>橡皮擦模式啟動，請注意只有在畫筆模式下才能插入文字喔！</v-alert>
         <v-card-text class='text-left'>
           <Paintable
             alwaysOnTop
@@ -479,6 +514,7 @@
             :color="citeColor"
             ref="paintable"
             @save="saveCanvas"
+            v-on:click.native="insertText"
           >
             <canvas ref='paintBase'></canvas>
           </Paintable>
@@ -1305,6 +1341,20 @@ export default {
     Paintable
   },
   methods: {
+    insertText: function(event) {
+      if(this.canvasText !== "") {
+        if(!this.citeEraser) {
+          let canvasPos = event.target.getBoundingClientRect();
+          let x = event.clientX - canvasPos.left;
+          let y = event.clientY - canvasPos.top;
+          let canvas = this.$refs.paintable;
+          let ctx = canvas.$el.children[0].getContext("2d");
+          ctx.font = this.canvasfontSize + "px Arial";
+          ctx.fillText(this.canvasText, x, y);
+          this.canvasText = "";
+        }
+      }
+    },
     saveCanvas: function(data) {
       this.paintIMG = data;
     },
@@ -2738,6 +2788,9 @@ export default {
   },
   data () {
     return {
+      canvasfontSize: 30,
+      textInputW: false,
+      canvasText: '',
       paintIMG: null,
       snapType: 0,
       readedStatus: {
