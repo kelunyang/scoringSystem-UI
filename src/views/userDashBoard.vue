@@ -1110,11 +1110,13 @@ export default {
           for (let k = 0; k < KB.stages.length; k++) {
             let stage = KB.stages[k];
             stage.special = false;
-            if(stage.current) {
-              if(stage.dueTick < moment().unix()) {
-                stage.special = true;
+            if(!('passTick' in stage)) {
+              if(stage.current) {
+                if(stage.dueTick < moment().unix()) {
+                  stage.special = true;
+                }
+                KB.attention = moment().unix() - stage.dueTick;
               }
-              KB.attention = moment().unix() - stage.dueTick;
             }
           }
           if(KB.currentStep > 0) {

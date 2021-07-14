@@ -21,18 +21,22 @@
                 <v-stepper-step
                   :key='"pt"+stage._id'
                   :step='index + 1'
-                  :complete='index + 1 < currentStep'
+                  :complete='"passTick" in stage'
                   :rules='[() => !stage.special]'
                   complete-icon='fa-check-circle'
                   error-icon='fa-bomb'
                 >
-                  <div v-if='currentStep === 0'>[未啟動]<br/>{{ stage.name }}</div>
-                  <div v-if='currentStep > 0' v-show='(index + 1) === currentStep'>[進行中]<br/>{{ stage.name }}</div>
-                  <div v-if='currentStep > 0' v-show='(index + 1) < currentStep'>[已完成]<br/>{{ stage.name }}</div>
-                  <div v-if='currentStep > 0' v-show='(index + 1) > currentStep'>[尚未發生]<br/>{{ stage.name }}</div>
+                  <div>
+                    <span v-if='"passTick" in stage'>[已完成]</span>
+                    <span v-else>
+                      <span v-if='currentStep === 0'>[未啟動]</span>
+                      <span v-if='currentStep > 0'>{{ (index + 1) === currentStep ? "[進行中]" : "[尚未發生]" }}</span>
+                    </span><br/>
+                    {{ stage.name }}
+                  </div>
                   <small v-if='"startTick" in stage'>起：{{ dateConvert(stage.startTick) }}</small>
-                  <small v-if='!("passtick" in stage)'>至：{{ dateConvert(stage.dueTick) }}</small>
-                  <small v-if='"passtick" in stage'>至：{{ dateConvert(stage.passTick) }}</small>
+                  <small v-if='!("passTick" in stage)'>至：{{ dateConvert(stage.dueTick) }}</small>
+                  <small v-if='"passTick" in stage'>至：{{ dateConvert(stage.passTick) }}</small>
                 </v-stepper-step>
                 <v-divider
                   :key='"divider" + stage._id'
