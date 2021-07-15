@@ -1,5 +1,6 @@
 <template>
   <v-main ref='mainBlock' class='pa-0' style="width: 100% !important;">
+    <div id="painterro"></div>
     <v-alert outlined type="success" icon="fa-grin-wink" class='text-left' v-show="hideAlert" v-if="statistics.unfinishObj === 0">
       本階段審查指標已全部完成，請回到DashBoard，可進入下一個階段（如果你在下一個階段還有權力的話）
     </v-alert>
@@ -328,7 +329,7 @@
         </v-card-text>
       </v-card>
     </v-dialog>
-    <v-dialog v-model='paintW' fullscreen hide-overlay transition='dialog-bottom-transition'>
+    <!-- <v-dialog v-model='paintW' fullscreen hide-overlay transition='dialog-bottom-transition'>
       <v-card>
         <v-toolbar dark color='primary'>
           <v-btn icon dark @click='paintW = false'>
@@ -519,6 +520,32 @@
             <canvas ref='paintBase'></canvas>
           </Paintable>
         </v-card-text>
+      </v-card>
+    </v-dialog> -->
+    <v-dialog
+      v-model="paintW"
+      persistent
+      max-width="50vw"
+    >
+      <v-card>
+        <v-toolbar
+          color="primary"
+          dark
+        >手繪知識點說明
+        </v-toolbar>
+        <v-card-text class='d-flex flex-column pa-1 text-left black--text text-body-1'>
+          你標記的項目已經截圖並載入下方的繪圖工具中，繪圖工具能用的筆刷、文字工具等項目請自行點選，畫完之後請按繪圖工具列最右下方的磁碟片圖案存檔💾，就會上傳你繪製的結果到Issue了
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            color='red'
+            class='white--text'
+            @click='paintW = false'
+          >
+            好的我要開始畫了！
+          </v-btn>
+        </v-card-actions>
       </v-card>
     </v-dialog>
     <v-dialog
@@ -1317,7 +1344,8 @@ import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf';
 import PdfjsWorker from 'workerize-loader!pdfjs-dist/build/pdf.worker.js';
 pdfjsLib.GlobalWorkerOptions.workerPort = new PdfjsWorker();
 import 'pdfjs-dist/build/pdf.worker.entry';
-import { Paintable } from 'paintablejs/vue';
+//import { Paintable } from 'paintablejs/vue';
+import Painterro from 'painterro';
 
 const renderer = new marked.Renderer();
 const linkRenderer = renderer.link;
@@ -1338,10 +1366,10 @@ export default {
   components: { 
     TipTap: () => import(/* webpackPrefetch: true */ './modules/TipTap'),
     IssueList: () => import(/* webpackPrefetch: true */ './modules/IssueList'),
-    Paintable
+    //Paintable
   },
   methods: {
-    insertText: function(event) {
+    /*insertText: function(event) {
       if(this.canvasText !== "") {
         if(!this.citeEraser) {
           let canvasPos = event.target.getBoundingClientRect();
@@ -1357,7 +1385,7 @@ export default {
     },
     saveCanvas: function(data) {
       this.paintIMG = data;
-    },
+    },*/
     socketdashboardUnreadedVersions: function (data) {
       let readedVersions = _find(data, (item) => {
         return item._id === this.KBid;
@@ -1461,30 +1489,18 @@ export default {
         this.hideAlert = true;
       }
     },
-    saveIMG: function() {
+    /*saveIMG: function() {
       let oriobj = this;
       this.$refs.paintable.active = false;
       Vue.nextTick(() => {
         oriobj.citetoIssue();
       });
+    },*/
+    citetoIssue: async function (img) {
+      this.issueCite = img.asBlob('image/png');
+      this.paintW = false;
     },
-    citetoIssue: async function () {
-      let oriobj = this;
-      let img = new Image();
-      let canvas = document.createElement('canvas');
-      canvas.height = this.$refs.paintBase.height;
-      canvas.width = this.$refs.paintBase.width;
-      canvas.getContext('2d').drawImage(this.$refs.paintBase, 0, 0);
-      img.src = this.paintIMG;
-      img.onload = function() {
-        canvas.getContext('2d').drawImage(img, 0, 0);
-        canvas.toBlob(function(blob) {
-          oriobj.issueCite = blob;
-        });
-        oriobj.paintW = false;
-      }
-    },
-    undoCanvas: function () {
+    /*undoCanvas: function () {
       this.$refs.paintable.undo();
     },
     redoCanvas: function () {
@@ -1492,7 +1508,7 @@ export default {
     },
     clearCanvas: function () {
       this.$refs.paintable.clear();
-    },
+    },*/
     fileiconConvert: function (name) {
       let type = mime.lookup(name);
       if(/image/g.test(type)) {
@@ -1770,13 +1786,13 @@ export default {
                   issue.version.type = "video/mp4"
                 }
               }
-              this.previousVersion = issue.version;
               if(/video/g.test(issue.version.type)) {
-                this.previousGoto = this.issue.position;
+                this.previousGoto = issue.position;
               } else if(/pdf/g.test(issue.version.type)) {
                 this.previousGoto = issue.position
               }
-              this.disableCompareMode = true;
+              this.previousVersion = issue.version;
+              this.disableCompareMode = false;
               this.$emit('toastPop', '這則Issue與舊版文件有關，對比模式已自動開啟');
             }
           }
@@ -2019,6 +2035,10 @@ export default {
       }, function onPlayerReady () {
         this.on('loadedmetadata', function () {
           oriobj.previousData.total = oriobj.timeConvert(this.duration());
+          if(oriobj.previousGoto !== 0) {
+            oriobj.previousPlayer.currentTime(oriobj.previousGoto);
+            oriobj.previousPlayer.pause();
+          }
           Vue.nextTick(() => {
             oriobj.barCalc();
           });
@@ -2100,14 +2120,24 @@ export default {
           oriobj.paintHeight = canvasHeight;
           oriobj.paintW = true;
           Vue.nextTick(() => {
-            oriobj.$refs.paintable.active = true;
-            oriobj.paintIMG = null;
-            oriobj.$refs.paintable.clear();
-            oriobj.$refs.paintBase.height = canvasHeight;
-            oriobj.$refs.paintBase.width = canvasWidth;
-            oriobj.$refs.paintBase.getContext('2d').drawImage(img, 0, canvasOffsetTop, canvasWidth, canvasHeight, 0, 0, canvasWidth, canvasHeight);
+            /*oriobj.$refs.paintable.active = true;*/
+            let canvas = document.createElement("canvas");
+            let oriHide = oriobj.hideFilterBtns;
+            //oriobj.paintIMG = null;
+            //oriobj.$refs.paintable.clear();
+            canvas.height = canvasHeight;
+            canvas.width = canvasWidth;
+            canvas.getContext('2d').drawImage(img, 0, canvasOffsetTop, canvasWidth, canvasHeight, 0, 0, canvasWidth, canvasHeight);
             oriobj.$emit("toastPop", "螢幕截圖完成，請開始標記");
             oriobj.snapShot = false;
+            oriobj.hideFilterBtns = true;
+            oriobj.painterro = Painterro({
+              saveHandler: function (image, done) {
+                oriobj.citetoIssue(image);
+                oriobj.hideFilterBtns = oriHide;
+                done(true);
+              }
+            }).show(canvas.toDataURL());
           });
         });
       } else {
@@ -2788,10 +2818,12 @@ export default {
   },
   data () {
     return {
+      savedCompareMode: false,
+      painterro: null,
       canvasfontSize: 30,
       textInputW: false,
       canvasText: '',
-      paintIMG: null,
+      //paintIMG: null,
       snapType: 0,
       readedStatus: {
         _id: undefined,
