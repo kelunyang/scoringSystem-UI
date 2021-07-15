@@ -2075,6 +2075,9 @@ export default {
         let canvasWidth = 0;
         Vue.nextTick(async () => {
           if(data === 0) {
+            oriobj.paintVersion = oriobj.currentVersion;
+            oriobj.paintVersion.version = 1;
+            oriobj.paintVersion.position = oriobj.currentData.position;
             if(oriobj.cType === 'video') {
               DOM = oriobj.$refs.currentPlayer;
               isMedia = true;
@@ -2086,6 +2089,9 @@ export default {
               DOM = oriobj.$refs.currentZip.$el;
             }
           } else {
+            oriobj.paintVersion = oriobj.previousVersion;
+            oriobj.paintVersion.version = 0;
+            oriobj.paintVersion.position = oriobj.previousData.position;
             if(oriobj.pType === 'video') {
               DOM = oriobj.$refs.previousPlayer;
               isMedia = true;
@@ -2719,7 +2725,7 @@ export default {
           let slice = this.issueCite.slice(0, 100000);
           let uuid = uuidv4();
           this.issueCite.lastModifiedDate = new Date();
-          this.issueCite.name = /pdf/g.test(this.currentVersion.type) ? this.versionnameConvert(this.currentVersion.name)+'版/'+this.currentData.position+'頁.png' : this.versionnameConvert(this.currentVersion.name)+'版/時間'+this.currentPosD+'.png';
+          this.issueCite.name = /pdf/g.test(this.paintVersion.type) ? this.versionnameConvert(this.paintVersion.name)+'版/'+this.paintVersion.position+'頁.png' : this.versionnameConvert(this.paintVersion.name)+'版/時間'+this.paintVersion.position+'.png';
           files[uuid] = {
             _id: this.issue._id,
             file: this.issueCite,
