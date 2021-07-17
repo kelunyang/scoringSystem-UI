@@ -103,7 +103,7 @@
           審查目標已完成：{{ currentItem.finishedObjs }} / {{ currentItem.currentObjs }}
         </span>
         <v-icon class='ma-1' small :color='currentItem.remainTick < 86400 ? "red" : "black"'>fa-user</v-icon>
-        <span>你的角色為</span>
+        <span>你在當前階段的角色為</span>
         <span class='text-weight-bold'>
           <span class='cyan--text darken-4' v-if='currentItem.isPM'>[PM]</span>
           <span class='blue-grey--text darken-4' v-if='currentItem.isWriter'>[寫手]</span>

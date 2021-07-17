@@ -11,7 +11,7 @@
         <v-card-text class='text-left black--text text-body-1 pa-2 d-flex flex-column'>
           <v-text-field label='關鍵字（可搜尋用戶名、動作名、描述）' hint='支援正規表達式，用|表示OR，用(?=.*集合一)(?=.*集合二)表示AND' outlined clearable dense v-model='eventKeyword'></v-text-field>
           <v-switch v-model="eventIgnore" label="忽略「儲存知識點順序」"></v-switch>
-          <div class='text-body-1'>選擇查詢區間</div>
+          <div class='text-body-1'>選擇查詢區間（如果你把兩個日期都選在同一天，那查詢就會查全部的時間段）</div>
           <v-date-picker
             v-model="eventsRange"
             full-width
@@ -109,7 +109,7 @@
         <v-toolbar
           color="primary"
           dark
-        >按照您的權限檢視知識點
+        >按照你在當前步驟的權限檢視知識點
         </v-toolbar>
         <v-card-text class='d-flex flex-column pa-0 text-left black--text text-body-1'>
           <v-alert outlined type='info' icon='fa-info-circle' class='text-left'>您可以在此按照您的角色／權限篩選知識點</v-alert>
@@ -731,7 +731,7 @@
           <v-icon v-else>fa-filter</v-icon>
         </v-btn>
       </template>
-      <v-tooltip bottom>
+      <!-- <v-tooltip bottom>
         <template v-slot:activator="{ on, attrs }">
           <v-btn
             v-bind="attrs" v-on="on"
@@ -746,7 +746,7 @@
         </template>
         <span v-if='queryHistory'>查看目前屬於你的知識點</span>
         <span v-if='!queryHistory'>查看所有和你有關的知識點</span>
-      </v-tooltip>
+      </v-tooltip> -->
       <v-tooltip bottom>
         <template v-slot:activator="{ on, attrs }">
           <v-btn
@@ -763,7 +763,7 @@
         <span v-if='sortingRule'>按照死線時間排序</span>
         <span v-if='!sortingRule'>按照知識點名稱排序</span>
       </v-tooltip>
-      <v-tooltip bottom>
+      <v-tooltip bottom v-if='!queryHistory'>
         <template v-slot:activator="{ on, attrs }">
           <v-btn
             v-bind="attrs" v-on="on"
@@ -864,7 +864,18 @@
         <v-btn color='indigo darken-4' class='white--text ma-1' @click="execSearch">搜尋</v-btn>
         <v-btn color="brown darken-4" class='white--text ma-1' @click="clearQueryTerm">清除</v-btn>
       </div>
-      <div class='blue-grey--text darken-1 text-caption'>已篩選出{{ renderList.length }}個知識點，為節省資源，不會全部展現出來，往下滑會載入更多</div>
+      <v-btn-toggle
+        v-model="filterHistory"
+        mandatory
+        class="justify-center"
+      >
+        <v-btn>
+          顯示當前處理階段和你有關的{{ renderList.length }}個知識點
+        </v-btn>
+        <v-btn>
+          顯示全部你曾經手以及正在處理的{{ progressList.length }}個知識點
+        </v-btn>
+      </v-btn-toggle>
       <v-lazy
         :options="{
           threshold: 0.5
@@ -1243,24 +1254,26 @@ export default {
           list = _uniqWith(list, (aKB, bKB) => {
             return aKB._id === bKB._id;
           });
-          list = _filter(list, (KB) => {
-            if(oriobj.viewReviewer) {
-              if(KB.isReviewer) return true;
-            }
-            if(oriobj.viewPM) {
-              if(KB.isPM) return true;
-            }
-            if(oriobj.viewFinal) {
-              if(KB.isFinal) return true;
-            }
-            if(oriobj.viewWriter) {
-              if(KB.isWriter) return true;
-            }
-            if(oriobj.viewVendor) {
-              if(KB.isVendor) return true;
-            }            
-            return false;
-          });
+          if(!this.queryHistory) {
+            list = _filter(list, (KB) => {
+              if(oriobj.viewReviewer) {
+                if(KB.isReviewer) return true;
+              }
+              if(oriobj.viewPM) {
+                if(KB.isPM) return true;
+              }
+              if(oriobj.viewFinal) {
+                if(KB.isFinal) return true;
+              }
+              if(oriobj.viewWriter) {
+                if(KB.isWriter) return true;
+              }
+              if(oriobj.viewVendor) {
+                if(KB.isVendor) return true;
+              }            
+              return false;
+            });
+          }
           if(this.stageFilter !== 0) {
             list = _filter(list, (KB) => {
               let filter = this.stageFilter === -1 ? 0 : this.stageFilter;
@@ -1735,6 +1748,7 @@ export default {
     },
     queryHistory: async function () {
       if(this.initialized) {
+        console.dir(this.initialized);
         this.initialized = false;
         await this.generateList();
         this.renderChart();
@@ -1810,6 +1824,14 @@ export default {
     }
   },
   computed: {
+    filterHistory: {
+      get: function() {
+        return this.queryHistory ? 1 : 0;
+      },
+      set: function(value) {
+        this.queryHistory = value === 0 ? false : true;
+      }
+    },
     currentUser: function () {
       return this.$store.state.currentUser;
     },
