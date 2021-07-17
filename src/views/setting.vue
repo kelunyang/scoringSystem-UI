@@ -525,7 +525,7 @@
 import Vue from 'vue';
 import TurndownService from 'turndown';
 import marked from 'marked';
-import moment from 'moment';
+import dayjs from 'dayjs';
 import _find from 'lodash-es/find';
 import _map from 'lodash-es/map';
 import _last from 'lodash-es/last';
@@ -574,14 +574,14 @@ export default {
     chartData: function() {
       let memdata = _map(this.vmStatus, (item) => {
         let ram = item.totalRAM === 0 ? 0 : parseInt(((item.totalRAM - item.ramStatus) / item.totalRAM) * 100);
-        return [ moment.unix(item.reportTick).format("YYYY-MM-DDTHH:mm:ss+0800"), ram ];
+        return [ dayjs.unix(item.reportTick).format("YYYY-MM-DDTHH:mm:ss+0800"), ram ];
       });
       let cpudata = _map(this.vmStatus, (item) => {
-        return [ moment.unix(item.reportTick).format("YYYY-MM-DDTHH:mm:ss+0800"), parseInt(item.cpuStatus) ];
+        return [ dayjs.unix(item.reportTick).format("YYYY-MM-DDTHH:mm:ss+0800"), parseInt(item.cpuStatus) ];
       });
       let storagedata = _map(this.vmStatus, (item) => {
         let storage = item.totalStorage === 0 ? 0 : parseInt(((item.totalStorage - item.storageStatus) / item.totalStorage) * 100);
-        return [ moment.unix(item.reportTick).format("YYYY-MM-DDTHH:mm:ss+0800"), storage ];
+        return [ dayjs.unix(item.reportTick).format("YYYY-MM-DDTHH:mm:ss+0800"), storage ];
       });
       return [{ 
         name: '記憶體用量',
@@ -601,7 +601,7 @@ export default {
         let vmItem = this.vmStatus[i];
         let plus = false;
         let annoItem = {
-          x: moment.unix(vmItem.reportTick).valueOf(),
+          x: dayjs.unix(vmItem.reportTick).valueOf(),
           borderColor: '#999',
           yAxisIndex: 0,
           label: {
@@ -813,7 +813,7 @@ export default {
       return dec.toFixed(2);
     },
     dateConvert: function (time) {
-      return time === 0 ? '尚未發生' : moment.unix(time).format('YYYY/MM/DD HH:mm:ss');
+      return time === 0 ? '尚未發生' : dayjs.unix(time).format('YYYY/MM/DD HH:mm:ss');
     },
     socketgetserverADDR: function (data) {
       this.serverAddress = data;
@@ -829,7 +829,7 @@ export default {
       });
     },
     githubConvert: function (commit) {
-      return commit.id + '(發布於' + moment(commit.commitDate).format('YYYY/MM/DD HH:mm:ss') + ')';
+      return commit.id + '(發布於' + dayjs(commit.commitDate).format('YYYY/MM/DD HH:mm:ss') + ')';
     },
     socketgetGithubCommit: function (data) {
       if(data.repo === this.siteSettings.repos.frontend) {

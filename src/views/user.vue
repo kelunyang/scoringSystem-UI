@@ -40,7 +40,7 @@
           <v-row no-gutters>
             <v-col class='flex-shrink-1'>
               <v-avatar size="62">
-                <img :src='"https://avatars.dicebear.com/api/" + currentUser.types + "/" + encodeURIComponent(currentUser.name + "@" + currentUser.unit) + ".svg"' />
+                <Avatar :user='currentUser'/>
               </v-avatar>
             </v-col>
             <v-col class='flex-grow-1'>
@@ -112,12 +112,15 @@
 <script>
 // @ is an alias to /src
 import { randomColor } from 'randomcolor';
-import moment from 'moment';
+import dayjs from 'dayjs';
 import { passwordStrength } from 'check-password-strength'
 import random from 'random';
 
 export default {
   name: 'userSetting',
+  components: { 
+    Avatar: () => import(/* webpackPrefetch: true */ './modules/Avatar'),
+  },
   beforeDestroy () {
     this.$socket.client.off('getRobotSetting', this.socketgetRobotSetting);
     this.$socket.client.off('setCurrentUser', this.socketsetCurrentUser);
@@ -188,7 +191,7 @@ export default {
       this.lineKey = data.LINENotifyKey;
     },
     dateConvert: function (time) {
-      return moment.unix(time).format('YYYY/MM/DD HH:mm:ss');
+      return dayjs.unix(time).format('YYYY/MM/DD HH:mm:ss');
     },
     tagColor: function (k) {
       return this.randomColors[k];

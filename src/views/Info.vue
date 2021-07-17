@@ -252,7 +252,7 @@
             <v-list-item v-for='item in userList' :key='item._id'>
               <v-list-item-avatar>
                 <v-avatar size='48'>
-                  <img :src='"https://avatars.dicebear.com/api/" + item.types + "/" + encodeURIComponent(item.name + "@" + item.unit) + ".svg"' />
+                  <Avatar :user='item' :size='48'/>
                 </v-avatar>
               </v-list-item-avatar>
               <v-list-item-content class='text-left'>
@@ -375,7 +375,7 @@
 <script>
 import Vue from 'vue';
 import VueClipboard from 'vue-clipboard2';
-import moment from 'moment';
+import dayjs from 'dayjs';
 import TurndownService from 'turndown';
 import marked from 'marked';
 import { v4 as uuidv4 } from 'uuid';
@@ -403,6 +403,7 @@ export default {
   components: { 
     TipTap: () => import(/* webpackPrefetch: true */ './modules/TipTap'),
     IssueView: () => import(/* webpackPrefetch: true */ './modules/IssueView'),
+    Avatar: () => import(/* webpackPrefetch: true */ './modules/Avatar'),
   },
   methods: {
     socketrequestfeedbackSlice: function (data) {
@@ -410,7 +411,7 @@ export default {
       let place = data.currentSlice * 100000;
       let slice = files[data.uuid].file.slice(place, place + Math.min(100000, files[data.uuid].file.size - place));
       this.uploadprogress = Math.ceil((place / files[data.uuid].file.size) * 100);
-      let nowdiff = moment().valueOf() - files[data.uuid].starttick;
+      let nowdiff = dayjs().valueOf() - files[data.uuid].starttick;
       this.uploadstatus = nowdiff === 0 ? '' : prettyBytes(place / (nowdiff/1000)) + '/s';
       let fileReader = new FileReader();
       fileReader.readAsArrayBuffer(slice);
@@ -545,7 +546,7 @@ export default {
       this.feedbackListW = true;
     },
     dateConvert: function (time) {
-      return time === 0 ? '尚未設定' : moment.unix(time).format('YYYY/MM/DD HH:mm:ss');
+      return time === 0 ? '尚未設定' : dayjs.unix(time).format('YYYY/MM/DD HH:mm:ss');
     },
     sendLINEnotify: function () {
       this.$socket.client.emit('sendLINEnotify', {
@@ -621,7 +622,7 @@ export default {
       });
       if(commit !== undefined) {
         return {
-          date: moment(commit.commitDate).format('YYYY/MM/DD HH:mm:ss'),
+          date: dayjs(commit.commitDate).format('YYYY/MM/DD HH:mm:ss'),
           message: commit.message,
           committer: commit.committerName,
           email: commit.committerEmail,
@@ -679,7 +680,7 @@ export default {
           files[uuid] = {
             _id: this.feedback._id,
             file: this.feedbackFile,
-            starttick: moment().valueOf()
+            starttick: dayjs().valueOf()
           };
           fileReader.readAsArrayBuffer(slice);
           fileReader.onload = () => {

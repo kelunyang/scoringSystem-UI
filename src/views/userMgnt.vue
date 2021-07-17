@@ -88,7 +88,7 @@
               <v-row>
                 <v-col class='pa-0 d-flex flex-column align-items-center'>
                   <v-avatar v-bind="attrs" v-on="on" size='48'>
-                    <img :src='"https://avatars.dicebear.com/api/" + editingUser.types + "/" + encodeURIComponent(editingUser.name + "@" + editingUser.unit) + ".svg"' />
+                    <Avatar :user='editingUser' :size='48'/>
                   </v-avatar>
                   <div class="text-body-2 font-weight-bold">帳號創建於： {{ dateConvert(editingUser.createDate) }} </div>
                   <div class="text-body-2 font-weight-bold">帳號修改於： {{ dateConvert(editingUser.modDate) }} </div>
@@ -402,7 +402,7 @@
         <v-list-item>
           <v-list-item-avatar>
             <v-avatar size="48">
-              <img :src='"https://avatars.dicebear.com/api/" + item.types + "/" + encodeURIComponent(item.name + "@" + item.unit) + ".svg"' />
+              <Avatar :user='item' :size='48'/>
             </v-avatar>
           </v-list-item-avatar>
           <v-list-item-content class="text-left">
@@ -451,8 +451,8 @@
 
 <script>
 // @ is an alias to /src
-import moment from 'moment';
-import validator from 'validator';
+import dayjs from 'dayjs';
+import isEmail from 'validator/es/lib/isEmail';
 import _filter from 'lodash/filter';
 import _includes from 'lodash/includes';
 import _flatten from 'lodash/flatten';
@@ -493,7 +493,10 @@ export default {
       this.$socket.client.on('setEmail', this.socketsetEmail);
       this.$socket.client.on('modUsers', this.socketmodUsers);
     },
-    components: { TagFilter: () => import(/* webpackPrefetch: true */ './modules/TagFilter') },
+    components: { 
+      TagFilter: () => import(/* webpackPrefetch: true */ './modules/TagFilter'),
+      Avatar: () => import(/* webpackPrefetch: true */ './modules/Avatar')
+    },
     computed: {
       filterColor: function () {
         return this.selectedFilterTags.length > 0 || this.queryTerm !== '' ? '#B71C1C' : '#00B0FF';
@@ -509,7 +512,7 @@ export default {
         let emailList = this.newEmail.split('\n');
         for (let i = 0; i < emailList.length; i++) {
           let email = emailList[i];
-          if (!validator.isEmail(email)) {
+          if (!isEmail(email)) {
             this.invalidEmailList.push(email);
           } else {
             this.emailList.push(email);
@@ -724,7 +727,7 @@ export default {
         }
       },
       dateConvert: function (time) {
-        return time === 0 ? '尚未設定' : moment.unix(time).format('YYYY/MM/DD HH:mm:ss');
+        return time === 0 ? '尚未設定' : dayjs.unix(time).format('YYYY/MM/DD HH:mm:ss');
       },
       filterTagUpdated: function (val) {
         this.selectedFilterTags = val;

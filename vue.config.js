@@ -24,12 +24,12 @@ module.exports = {
       minimize: true,
       minimizer: [new UglifyJsPlugin()],
     },
-    plugins: [
+    /*plugins: [
       new webpack.IgnorePlugin({
         resourceRegExp: /^\.\/locale$/,
         contextRegExp: /moment$/
       })
-    ]
+    ]*/
   },
   pluginOptions: {
     compression:{

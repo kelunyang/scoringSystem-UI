@@ -899,8 +899,8 @@
 
 <script>
 import Vue from 'vue';
-import moment from 'moment';
-import momentDurationFormatSetup from 'moment-duration-format';
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration';
 import { randomColor } from 'randomcolor';
 import _filter from 'lodash/filter';
 import _find from 'lodash/find';
@@ -922,7 +922,7 @@ import prettyBytes from 'pretty-bytes';
 import Papa from 'papaparse';
 Vue.use(VueApexCharts);
 Vue.component('apexchart', VueApexCharts);
-momentDurationFormatSetup(moment);
+dayjs.extend(duration);
 let files = [];
 
 export default {
@@ -969,9 +969,9 @@ export default {
           let opTime = '無此階段'
           if(item.stages.length > k) {
             otStatus = item.currentStep - 1 === k ? '進行中' : item.currentStep - 1 < k ? '尚未發生' : '已完成';
-            osTime = 'startTick' in item.stages[k] ? moment.unix(item.stages[k].startTick).format('YYYY/MM/DD HH:mm:ss') : '未設定開始時間';
-            oeTime = 'dueTick' in item.stages[k] ? moment.unix(item.stages[k].dueTick).format('YYYY/MM/DD HH:mm:ss') : '未設定死線時間';
-            opTime = 'passTick' in item.stages[k] ? moment.unix(item.stages[k].passTick).format('YYYY/MM/DD HH:mm:ss') : '未設定完成時間';
+            osTime = 'startTick' in item.stages[k] ? dayjs.unix(item.stages[k].startTick).format('YYYY/MM/DD HH:mm:ss') : '未設定開始時間';
+            oeTime = 'dueTick' in item.stages[k] ? dayjs.unix(item.stages[k].dueTick).format('YYYY/MM/DD HH:mm:ss') : '未設定死線時間';
+            opTime = 'passTick' in item.stages[k] ? dayjs.unix(item.stages[k].passTick).format('YYYY/MM/DD HH:mm:ss') : '未設定完成時間';
           }
           outputItem['第' + (k+1) + '階段執行狀態'] = otStatus;
           outputItem['第' + (k+1) + '階段開始時間'] = osTime;
@@ -982,7 +982,7 @@ export default {
       }
       var element = document.createElement('a');
       element.setAttribute('href', 'data:text/plain;charset=utf-8,' + "\ufeff"+ Papa.unparse(output));
-      element.setAttribute('download', moment().format('YYYY/MM/DD HH:mm:ss') + "知識點狀態報表，過濾條件：" + queryTerm + ".csv");
+      element.setAttribute('download', dayjs().format('YYYY/MM/DD HH:mm:ss') + "知識點狀態報表，過濾條件：" + queryTerm + ".csv");
       element.style.display = 'none';
       element.click();
     },
@@ -994,7 +994,7 @@ export default {
       }
     },
     timeConvert: function (time) {
-      return moment.duration(time, 'second').format('mm分ss秒SS');
+      return dayjs.duration(time, 'second').format('mm分ss秒SS');
     },
     execSearch:async function() {
       if(this.initialized) {
@@ -1137,7 +1137,7 @@ export default {
     },
     generateList: async function() {
       if(this.currentUser.tags.length > 0) {
-        let now = moment().unix();
+        let now = dayjs().unix();
         let list = [];
         let oriobj = this;
         this.$emit('toastPop', '整理清單中，請稍後...');
@@ -1192,10 +1192,10 @@ export default {
             stage.special = false;
             if(!('passTick' in stage)) {
               if(stage.current) {
-                if(stage.dueTick < moment().unix()) {
+                if(stage.dueTick < dayjs().unix()) {
                   stage.special = true;
                 }
-                KB.attention = moment().unix() - stage.dueTick;
+                KB.attention = dayjs().unix() - stage.dueTick;
               }
             }
           }
@@ -1426,7 +1426,7 @@ export default {
       let oriobj = this;
       this.$emit('timerOn', false);
       this.$emit('toastPop', '清單下載完成，請稍後...');
-      this.lastCheckTime = moment().unix();
+      this.lastCheckTime = dayjs().unix();
       for(let i=0; i<data.length;i++) {
         data[i].unreaded = 0;
         data[i].eventLog = {
@@ -1487,12 +1487,12 @@ export default {
       }
       var element = document.createElement('a');
       element.setAttribute('href', 'data:text/plain;charset=utf-8,' + "\ufeff"+ Papa.unparse(output));
-      element.setAttribute('download', moment().format('YYYY/MM/DD HH:mm:ss') + this.currentKB.title + "編審紀錄報表.csv");
+      element.setAttribute('download', dayjs().format('YYYY/MM/DD HH:mm:ss') + this.currentKB.title + "編審紀錄報表.csv");
       element.style.display = 'none';
       element.click();
     },
     getKBLog: function(KB) {
-      let now = moment().format("YYYY-MM-DD");
+      let now = dayjs().format("YYYY-MM-DD");
       this.currentKB = KB;
       this.eventNum = 10;
       this.eventKeyword = '';
@@ -1512,7 +1512,7 @@ export default {
       this.eventlogW = true;
     },
     dateConvert: function (time) {
-      return time === null || time === undefined ? moment().format('YYYY/MM/DD HH:mm:ss') : moment.unix(time).format('YYYY/MM/DD HH:mm:ss');
+      return time === null || time === undefined ? dayjs().format('YYYY/MM/DD HH:mm:ss') : dayjs.unix(time).format('YYYY/MM/DD HH:mm:ss');
     },
     sockparticipantStatstics: function (data) {
       data.proceedUsers = _uniq(data.proceedUsers);
@@ -1598,7 +1598,7 @@ export default {
       }
       var element = document.createElement('a');
       element.setAttribute('href', 'data:text/plain;charset=utf-8,' + "\ufeff"+ Papa.unparse(output));
-      element.setAttribute('download', moment().format('YYYY/MM/DD HH:mm:ss') + "參與者統計匯出報表.csv");
+      element.setAttribute('download', dayjs().format('YYYY/MM/DD HH:mm:ss') + "參與者統計匯出報表.csv");
       element.style.display = 'none';
       element.click();
     },
@@ -1652,7 +1652,7 @@ export default {
       let place = data.currentSlice * 100000;
       let slice = files[data.uuid].file.slice(place, place + Math.min(100000, files[data.uuid].file.size - place));
       this.uploadprogress = Math.ceil((place / files[data.uuid].file.size) * 100);
-      let nowdiff = moment().valueOf() - files[data.uuid].starttick;
+      let nowdiff = dayjs().valueOf() - files[data.uuid].starttick;
       this.uploadstatus = nowdiff === 0 ? '' : prettyBytes(place / (nowdiff/1000)) + '/s';
       let fileReader = new FileReader();
       fileReader.readAsArrayBuffer(slice);
@@ -1804,7 +1804,7 @@ export default {
           files[uuid] = {
             _id: this.currentKB._id,
             file: this.versionFile,
-            starttick: moment().valueOf()
+            starttick: dayjs().valueOf()
           };
           fileReader.readAsArrayBuffer(slice);
           fileReader.onload = () => {
@@ -2044,7 +2044,7 @@ export default {
     });
     this.$emit('timerOn', true);
     this.$emit('toastPop', 'DashBoard更新中');
-    let now = moment().format("YYYY-MM-DD");
+    let now = dayjs().format("YYYY-MM-DD");
     this.eventsRange = [now, now];
     this.$socket.client.on('listKBLog', this.socketlistKBLog);
     this.$socket.client.on('dashboardObjectives', this.socketdashboardObjectives);

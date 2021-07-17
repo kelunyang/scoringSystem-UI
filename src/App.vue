@@ -127,7 +127,7 @@
             <v-timeline-item v-for='message in messageDialog.messages' :key='message.uuid' class='ma-0 pa-0'>
               <template v-slot:icon>
                 <v-avatar>
-                  <img :src='"https://avatars.dicebear.com/api/" + message.user.types + "/" + encodeURIComponent(message.user.name + "@" + message.user.unit) + ".svg"' />
+                  <Avatar :user='message.user'/>
                 </v-avatar>
               </template>
               <v-row class='d-flex flex-column ma-0 pa-0'>
@@ -156,7 +156,7 @@
         </v-toolbar>
         <v-card-text class='text-left black--text text-body-1'>
           <v-avatar>
-            <img :src='"https://avatars.dicebear.com/api/" + viewUser.types + "/" + encodeURIComponent(viewUser.name + "@" + viewUser.unit) + ".svg"' />
+            <Avatar :user='viewUser'/>
           </v-avatar>
           <div>姓名： {{ viewUser.name }} </div>
           <div>服務單位： {{ viewUser.unit }} </div>
@@ -349,7 +349,7 @@
         <template v-slot:activator='{ on, attrs }'>
           <v-btn icon v-bind='attrs' v-on='on'>
             <v-avatar size="30">
-              <img :src='"https://avatars.dicebear.com/api/" + currentUser.types + "/" + encodeURIComponent(currentUser.name + "@" + currentUser.unit) + ".svg"' />
+              <Avatar :user='currentUser' :size='30' />
             </v-avatar>
           </v-btn>
         </template>
@@ -388,7 +388,7 @@
             <div v-if='socketUsersList.users.length > 0'>
               <v-list-item v-for='user in socketUsersList.users' :key='user._id' style='background-color:white'>
                 <v-list-item-avatar>
-                  <img :src='"https://avatars.dicebear.com/api/" + user.types + "/" + encodeURIComponent(user.name + "@" + user.unit) + ".svg"' :style='messageConverter(user)' />
+                  <Avatar :user='user' :style='messageConverter(user)'/>
                 </v-list-item-avatar>
                 <v-list-item-content>
                   <v-list-item-title class='text-left'>{{ user.name }}</v-list-item-title>
@@ -498,9 +498,9 @@ h1 {
 import Vue from 'vue';
 import io from 'socket.io-client';
 import VueSocketIOExt from 'vue-socket.io-extended';
-import moment from 'moment';
+import dayjs from 'dayjs';
 import marked from 'marked';
-import momentDurationFormatSetup from 'moment-duration-format';
+import duration from 'dayjs/plugin/duration';
 import TurndownService from 'turndown';
 import { v4 as uuidv4 } from 'uuid';
 import _intersectionWith from 'lodash/intersectionWith';
@@ -522,13 +522,16 @@ renderer.link = (href, title, text) => {
 
 const socketInstance = io('https://' + window.location.host + '/');
 Vue.use(VueSocketIOExt, socketInstance);
-momentDurationFormatSetup(moment);
+dayjs.extend(duration);
 
 const turndownService = new TurndownService();
 
 export default {
   name: 'App',
-  components: { TipTap: () => import(/* webpackPrefetch: true */ './views/modules/TipTap') },
+  components: { 
+    TipTap: () => import(/* webpackPrefetch: true */ './views/modules/TipTap'),
+    Avatar: () => import(/* webpackPrefetch: true */ './views/modules/Avatar'),
+  },
   methods: {
     addTag: function (val) {
       this.$socket.client.emit('addTag', val);
@@ -612,7 +615,7 @@ export default {
       };
     },
     dateConvert: function (time) {
-      return time === null || time === undefined ? moment().format('YYYY/MM/DD HH:mm:ss') : moment.unix(time).format('YYYY/MM/DD HH:mm:ss');
+      return time === null || time === undefined ? dayjs().format('YYYY/MM/DD HH:mm:ss') : dayjs.unix(time).format('YYYY/MM/DD HH:mm:ss');
     },
     privilegeConvert: function (loginRequire) {
       return loginRequire ? '登入' : '特殊權限標籤';
@@ -808,12 +811,12 @@ export default {
     document.addEventListener("visibilitychange", function() {
       if (document.visibilityState === 'visible') {
         oriobj.sendToast({
-          message: "你離開了" + moment.duration((moment().unix() - leaveTick), 'second').format('mm分ss秒SS') + "！正在確認您的登入是否還有效中...（無效的話您會被自動登出）",
+          message: "你離開了" + dayjs.duration((dayjs().unix() - leaveTick), 'second').format('mm分ss秒SS') + "！正在確認您的登入是否還有效中...（無效的話您會被自動登出）",
           time:3000
         });
         oriobj.$socket.client.emit('getCurrentUser');
       } else {
-        leaveTick = moment().unix();
+        leaveTick = dayjs().unix();
       }
     });
     angleDetect.onchange = () => {
@@ -988,7 +991,7 @@ export default {
       window.clearInterval(oriobj.intervalTimer);
       oriobj.intervalTimer = null;
       oriobj.intervalTimer = setInterval(() => {
-        oriobj.nextCheckTime = (oriobj.siteSettings.userCheckTime * 60 - (moment().unix() - oriobj.siteSettings.lastCheckTime));
+        oriobj.nextCheckTime = (oriobj.siteSettings.userCheckTime * 60 - (dayjs().unix() - oriobj.siteSettings.lastCheckTime));
       }, 1000);
     });
 

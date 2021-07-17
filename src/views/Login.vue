@@ -19,7 +19,7 @@
       <v-col class='d-flex flex-column justify-center align-center'>
         <div class='ma-3'>
           <v-avatar size="60">
-            <img :src='"https://avatars.dicebear.com/api/" + currentUser.types + "/" + encodeURIComponent(currentUser.name + "@" + currentUser.unit) + ".svg"' />
+            <Avatar :user='currentUser' :size='60' />
           </v-avatar>
           <p class='text-h6'>{{ currentUser.name }}</p>
           <p class='text-body-2'>已登入</p>
@@ -38,7 +38,7 @@
 
 <script>
 // @ is an alias to /src
-import moment from 'moment';
+import dayjs from 'dayjs';
 import axios from 'axios';
 
 export default {
@@ -47,6 +47,9 @@ export default {
     currentUser: function () {
       return this.$store.state.currentUser;
     }
+  },
+  components: { 
+    Avatar: () => import(/* webpackPrefetch: true */ './modules/Avatar'),
   },
   data: function () {
     return {
@@ -74,7 +77,7 @@ export default {
       this.$socket.client.emit('passwordClientReset', this.name);
     },
     dateConvert: function (time) {
-        return moment.unix(time).format('YYYY/MM/DD HH:mm:ss');
+        return dayjs.unix(time).format('YYYY/MM/DD HH:mm:ss');
     },
     submit: async function () {
         let result = await axios.post('https://' + window.location.host + '/backend/login', {

@@ -1139,7 +1139,7 @@ import _flatten from 'lodash/flatten';
 import _orderBy from 'lodash/orderBy';
 import _slice from 'lodash/slice';
 import _filter from 'lodash/filter';
-import moment from 'moment';
+import dayjs from 'dayjs';
 import 'vue-ctk-date-time-picker/dist/vue-ctk-date-time-picker.css';
 
 const renderer = new marked.Renderer();
@@ -1163,10 +1163,10 @@ export default {
   },
   watch: {
     currentStageDate: function () {
-      this.currentStage.dueTick = moment(this.currentStageDate).unix();
+      this.currentStage.dueTick = dayjs(this.currentStageDate).unix();
     },
     currentStage: function () {
-      this.currentStageDate = moment.unix(this.currentStage.dueTick).format(moment.HTML5_FMT.DATETIME_LOCAL);
+      this.currentStageDate = dayjs.unix(this.currentStage.dueTick).format("YYYY-MM-DDTHH:mm");
     },
     KBFile: {
       immediate: true,
@@ -1179,7 +1179,7 @@ export default {
           files[uuid] = {
             _id: this.currentKB._id,
             file: this.KBFile,
-            starttick: moment().valueOf()
+            starttick: dayjs().valueOf()
           };
           fileReader.readAsArrayBuffer(slice);
           fileReader.onload = () => {
@@ -1207,7 +1207,7 @@ export default {
           files[uuid] = {
             _id: this.currentKB._id,
             file: this.importFile,
-            starttick: moment().valueOf()
+            starttick: dayjs().valueOf()
           };
           fileReader.readAsArrayBuffer(slice);
           fileReader.onload = () => {
@@ -1242,7 +1242,7 @@ export default {
       this.pointerObjs.push({
         id: uuidv4(),
         text: '',
-        tick: moment().unix()
+        tick: dayjs().unix()
       });
       this.pointerObjs = _orderBy(this.pointerObjs, ['tick'], ['desc'])
     },
@@ -1301,7 +1301,7 @@ export default {
       this.pointerW = true;
     },
     socketpriviTagUsed: function (data) {
-      let now = moment().unix();
+      let now = dayjs().unix();
       let tags = this.recentTags;
       let newTags = [];
       let successTag = _flatten([data.pmTags, data.reviewerTags, data.vendorTags, data.writerTags, data.finalTags]);
@@ -1460,7 +1460,7 @@ export default {
       });
     },
     isodateConverter: function () {
-      this.currentStageDate = moment.unix(this.currentStage.dueTick).format(moment.HTML5_FMT.DATETIME_LOCAL);
+      this.currentStageDate = dayjs.unix(this.currentStage.dueTick).format("YYYY-MM-DDTHH:mm");
     },
     closeAssign: function () {
       this.assignW = false;
@@ -1508,7 +1508,7 @@ export default {
       this.stagePopulated = true;
     },
     dateConvert: function (time) {
-      return time === null || time === undefined ? moment().format('YYYY/MM/DD HH:mm:ss') : moment.unix(time).format('YYYY/MM/DD HH:mm:ss');
+      return time === null || time === undefined ? dayjs().format('YYYY/MM/DD HH:mm:ss') : dayjs.unix(time).format('YYYY/MM/DD HH:mm:ss');
     },
     filenameConvert: function (name) {
       let filenameLength = name.length > 3 ? 3 : name.length;
@@ -1676,7 +1676,7 @@ export default {
       let place = data.currentSlice * 100000;
       let slice = files[data.uuid].file.slice(place, place + Math.min(100000, files[data.uuid].file.size - place));
       this.uploadprogress = Math.ceil((place / files[data.uuid].file.size) * 100);
-      let nowdiff = moment().valueOf() - files[data.uuid].starttick;
+      let nowdiff = dayjs().valueOf() - files[data.uuid].starttick;
       this.uploadstatus = nowdiff === 0 ? '' : prettyBytes(place / (nowdiff/1000)) + '/s';
       let fileReader = new FileReader();
       fileReader.readAsArrayBuffer(slice);
@@ -1725,7 +1725,7 @@ export default {
       let place = data.currentSlice * 100000;
       let slice = files[data.uuid].file.slice(place, place + Math.min(100000, files[data.uuid].file.size - place));
       this.uploadzipprogress = Math.ceil((place / files[data.uuid].file.size) * 100);
-      let nowdiff = moment().valueOf() - files[data.uuid].starttick;
+      let nowdiff = dayjs().valueOf() - files[data.uuid].starttick;
       this.uploadzipstatus = nowdiff === 0 ? '' : prettyBytes(place / (nowdiff/1000)) + '/s';
       let fileReader = new FileReader();
       fileReader.readAsArrayBuffer(slice);

@@ -3,7 +3,7 @@
     <div class='d-flex flex-row justify-space-between'>
       <div class='pa-0 ma-0 d-flex flex-row justify-start flex-shrink-1 flex-grow-0' style='min-width: 100px'>
         <v-avatar size="36">
-          <img :src='"https://avatars.dicebear.com/api/" + issue.user.types + "/" + encodeURIComponent(issue.user.name + "@" + issue.user.unit) + ".svg"' />
+          <Avatar :user='issue.user' :size='36'/>
         </v-avatar>
         <div class='d-flex flex-column align-start'>
           <div class='text-caption'>{{ issue.user.name }}</div>
@@ -100,7 +100,7 @@
 
 <script>
 import marked from 'marked';
-import moment from 'moment';
+import dayjs from 'dayjs';
 import prettyBytes from 'pretty-bytes';
 
 const renderer = new marked.Renderer();
@@ -115,6 +115,9 @@ renderer.link = (href, title, text) => {
 
 export default {
   name: 'IssueView',
+  components: { 
+    Avatar: () => import(/* webpackPrefetch: true */ './Avatar'),
+  },
   props: {
     issue: Object,
     compareCommit: Object,
@@ -220,7 +223,7 @@ export default {
       return found;
     },
     dateConvert: function (time) {
-      return time === 0 ? '尚未設定' : moment.unix(time).format('YYYY/MM/DD HH:mm:ss');
+      return time === 0 ? '尚未設定' : dayjs.unix(time).format('YYYY/MM/DD HH:mm:ss');
     }
   }
 }

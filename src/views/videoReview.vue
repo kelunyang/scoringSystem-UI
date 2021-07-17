@@ -1318,8 +1318,8 @@
 <script>
 // @ is an alias to /src
 import Vue from 'vue';
-import moment from 'moment';
-import momentDurationFormatSetup from 'moment-duration-format';
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration';
 import videojs from 'video.js';
 import _uniqWith from 'lodash/uniqWith';
 import _find from 'lodash/find';
@@ -1359,7 +1359,7 @@ renderer.link = (href, title, text) => {
 
 let files = [];
 
-momentDurationFormatSetup(moment);
+dayjs.extend(duration);
 
 export default {
   name: 'videoReview',
@@ -1552,7 +1552,7 @@ export default {
       });
     },
     dateobjConvert: function (date) {
-      return moment(date).format('YYYY/MM/DD HH:mm:ss');
+      return dayjs(date).format('YYYY/MM/DD HH:mm:ss');
     },
     acceptStage: function () {
       this.$socket.client.emit('acceptStage', this.currentKB._id);
@@ -1606,7 +1606,7 @@ export default {
       let place = data.currentSlice * 100000;
       let slice = files[data.uuid].file.slice(place, place + Math.min(100000, files[data.uuid].file.size - place));
       this.uploadprogress = Math.ceil((place / files[data.uuid].file.size) * 100);
-      let nowdiff = moment().valueOf() - files[data.uuid].starttick;
+      let nowdiff = dayjs().valueOf() - files[data.uuid].starttick;
       this.uploadstatus = nowdiff === 0 ? '' : prettyBytes(place / (nowdiff/1000)) + '/s';
       let fileReader = new FileReader();
       fileReader.readAsArrayBuffer(slice);
@@ -1800,7 +1800,7 @@ export default {
       }
     },
     dateConvert: function (time) {
-      return time === 0 ? '尚未設定' : moment.unix(time).format('YYYY/MM/DD HH:mm:ss');
+      return time === 0 ? '尚未設定' : dayjs.unix(time).format('YYYY/MM/DD HH:mm:ss');
     },
     HTMLConverter: function (msg) {
       msg = msg === null || msg == undefined ? '**用戶未輸入任何內容**' : msg;
@@ -1913,7 +1913,7 @@ export default {
       }
     },
     timeConvert: function (time) {
-      return moment.duration(time, 'second').format('mm分ss秒SS');
+      return dayjs.duration(time, 'second').format('mm分ss秒SS');
     },
     versionConvert: function (version) {
       if(this.currentVersion._id !== '') {
@@ -2699,7 +2699,7 @@ export default {
           files[uuid] = {
             _id: this.issue._id,
             file: this.issueFile,
-            starttick: moment().valueOf()
+            starttick: dayjs().valueOf()
           };
           fileReader.readAsArrayBuffer(slice);
           fileReader.onload = () => {
@@ -2729,7 +2729,7 @@ export default {
           files[uuid] = {
             _id: this.issue._id,
             file: this.issueCite,
-            starttick: moment().valueOf()
+            starttick: dayjs().valueOf()
           };
           fileReader.readAsArrayBuffer(slice);
           fileReader.onload = () => {

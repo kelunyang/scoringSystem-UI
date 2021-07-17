@@ -686,7 +686,7 @@
 <script>
 import Vue from 'vue';
 import { v4 as uuidv4 } from 'uuid';
-import moment from 'moment';
+import dayjs from 'dayjs';
 import _filter from 'lodash/filter';
 import _find from 'lodash/find';
 import _map from 'lodash/map';
@@ -734,8 +734,8 @@ export default {
       }
       this.tempavgRange = 1;
       this.tempavgsecondConvert = false;
-      this.tempavgstartTick = moment().format("YYYY-MM-DD");
-      this.tempavgendTick = moment().format("YYYY-MM-DD");
+      this.tempavgstartTick = dayjs().format("YYYY-MM-DD");
+      this.tempavgendTick = dayjs().format("YYYY-MM-DD");
       this.avgW = true;
     },
     openFilterW: function () {
@@ -754,7 +754,7 @@ export default {
       this.currentPreset = 0;
     },
     dateConvert: function (time) {
-      return time === 0 ? '尚未設定' : moment.unix(time).format('YYYY/MM/DD HH:mm:ss');
+      return time === 0 ? '尚未設定' : dayjs.unix(time).format('YYYY/MM/DD HH:mm:ss');
     },
     deletePreset: function (preset) {
       this.usedPresets = _filter(this.usedPresets, (upreset) => {
@@ -802,8 +802,8 @@ export default {
             querytypeTag: this.tempcomp1Preset.querytypeTag,
             querysourceTags: this.tempcomp1Preset.querysourceTags,
             queryKBTags: this.tempcomp1Preset.queryKBTags,
-            starttick: moment(this.tempavgstartTick).unix(),
-            endtick: moment(this.tempavgendTick).unix(),
+            starttick: dayjs(this.tempavgstartTick).unix(),
+            endtick: dayjs(this.tempavgendTick).unix(),
           });
         }
       }
@@ -822,8 +822,8 @@ export default {
             querytypeTag: this.temptypeTag,
             querysourceTags: this.tempsourceTags,
             queryKBTags: this.tempKBTags,
-            starttick: moment(this.tempstartTick).unix(),
-            endtick: moment(this.tempendTick).unix(),
+            starttick: dayjs(this.tempstartTick).unix(),
+            endtick: dayjs(this.tempendTick).unix(),
           });
           this.$socket.client.emit("periodKBranking", {
             type: this.range,
@@ -831,8 +831,8 @@ export default {
             querytypeTag: this.temptypeTag,
             querysourceTags: this.tempsourceTags,
             queryKBTags: this.tempKBTags,
-            starttick: moment(this.tempstartTick).unix(),
-            endtick: moment(this.tempendTick).unix()
+            starttick: dayjs(this.tempstartTick).unix(),
+            endtick: dayjs(this.tempendTick).unix()
           });
           return;
         }
@@ -880,7 +880,7 @@ export default {
       let place = data.currentSlice * 100000;
       let slice = files[data.uuid].file.slice(place, place + Math.min(100000, files[data.uuid].file.size - place));
       this.uploadprogress = Math.ceil((place / files[data.uuid].file.size) * 100);
-      let nowdiff = moment().valueOf() - files[data.uuid].starttick;
+      let nowdiff = dayjs().valueOf() - files[data.uuid].starttick;
       this.uploadstatus = nowdiff === 0 ? '' : prettyBytes(place / (nowdiff/1000)) + '/s';
       let fileReader = new FileReader();
       fileReader.readAsArrayBuffer(slice);
@@ -908,7 +908,7 @@ export default {
         this.queryKBTags = this.tempKBTags;
         this.queryType = this.tempType;
         this.secondConvert = this.tempsecondConvert;
-        let now = moment().unix();
+        let now = dayjs().unix();
         this.sumValue = new Decimal(0);
         if(this.secondConvert) {
           for(let i=0; i < data.length; i++) {
@@ -958,8 +958,8 @@ export default {
           querytypeTag: this.tempcomp2Preset.querytypeTag,
           querysourceTags: this.tempcomp2Preset.querysourceTags,
           queryKBTags: this.tempcomp2Preset.queryKBTags,
-          starttick: moment(this.tempavgstartTick).unix(),
-          endtick: moment(this.tempavgendTick).unix(),
+          starttick: dayjs(this.tempavgstartTick).unix(),
+          endtick: dayjs(this.tempavgendTick).unix(),
         });
       } else if(this.usage === COMP2DOWNLOAD) {
         this.comp2Data = data;
@@ -1009,7 +1009,7 @@ export default {
             typeTags: this.typeTags,
             sourceTag: this.sourceTag,
             file: this.statisticsFile,
-            starttick: moment().valueOf(),
+            starttick: dayjs().valueOf(),
             overwrite: this.importOverwrite
           };
           fileReader.readAsArrayBuffer(slice);
@@ -1055,8 +1055,8 @@ export default {
       },
       tempavgTitle: '',
       tempavgRange: 1,
-      tempavgstartTick: moment().format("YYYY-MM-DD"),
-      tempavgendTick: moment().format("YYYY-MM-DD"),
+      tempavgstartTick: dayjs().format("YYYY-MM-DD"),
+      tempavgendTick: dayjs().format("YYYY-MM-DD"),
       avgW: false,
       tempsecondConvert: false,
       temprange: 1,
@@ -1064,8 +1064,8 @@ export default {
       tempsourceTags: [],
       tempKBTags: [],
       tempType: '',
-      tempstartTick: moment().format("YYYY-MM-DD"),
-      tempendTick: moment().format("YYYY-MM-DD"),
+      tempstartTick: dayjs().format("YYYY-MM-DD"),
+      tempendTick: dayjs().format("YYYY-MM-DD"),
       importOverwrite: false,
       localLoaded: false,
       usedPresets: [],

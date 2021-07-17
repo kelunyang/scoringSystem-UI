@@ -3,7 +3,7 @@
     <div class='d-flex flex-row justify-space-between'>
       <div class='pa-0 ma-0 d-flex flex-row justify-start flex-shrink-1 flex-grow-0' style='min-width: 100px'>
         <v-avatar size="36">
-          <img :src='"https://avatars.dicebear.com/api/" + currentIssue.user.types + "/" + encodeURIComponent(currentIssue.user.name + "@" + currentIssue.user.unit) + ".svg"' />
+          <Avatar :user='currentIssue.user' :size='36'/>
         </v-avatar>
         <div class='d-flex flex-column align-start'>
           <div class='text-caption'>{{ currentIssue.user.name }}</div>
@@ -237,11 +237,11 @@
 </style>
 
 <script>
-import moment from 'moment';
+import dayjs from 'dayjs';
 import mime from 'mime-types';
-import momentDurationFormatSetup from 'moment-duration-format';
+import duration from 'dayjs/plugin/duration';
 
-momentDurationFormatSetup(moment);
+dayjs.extend(duration);
 
 export default {
   name: 'IssueList',
@@ -256,7 +256,8 @@ export default {
     rStatus: Object
   },
   components: { 
-    IssueView: () => import(/* webpackPrefetch: true */ './IssueView')
+    IssueView: () => import(/* webpackPrefetch: true */ './IssueView'),
+    Avatar: () => import(/* webpackPrefetch: true */ './Avatar')
   },
   computed: {
     issuesInView: function() {
@@ -357,7 +358,7 @@ export default {
           if('version' in issue) {
             let type = mime.lookup(issue.version.name);
             if(/video/g.test(type)) {
-              return "@" + moment.duration(issue.position, 'second').format('mm分ss秒SS');
+              return "@" + dayjs.duration(issue.position, 'second').format('mm分ss秒SS');
             } else if(/pdf/g.test(type)) {
               return "@" + issue.position + '頁';
             }
@@ -384,7 +385,7 @@ export default {
       this.$emit('back');
     },
     dateConvert: function (time) {
-      return time === 0 ? '尚未設定' : moment.unix(time).format('YYYY/MM/DD HH:mm:ss');
+      return time === 0 ? '尚未設定' : dayjs.unix(time).format('YYYY/MM/DD HH:mm:ss');
     }
   }
 }

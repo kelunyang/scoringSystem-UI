@@ -1,4 +1,4 @@
-import moment from 'moment';
+import dayjs from 'dayjs';
 import Vue from 'vue';
 import Vuex, {Store} from "vuex";
 import _orderBy from 'lodash/orderBy';
@@ -74,7 +74,7 @@ const store = new Store({
     },
     updateGlobalSetting(state, settings) {
       state.siteSettings = settings;
-      state.siteSettings.lastCheckTime = moment().unix();
+      state.siteSettings.lastCheckTime = dayjs().unix();
     },
     updateUser(state, user) {
       if(user === null) {

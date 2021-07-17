@@ -280,7 +280,7 @@
 // @ is an alias to /src
 import Vue from 'vue';
 import { v4 as uuidv4 } from 'uuid';
-import moment from 'moment';
+import dayjs from 'dayjs';
 import prettyBytes from 'pretty-bytes';
 import TurndownService from 'turndown';
 import marked from 'marked';
@@ -372,7 +372,7 @@ export default {
       let place = data.currentSlice * 100000;
       let slice = files[data.uuid].file.slice(place, place + Math.min(100000, files[data.uuid].file.size - place));
       this.uploadprogress = Math.ceil((place / files[data.uuid].file.size) * 100);
-      let nowdiff = moment().valueOf() - files[data.uuid].starttick;
+      let nowdiff = dayjs().valueOf() - files[data.uuid].starttick;
       this.uploadstatus = nowdiff === 0 ? '' : prettyBytes(place / (nowdiff/1000)) + '/s';
       let fileReader = new FileReader();
       fileReader.readAsArrayBuffer(slice);
@@ -470,7 +470,7 @@ export default {
       });
     },
     dateConvert: function (time) {
-        return moment.unix(time).format('YYYY/MM/DD HH:mm:ss');
+        return dayjs.unix(time).format('YYYY/MM/DD HH:mm:ss');
     },
     editMsg: function (id) {
       this.$socket.client.emit('getMessage', id);
@@ -500,7 +500,7 @@ export default {
           files[uuid] = {
             _id: this.message._id,
             file: this.msgFile,
-            starttick: moment().valueOf()
+            starttick: dayjs().valueOf()
           };
           fileReader.readAsArrayBuffer(slice);
           fileReader.onload = () => {

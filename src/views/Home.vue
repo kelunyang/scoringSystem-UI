@@ -54,7 +54,7 @@
 </template>
 
 <script>
-import moment from 'moment';
+import dayjs from 'dayjs';
 import prettyBytes from 'pretty-bytes';
 import marked from 'marked';
 
@@ -103,7 +103,7 @@ export default {
       };
     },
     dateConvert: function (time) {
-      return moment.unix(time).format('YYYY/MM/DD HH:mm:ss');
+      return dayjs.unix(time).format('YYYY/MM/DD HH:mm:ss');
     }
   },
   computed: {

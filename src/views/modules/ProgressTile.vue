@@ -133,12 +133,12 @@
 </template>
 
 <script>
-import moment from 'moment';
+import dayjs from 'dayjs';
 import _inRange from 'lodash/inRange';
 import _find from 'lodash/find'
-import momentDurationFormatSetup from 'moment-duration-format';
+import duration from 'dayjs/plugin/duration';
 
-momentDurationFormatSetup(moment);
+dayjs.extend(duration);
 
 export default {
     name: 'ProgressTile',
@@ -154,13 +154,13 @@ export default {
         return _inRange(value, start - 0.001, end + 0.001);
       },
       dateConvert: function (time) {
-        return moment.unix(time).format('YYYY/MM/DD HH:mm:ss');
+        return dayjs.unix(time).format('YYYY/MM/DD HH:mm:ss');
       },
       requestUpload: function (item) {
         this.$emit('requestUpload', item);
       },
       timeConvert: function (time) {
-        return moment.duration(Math.abs(time), 'second').format('DD日HH小時')
+        return dayjs.duration(Math.abs(time), 'second').format('DD日HH小時')
       },
       openauthDetail: function (item) {
         this.$emit('viewDetail', item);
