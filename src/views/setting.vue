@@ -9,11 +9,12 @@
           <v-toolbar-title>{{ botName }}執行記錄檔</v-toolbar-title>
         </v-toolbar>
         <v-card-text class='text-left black--text text-body-1 pa-1 d-flex flex-column'>
-          <v-text-field label='搜尋關鍵字' hint='支援正規表達式' outlined clearable dense v-model='botAction'></v-text-field>
+          <v-text-field label='動作關鍵字' hint='支援正規表達式' outlined clearable dense v-model='botAction'></v-text-field>
+          <v-text-field label='註解關鍵字' hint='支援正規表達式' outlined clearable dense v-model='botComment'></v-text-field>
           <v-slider
             label='下載條目數量'
             min='10'
-            max='50'
+            max='500'
             v-model="botNum"
             thumb-label
           ></v-slider>
@@ -23,7 +24,8 @@
               <thead>
                 <tr>
                   <th class="text-left">執行時間</th>
-                  <th class="text-left">執行內容</th>
+                  <th class="text-left">執行動作</th>
+                  <th class="text-left">執行註解</th>
                 </tr>
               </thead>
               <tbody>
@@ -36,6 +38,9 @@
                   </td>
                   <td class="text-left">
                     {{ log.action }}
+                  </td>
+                  <td class="text-left">
+                    {{ log.comment }}
                   </td>
                 </tr>
               </tbody>
@@ -729,6 +734,7 @@ export default {
       this.$socket.client.emit('listRobotLog', {
         botName: this.botName,
         action: this.botAction,
+        comment: this.botComment,
         logNum: this.botNum
       });
       this.botLog = [];
@@ -739,9 +745,11 @@ export default {
     getrobotLog: function(data) {
       this.botNum = 10;
       this.botAction = '';
+      this.botComment = '';
       this.botName = data;
       this.$socket.client.emit('listRobotLog', {
         botName: data,
+        comment: '',
         action: '',
         logNum: 10
       });
@@ -1021,6 +1029,7 @@ export default {
   },
   data () {
     return {
+      botComment: '',
       botNum: 10,
       botAction: '',
       botName: '',

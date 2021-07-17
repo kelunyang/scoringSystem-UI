@@ -1,5 +1,65 @@
 <template>
   <v-sheet class='d-flex flex-column'>
+    <v-dialog v-model='eventlogW' fullscreen hide-overlay transition='dialog-bottom-transition'>
+      <v-card>
+        <v-toolbar dark color='primary'>
+          <v-btn icon dark @click='eventlogW = false'>
+            <v-icon>fa-times</v-icon>
+          </v-btn>
+          <v-toolbar-title>查詢{{ currentKB.title }}的編審紀錄</v-toolbar-title>
+        </v-toolbar>
+        <v-card-text class='text-left black--text text-body-1 pa-2 d-flex flex-column'>
+          <v-text-field label='關鍵字（可搜尋用戶名、動作名、描述）' hint='支援正規表達式，用|表示OR，用(?=.*集合一)(?=.*集合二)表示AND' outlined clearable dense v-model='eventKeyword'></v-text-field>
+          <v-switch v-model="eventIgnore" label="忽略「儲存知識點順序」"></v-switch>
+          <div class='text-body-1'>選擇查詢區間</div>
+          <v-date-picker
+            v-model="eventsRange"
+            full-width
+            range
+          ></v-date-picker>
+          <v-slider
+            label='下載條目數量'
+            min='10'
+            max='500'
+            v-model="eventNum"
+            thumb-label
+          ></v-slider>
+          <v-btn class='ma-1' @click='filterKBLog'>篩選編審紀錄</v-btn>
+          <v-btn class='ma-1' @click='downloadKBLog'>下載篩選的編審紀錄</v-btn>
+          <v-simple-table v-if="KBLog.length > 0" class='black--text'>
+            <template v-slot:default>
+              <thead>
+                <tr>
+                  <th class="text-left">執行時間</th>
+                  <th class="text-left">執行者</th>
+                  <th class="text-left">執行動作</th>
+                  <th class="text-left">執行註解</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="event in KBLog"
+                  :key="event._id"
+                >
+                  <td class="text-left">
+                    {{ dateConvert(event.tick) }}
+                  </td>
+                  <td class="text-left">
+                    {{ event.user.name }}
+                  </td>
+                  <td class="text-left">
+                    {{ event.type }}
+                  </td>
+                  <td class="text-left">
+                    {{ event.desc }}
+                  </td>
+                </tr>
+              </tbody>
+            </template>
+          </v-simple-table>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
     <v-dialog
       v-model="stageFW"
       persistent
@@ -800,7 +860,7 @@
     <v-sheet v-if='dashboardPopulated' class='pa-0 ma-0 d-flex flex-column'>
       <div v-if='progressList.length === 0'>您目前沒有待處理的項目</div>
       <div class='d-flex flex-row' v-if='KBLoaded'>
-        <v-text-field outlined clearable dense class='flex-grow-1' label='搜尋知識點關鍵字，可以搜科目、章節、排序、標題，輸入部分關鍵字即可' hint='支援正規表達式（可上網查詢語法），例如你可以使用 | 串聯兩個字詞查詢交集' prepend-icon="fa-search" v-model="queryTerm"></v-text-field>
+        <v-text-field outlined clearable dense class='flex-grow-1' label='搜尋知識點關鍵字，可以搜科目、章節、排序、標題，輸入部分關鍵字即可' hint='支援正規表達式（可上網查詢語法），例如你可以使，用|表示OR，用(?=.*集合一)(?=.*集合二)表示AND' prepend-icon="fa-search" v-model="queryTerm"></v-text-field>
         <v-btn color='indigo darken-4' class='white--text ma-1' @click="execSearch">搜尋</v-btn>
         <v-btn color="brown darken-4" class='white--text ma-1' @click="clearQueryTerm">清除</v-btn>
       </div>
@@ -813,7 +873,7 @@
         transition="fade-transition"
         v-for="(item,n) in renderList" :key="'KB'+n"
       >
-        <progress-tile @tags='openTagW' @requestUpload='openUploadW' @viewDetail='openauthDetail' @KBselected='KBupdated' :progressItem='item' :selectedItems='selectedpmKBs' />
+        <progress-tile @events='getKBLog' @tags='openTagW' @requestUpload='openUploadW' @viewDetail='openauthDetail' @KBselected='KBupdated' :progressItem='item' :selectedItems='selectedpmKBs' />
       </v-lazy>
     </v-sheet>
   </v-sheet>
@@ -935,10 +995,10 @@ export default {
     },
     socketdashBoardEventLog: function(data) {
       this.$emit('timerOn', false);
-      this.$emit('toastPop', '知識點編輯紀錄已下載，更新清單中');
+      this.$emit('toastPop', '知識點編審紀錄已下載，更新清單中');
       this.eventList = data;
       this.injectEvents(data);
-      this.$emit('toastPop', '知識點編輯紀錄更新完成');
+      this.$emit('toastPop', '知識點編審紀錄更新完成');
     },
     socketdashboardObjectives: function(data) {
       this.$emit('timerOn', false);
@@ -962,6 +1022,15 @@ export default {
     injectEvents: function(data) {
       for(let i=0; i<data.length; i++) {
         let event = data[i];
+        if(!('events' in data)) {
+          data.events = {
+            desc: '',
+            user: {
+              name: ''
+            },
+            tick: 0
+          }
+        }
         let eventRender = _find(this.renderList, (item) => {
           return item._id === event._id;
         });
@@ -1252,7 +1321,7 @@ export default {
             oriobj.injectUnread(oriobj.unreadedList);
           }
           if(oriobj.eventList.length === 0) {
-            oriobj.$emit('toastPop', '3秒後開始下載知識點編輯紀錄（完成後您會在每個知識點右上方看到最後一次的編輯紀錄）');
+            oriobj.$emit('toastPop', '3秒後開始下載知識點編審紀錄（完成後您會在每個知識點右上方看到最後一次的編審紀錄）');
             oriobj.eventTimer = setTimeout(() => {
               oriobj.$socket.client.emit('dashBoardEventLog', requestList);
             }, 3000);
@@ -1347,7 +1416,13 @@ export default {
       this.lastCheckTime = moment().unix();
       for(let i=0; i<data.length;i++) {
         data[i].unreaded = 0;
-        data[i].eventLog = [];
+        data[i].eventLog = {
+          desc: '',
+          user: {
+            name: ''
+          },
+          tick: 0
+        };
         data[i].unreadedVersion = 0;
         data[i].currentObjs = 0;
         data[i].finishedObjs = 0;
@@ -1375,6 +1450,53 @@ export default {
     },
     updateFilterTag: function (value) {
       this.selectedFilterTags = value;
+    },
+    filterKBLog: function() {
+      this.$socket.client.emit('listKBLog', {
+        KBID: this.currentKB._id,
+        keyword: this.eventKeyword,
+        ignore: this.eventIgnore,
+        logNum: this.eventNum,
+        logRange: this.eventsRange
+      });
+      this.KBLog = [];
+    },
+    downloadKBLog: function() {
+      let output = [];
+      for(let i=0; i<this.KBLog.length; i++) {
+        let event = this.KBLog[i];
+        output.push({
+          "事件時間": this.dateConvert(event.tick),
+          "使用者": event.user.name + "(" + event.user._id + ")",
+          "事件類型": event.type,
+          "事件描述": event.desc
+        });
+      }
+      var element = document.createElement('a');
+      element.setAttribute('href', 'data:text/plain;charset=utf-8,' + "\ufeff"+ Papa.unparse(output));
+      element.setAttribute('download', moment().format('YYYY/MM/DD HH:mm:ss') + this.currentKB.title + "編審紀錄報表.csv");
+      element.style.display = 'none';
+      element.click();
+    },
+    getKBLog: function(KB) {
+      let now = moment().format("YYYY-MM-DD");
+      this.currentKB = KB;
+      this.eventNum = 10;
+      this.eventKeyword = '';
+      this.eventIgnore = true;
+      this.eventsRange = [now, now];
+      this.$socket.client.emit('listKBLog', {
+        KBID: this.currentKB._id,
+        keyword: this.eventKeyword,
+        ignore: this.eventIgnore,
+        logNum: this.eventNum,
+        logRange: this.eventsRange
+      });
+      this.KBLog = [];
+    },
+    socketlistKBLog: function(data) {
+      this.KBLog = data;
+      this.eventlogW = true;
     },
     dateConvert: function (time) {
       return time === null || time === undefined ? moment().format('YYYY/MM/DD HH:mm:ss') : moment.unix(time).format('YYYY/MM/DD HH:mm:ss');
@@ -1712,6 +1834,12 @@ export default {
   },
   data () {
     return {
+      eventsRange: [],
+      eventKeyword: '',
+      eventIgnore: true,
+      eventNum: 10,
+      KBLog: [],
+      eventlogW: false,
       stageFilter: 0,
       stageFW: false,
       KBLoaded: false,
@@ -1851,6 +1979,7 @@ export default {
     this.$socket.client.off('setKBTag', this.soketsetKBTag);
     this.$socket.client.off('dashboardUnreadedVersions', this.socketdashboardUnreadedVersions);
     this.$socket.client.off('deleteKBVersion', this.socketdeleteKBVersion);
+    this.$socket.client.off('listKBLog', this.socketlistKBLog);
     window.clearTimeout(this.queryTimer);
     this.queryTimer = null;
     window.clearTimeout(this.issueTimer);
@@ -1893,6 +2022,9 @@ export default {
     });
     this.$emit('timerOn', true);
     this.$emit('toastPop', 'DashBoard更新中');
+    let now = moment().format("YYYY-MM-DD");
+    this.eventsRange = [now, now];
+    this.$socket.client.on('listKBLog', this.socketlistKBLog);
     this.$socket.client.on('dashboardObjectives', this.socketdashboardObjectives);
     this.$socket.client.on('dashBoardEventLog', this.socketdashBoardEventLog);
     this.$socket.client.on('dashBoardUnreaded', this.socketdashBoardUnreaded);
