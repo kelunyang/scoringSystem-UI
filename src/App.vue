@@ -811,7 +811,7 @@ export default {
     document.addEventListener("visibilitychange", function() {
       if (document.visibilityState === 'visible') {
         oriobj.sendToast({
-          message: "你離開了" + dayjs.duration((dayjs().unix() - leaveTick), 'second').format('mm分ss秒SS') + "！正在確認您的登入是否還有效中...（無效的話您會被自動登出）",
+          message: "你離開了" + dayjs.duration((dayjs().unix() - leaveTick), 'second').format('mm分ss秒') + "！正在確認您的登入是否還有效中...（無效的話您會被自動登出）",
           time:3000
         });
         oriobj.$socket.client.emit('getCurrentUser');

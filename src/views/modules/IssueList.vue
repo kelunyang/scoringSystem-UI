@@ -358,7 +358,7 @@ export default {
           if('version' in issue) {
             let type = mime.lookup(issue.version.name);
             if(/video/g.test(type)) {
-              return "@" + dayjs.duration(issue.position, 'second').format('mm分ss秒SS');
+              return "@" + dayjs.duration(issue.position, 'second').format('mm分ss秒');
             } else if(/pdf/g.test(type)) {
               return "@" + issue.position + '頁';
             }

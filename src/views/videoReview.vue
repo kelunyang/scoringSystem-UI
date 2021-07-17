@@ -1913,7 +1913,7 @@ export default {
       }
     },
     timeConvert: function (time) {
-      return dayjs.duration(time, 'second').format('mm分ss秒SS');
+      return dayjs.duration(time, 'second').format('mm分ss秒');
     },
     versionConvert: function (version) {
       if(this.currentVersion._id !== '') {
