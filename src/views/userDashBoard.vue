@@ -1748,7 +1748,6 @@ export default {
     },
     queryHistory: async function () {
       if(this.initialized) {
-        console.dir(this.initialized);
         this.initialized = false;
         await this.generateList();
         this.renderChart();
