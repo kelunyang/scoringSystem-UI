@@ -27,7 +27,9 @@
           </v-btn>
         </v-toolbar>
         <v-card-text class='pa-3 text-left black--text text-body-1'>
-          <img width="100%" :src="'/storages/' + imgCache._id" />
+          <v-img
+            :src="'/storages/' + imgCache._id"
+          ></v-img>
         </v-card-text>
       </v-card>
     </v-dialog>
