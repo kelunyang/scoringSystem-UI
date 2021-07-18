@@ -38,6 +38,14 @@
         });
       }
     },
+    watch: {
+      user: function() {
+        this.userObj = this.user;
+      },
+      size: function() {
+        this.sizeObj = this.size;
+      }
+    },
     mounted () {
       this.userObj = this.user;
       this.sizeObj = this.size;
