@@ -746,7 +746,7 @@
         </template>
         <span v-if='queryHistory'>查看目前屬於你的知識點</span>
         <span v-if='!queryHistory'>查看所有和你有關的知識點</span>
-      </v-tooltip> -->
+      </v-tooltip>
       <v-tooltip bottom>
         <template v-slot:activator="{ on, attrs }">
           <v-btn
@@ -762,7 +762,7 @@
         </template>
         <span v-if='sortingRule'>按照死線時間排序</span>
         <span v-if='!sortingRule'>按照知識點名稱排序</span>
-      </v-tooltip>
+      </v-tooltip> -->
       <v-tooltip bottom v-if='!queryHistory'>
         <template v-slot:activator="{ on, attrs }">
           <v-btn
@@ -864,18 +864,30 @@
         <v-btn color='indigo darken-4' class='white--text ma-1' @click="execSearch">搜尋</v-btn>
         <v-btn color="brown darken-4" class='white--text ma-1' @click="clearQueryTerm">清除</v-btn>
       </div>
-      <v-btn-toggle
-        v-model="filterHistory"
-        mandatory
-        class="justify-center"
-      >
-        <v-btn>
-          顯示當前處理階段和你有關的{{ renderList.length }}個知識點
-        </v-btn>
-        <v-btn>
-          顯示全部你曾經手以及正在處理的{{ progressList.length }}個知識點
-        </v-btn>
-      </v-btn-toggle>
+      <div class='d-flex flex-row pa-1 justify-space-between'>
+        <v-btn-toggle
+          v-model="filterHistory"
+          mandatory
+        >
+          <v-btn>
+            顯示當前處理階段和你有關的{{ renderList.length }}個知識點
+          </v-btn>
+          <v-btn>
+            顯示全部你曾經手以及正在處理的{{ progressList.length }}個知識點
+          </v-btn>
+        </v-btn-toggle>
+        <v-btn-toggle
+          v-model="sortingBtns"
+          mandatory
+        >
+          <v-btn>
+            按照死線時間先後排序
+          </v-btn>
+          <v-btn>
+            按照知識點名稱及編號排序
+          </v-btn>
+        </v-btn-toggle>
+      </div>
       <v-lazy
         :options="{
           threshold: 0.5
@@ -1829,6 +1841,14 @@ export default {
       },
       set: function(value) {
         this.queryHistory = value === 0 ? false : true;
+      }
+    },
+    sortingBtns: {
+      get: function() {
+        return this.sortingRule ? 0 : 1;
+      },
+      set: function(value) {
+        this.sortingRule = value === 0 ? true : false;
       }
     },
     currentUser: function () {
