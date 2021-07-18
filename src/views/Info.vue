@@ -401,9 +401,9 @@ let files = [];
 export default {
   name: 'Info',
   components: { 
-    TipTap: () => import(/* webpackPrefetch: true */ './modules/TipTap'),
-    IssueView: () => import(/* webpackPrefetch: true */ './modules/IssueView'),
-    Avatar: () => import(/* webpackPrefetch: true */ './modules/Avatar'),
+    TipTap: () => import(/* webpackChunkName: 'TipTap', webpackPrefetch: true */ './modules/TipTap'),
+    IssueView: () => import(/* webpackChunkName: 'IssueView', webpackPrefetch: true */ './modules/IssueView'),
+    Avatar: () => import(/* webpackChunkName: 'Avatar', webpackPrefetch: true */ './modules/Avatar'),
   },
   methods: {
     socketrequestfeedbackSlice: function (data) {

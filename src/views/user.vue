@@ -119,7 +119,7 @@ import random from 'random';
 export default {
   name: 'userSetting',
   components: { 
-    Avatar: () => import(/* webpackPrefetch: true */ './modules/Avatar'),
+    Avatar: () => import(/* webpackChunkName: 'Avatar', webpackPrefetch: true */ './modules/Avatar'),
   },
   beforeDestroy () {
     this.$socket.client.off('getRobotSetting', this.socketgetRobotSetting);

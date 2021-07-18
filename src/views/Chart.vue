@@ -706,7 +706,7 @@ Vue.component('apexchart', VueApexCharts);
 
 export default {
   components: { 
-    TagFilter: () => import(/* webpackPrefetch: true */ './modules/TagFilter')
+    TagFilter: () => import(/* webpackChunkName: 'TagFilter', webpackPrefetch: true */ './modules/TagFilter')
   },
   name: 'charts',
   methods: {

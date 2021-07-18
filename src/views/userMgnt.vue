@@ -494,8 +494,8 @@ export default {
       this.$socket.client.on('modUsers', this.socketmodUsers);
     },
     components: { 
-      TagFilter: () => import(/* webpackPrefetch: true */ './modules/TagFilter'),
-      Avatar: () => import(/* webpackPrefetch: true */ './modules/Avatar')
+      TagFilter: () => import(/* webpackChunkName: 'TagFilter', webpackPrefetch: true */ './modules/TagFilter'),
+      Avatar: () => import(/* webpackChunkName: 'Avatar', webpackPrefetch: true */ './modules/Avatar')
     },
     computed: {
       filterColor: function () {

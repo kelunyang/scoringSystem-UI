@@ -256,8 +256,8 @@ export default {
     rStatus: Object
   },
   components: { 
-    IssueView: () => import(/* webpackPrefetch: true */ './IssueView'),
-    Avatar: () => import(/* webpackPrefetch: true */ './Avatar')
+    IssueView: () => import(/* webpackChunkName: 'IssueView', webpackPrefetch: true */ './IssueView'),
+    Avatar: () => import(/* webpackChunkName: 'Avatar', webpackPrefetch: true */ './Avatar')
   },
   computed: {
     issuesInView: function() {

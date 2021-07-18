@@ -551,7 +551,7 @@ const turndownService = new TurndownService();
 export default {
   name: 'settings',
   components: { 
-    TagFilter: () => import(/* webpackPrefetch: true */ './modules/TagFilter')
+    TagFilter: () => import(/* webpackChunkName: 'TagFilter', webpackPrefetch: true */ './modules/TagFilter')
   },
   computed: {
     savedTags: function () {

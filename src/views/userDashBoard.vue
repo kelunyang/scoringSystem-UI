@@ -928,8 +928,8 @@ let files = [];
 export default {
   name: 'userDashBoard',
   components: { 
-    TagFilter: () => import(/* webpackPrefetch: true */ './modules/TagFilter'),
-    ProgressTile: () => import(/* webpackPrefetch: true */ './modules/ProgressTile')
+    TagFilter: () => import(/* webpackChunkName: 'TagFilter', webpackPrefetch: true */ './modules/TagFilter'),
+    ProgressTile: () => import(/* webpackChunkName: 'ProgressTile', webpackPrefetch: true */ './modules/ProgressTile')
   },
   methods: {
     exportKBCSV: function() {

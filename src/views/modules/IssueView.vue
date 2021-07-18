@@ -116,7 +116,7 @@ renderer.link = (href, title, text) => {
 export default {
   name: 'IssueView',
   components: { 
-    Avatar: () => import(/* webpackPrefetch: true */ './Avatar'),
+    Avatar: () => import(/* webpackChunkName: 'Avatar', webpackPrefetch: true */ './Avatar'),
   },
   props: {
     issue: Object,

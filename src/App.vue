@@ -248,37 +248,6 @@
       </v-card>
     </v-dialog>
     <v-dialog
-      v-model="syncW"
-      persistent
-      max-width="50vw"
-    >
-      <v-card>
-        <v-card-title class="headline">
-          <v-icon>fas fa-plug</v-icon>
-          同步連線建立中！
-        </v-card-title>
-        <v-card-text class='text-left black--text text-body-1'>
-          可能是網頁剛剛開啟，連與伺服器間的同步連線尚未啟動，但如果您是使用到一半看到本訊息，請嘗試重新整理網頁（可能需要重新登入），如重複發生請聯絡管理員
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn
-            color="primary"
-            link
-            href='/'
-          >
-            回到首頁
-          </v-btn>
-          <v-btn
-            color="primary"
-            @click="syncW = false"
-          >
-            關閉通知
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-    <v-dialog
       v-model="violationW"
       persistent
       max-width="50vw"
@@ -457,6 +426,7 @@
         </v-card>
       </v-menu>
     </v-app-bar>
+    <v-alert type="error" v-if='syncW' outlined icon='fas fa-plug' class='text-left'>同步連線中斷！可能是網頁剛剛開啟，連與伺服器間的同步連線尚未啟動，但如果您是使用到一半看到本訊息，請嘗試重新整理網頁（可能需要重新登入），如重複發生請聯絡管理員</v-alert>
     <v-alert type="error" outlined icon='fab fa-internet-explorer' class='text-left' v-if='isIE'>請勿使用Internet Explorer！</v-alert>
     <v-alert type="error" outlined icon='fas fa-mobile-alt' class='text-left' v-if='isPortrait'>請勿使用直立操作！</v-alert>
     <v-alert type="error" outlined icon='fab fa-safari' class='text-left' v-if='isSafari'>Safari瀏覽器可能會導致同步連線異常，建議不要使用！</v-alert>
@@ -529,8 +499,8 @@ const turndownService = new TurndownService();
 export default {
   name: 'App',
   components: { 
-    TipTap: () => import(/* webpackPrefetch: true */ './views/modules/TipTap'),
-    Avatar: () => import(/* webpackPrefetch: true */ './views/modules/Avatar'),
+    TipTap: () => import(/* webpackChunkName: 'TipTap', webpackPrefetch: true */ './views/modules/TipTap'),
+    Avatar: () => import(/* webpackChunkName: 'Avatar', webpackPrefetch: true */ './views/modules/Avatar'),
   },
   methods: {
     addTag: function (val) {

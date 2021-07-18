@@ -291,7 +291,7 @@ const turndownService = new TurndownService();
 
 export default {
   name: 'messageMgnt',
-  components: { TipTap: () => import(/* webpackPrefetch: true */ './modules/TipTap') },
+  components: { TipTap: () => import(/* webpackChunkName: 'TipTap', webpackPrefetch: true */ './modules/TipTap') },
   beforeDestroy () {
     this.$socket.client.off('getMessages', this.socketgetMessages);
     this.$socket.client.off('msgFileUploadDone', this.soketmsgFileUploadDone);

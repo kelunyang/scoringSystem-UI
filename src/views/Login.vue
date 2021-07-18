@@ -49,7 +49,7 @@ export default {
     }
   },
   components: { 
-    Avatar: () => import(/* webpackPrefetch: true */ './modules/Avatar'),
+    Avatar: () => import(/* webpackChunkName: 'Avatar', webpackPrefetch: true */ './modules/Avatar'),
   },
   data: function () {
     return {

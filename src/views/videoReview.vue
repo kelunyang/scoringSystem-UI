@@ -1364,8 +1364,8 @@ dayjs.extend(duration);
 export default {
   name: 'videoReview',
   components: { 
-    TipTap: () => import(/* webpackPrefetch: true */ './modules/TipTap'),
-    IssueList: () => import(/* webpackPrefetch: true */ './modules/IssueList'),
+    TipTap: () => import(/* webpackChunkName: 'TipTap', webpackPrefetch: true */ './modules/TipTap'),
+    IssueList: () => import(/* webpackChunkName: 'IssueList', webpackPrefetch: true */ './modules/IssueList'),
     //Paintable
   },
   methods: {

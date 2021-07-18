@@ -1156,10 +1156,10 @@ let files = [];
 export default {
   name: 'createKB',
   components: { 
-    TagFilter: () => import(/* webpackPrefetch: true */ './modules/TagFilter'),
-    draggable: () => import(/* webpackPrefetch: true */ 'vuedraggable'),
-    TipTap: () => import(/* webpackPrefetch: true */ './modules/TipTap'),
-    VueCtkDateTimePicker: () => import(/* webpackPrefetch: true */ 'vue-ctk-date-time-picker')
+    TagFilter: () => import(/* webpackChunkName: 'TagFilter', webpackPrefetch: true */ './modules/TagFilter'),
+    draggable: () => import(/* webpackChunkName: 'daraggable', webpackPrefetch: true */ 'vuedraggable'),
+    TipTap: () => import(/* webpackChunkName: 'TipTap', webpackPrefetch: true */ './modules/TipTap'),
+    VueCtkDateTimePicker: () => import(/* webpackChunkName: 'ctkPicker', webpackPrefetch: true */ 'vue-ctk-date-time-picker')
   },
   watch: {
     currentStageDate: function () {
