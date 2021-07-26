@@ -253,16 +253,18 @@
         <v-toolbar dark color='primary'>
           <v-toolbar-title>下載 {{ selectedpmKBs.length }} 個知識點的最新版本</v-toolbar-title>
         </v-toolbar>
-        <v-card-text class='d-flex flex-column text-left black--text text-body-1'>
+        <v-card-text class='d-flex flex-column text-left black--text text-body-1 pa-0'>
           <v-alert outlined type='info' icon='fa-info-circle' class='text-left'>請注意，為節省系統資源，系統不會幫你把這些檔案壓縮，而會同時發送這些檔案給你，你應該會在瀏覽器正下方（或是正上方）看到「是否允許下載多個檔案」的提示，請務必按「同意」</v-alert>
-          <div class='red--text text-caption'>你要下載最新的幾個版本呢？（{{ latestCount }}）</div>
-          <v-slider
-            label='最新版本數量'
-            min='1'
-            max='10'
-            v-model="latestCount"
-            thumb-label
-          ></v-slider>
+          <div class='pa-1'>
+            <div class='red--text text-caption'>你要下載最新的幾個版本呢？（{{ latestCount }}）</div>
+            <v-slider
+              label='最新版本數量'
+              min='1'
+              max='10'
+              v-model="latestCount"
+              thumb-label
+            ></v-slider>
+          </div>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -642,6 +644,7 @@
         overlap
         :content='selectedpmKBs.length'
         :value='selectedpmKBs.length'
+        v-if='selectedpmKBs.length > 0'
       >
         <v-tooltip bottom>
           <template v-slot:activator="{ on, attrs }">
@@ -664,6 +667,7 @@
         overlap
         :content='selectedpmKBs.length'
         :value='selectedpmKBs.length'
+        v-if='selectedpmKBs.length > 0'
       >
         <v-tooltip bottom>
           <template v-slot:activator="{ on, attrs }">
@@ -686,6 +690,7 @@
         overlap
         :content='selectedpmKBs.length'
         :value='selectedpmKBs.length'
+        v-if='selectedpmKBs.length > 0'
       >
         <v-tooltip bottom>
           <template v-slot:activator="{ on, attrs }">
@@ -864,10 +869,11 @@
         <v-btn color='indigo darken-4' class='white--text ma-1' @click="execSearch">搜尋</v-btn>
         <v-btn color="brown darken-4" class='white--text ma-1' @click="clearQueryTerm">清除</v-btn>
       </div>
-      <div class='d-flex flex-row pa-1 justify-space-between'>
+      <div class='d-flex flex-lg-row flex-md-row flex-xl-row justify-space-between align-center flex-sm-column'>
         <v-btn-toggle
           v-model="filterHistory"
           mandatory
+          class='ma-1'
         >
           <v-btn>
             顯示當前處理階段和你有關的{{ renderList.length }}個知識點
@@ -879,6 +885,7 @@
         <v-btn-toggle
           v-model="sortingBtns"
           mandatory
+          class='ma-1'
         >
           <v-btn>
             按照死線時間先後排序
@@ -980,7 +987,7 @@ export default {
           let oeTime = '無此階段'
           let opTime = '無此階段'
           if(item.stages.length > k) {
-            otStatus = item.currentStep - 1 === k ? '進行中' : item.currentStep - 1 < k ? '尚未發生' : '已完成';
+            otStatus = item.currentStep - 1 === k ? 'dueTick' in item.stages[k] ? '已完成' : '進行中' : item.currentStep - 1 < k ? '尚未發生' : '已完成';
             osTime = 'startTick' in item.stages[k] ? dayjs.unix(item.stages[k].startTick).format('YYYY/MM/DD HH:mm:ss') : '未設定開始時間';
             oeTime = 'dueTick' in item.stages[k] ? dayjs.unix(item.stages[k].dueTick).format('YYYY/MM/DD HH:mm:ss') : '未設定死線時間';
             opTime = 'passTick' in item.stages[k] ? dayjs.unix(item.stages[k].passTick).format('YYYY/MM/DD HH:mm:ss') : '未設定完成時間';
@@ -1875,6 +1882,7 @@ export default {
   },
   data () {
     return {
+      downloadW: false,
       eventsRange: [],
       eventKeyword: '',
       eventIgnore: true,
