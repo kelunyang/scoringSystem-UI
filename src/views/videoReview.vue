@@ -1792,8 +1792,13 @@ export default {
                 this.previousGoto = issue.position
               }
               this.previousVersion = issue.version;
-              this.disableCompareMode = false;
-              this.$emit('toastPop', '這則Issue與舊版文件有關，對比模式已自動開啟');
+              //this.disableCompareMode = false;
+              if(this.disableCompareMode) {
+                this.$emit('toastPop', {
+                  message: '這則Issue與舊版文件有關，但你已關閉對比模式，請自己手動打開對比模式或是拉一下對比條即可查看不同版本差異',
+                  time: 5000
+                });
+              }
             }
           }
         }
