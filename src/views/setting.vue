@@ -404,7 +404,7 @@
         </tbody>
       </template>
     </v-simple-table>
-    <v-btn class='ma-1' @click='addNTemplate'>新增定時通知範本</v-btn>
+    <v-btn class='ma-1' @click='addNTemplate'>新增定時通知範本（本功能未完工，請評估必要性）</v-btn>
     <v-text-field outlined clearable dense label='備份檔案位置' v-model='backupLocation' hint='請注意，這裡的位置是NFS主機上的位置，不知道別亂調，最後不用加上/，另外，檔案備份是直接複寫舊備份檔，沒有版本問題'></v-text-field>
     <v-slider
       label='檔案備份頻率（天）'
@@ -504,19 +504,6 @@
     />
     <v-btn @click="getrobotLog('格式檢查機器人')" class='ma-1'>查看格式檢查機器人執行紀錄</v-btn>
     <v-btn @click="getrobotLog('轉檔機器人')" class='ma-1'>查看轉檔機器人執行紀錄</v-btn>
-    <div class='text-h5 text-center pt-5 font-weight-black'>啟動／關閉v2ray</div>
-    <v-switch
-      :disabled='!v2RayChecked'
-      v-model="v2Ray"
-      label="啟動v2Ray穿牆"
-    ></v-switch>
-    <v-textarea
-      outlined clearable counter dense
-      label="回傳紀錄"
-      v-model="shellReport"
-    ></v-textarea>
-    <div class='text-caption red--text' v-if='!v2RayChecked'>確認v2Ray狀態中</div>
-    <div class='text-caption red--text' v-if='serverAddress !== ""'>主機IP位置： {{ serverAddress }} </div>
   </v-sheet>
 </template>
 
@@ -679,9 +666,6 @@ export default {
     this.$socket.client.off('getGlobalSettings', this.socketgetGlobalSettings);
     this.$socket.client.off('getRobotSetting', this.socketgetRobotSetting);
     this.$socket.client.off('getGithubCommit', this.socketgetGithubCommit);
-    this.$socket.client.off('v2rayReport', this.socketv2rayReport);
-    this.$socket.client.off('checkV2ray', this.socketcheckV2ray);
-    this.$socket.client.off('getserverADDR', this.socketgetserverADDR);
     this.$socket.client.off('modNTemplate', this.socketmodNTemplate);
     this.$socket.client.off('listNTemplate', this.socketlistNTemplate);
     this.$socket.client.off('removeNTemplate', this.socketremoveNTemplate);
@@ -701,7 +685,6 @@ export default {
     this.$socket.client.emit('getTagUsers');
     this.$socket.client.emit('getGlobalSettings');
     this.$socket.client.emit('getRobotSetting');
-    this.$socket.client.emit('checkV2ray');
     this.$socket.client.emit('listNTemplate');
     this.$socket.client.emit('checkbotVM');
     if(this.siteSettings.repos.frontend !== "") {
@@ -719,13 +702,10 @@ export default {
     this.$socket.client.on('listNTemplate', this.socketlistNTemplate);
     this.$socket.client.on('modNTemplate', this.socketmodNTemplate);
     this.$socket.client.on('setSetting', this.socketsetSetting);
-    this.$socket.client.on('getserverADDR', this.socketgetserverADDR);
-    this.$socket.client.on('checkV2ray', this.socketcheckV2ray);
     this.$socket.client.on('getTagUsers', this.socketgetTagUsers);
     this.$socket.client.on('getGlobalSettings', this.socketgetGlobalSettings);
     this.$socket.client.on('getRobotSetting', this.socketgetRobotSetting);
     this.$socket.client.on('getGithubCommit', this.socketgetGithubCommit);
-    this.$socket.client.on('v2rayReport', this.socketv2rayReport);
     this.$socket.client.on('listRobotLog', this.socketlistRobotLog);
     this.$socket.client.on('checkbotVM', this.socketcheckbotVM);
   },
@@ -814,19 +794,6 @@ export default {
     },
     dateConvert: function (time) {
       return time === 0 ? '尚未發生' : dayjs.unix(time).format('YYYY/MM/DD HH:mm:ss');
-    },
-    socketgetserverADDR: function (data) {
-      this.serverAddress = data;
-    },
-    socketv2rayReport: function (data) {
-      this.shellReport += data + '\n';
-    },
-    socketcheckV2ray: function (data) {
-      let oriobj = this;
-      this.v2Ray = data;
-      Vue.nextTick(() => {
-        oriobj.v2RayChecked = true;
-      });
     },
     githubConvert: function (commit) {
       return commit.id + '(發布於' + dayjs(commit.commitDate).format('YYYY/MM/DD HH:mm:ss') + ')';
@@ -1010,15 +977,6 @@ export default {
     }
   },
   watch: {
-    v2Ray: function () {
-      if(this.v2RayChecked) {
-        if(this.v2Ray) {
-          this.$socket.client.emit('startV2ray');
-        } else {
-          this.$socket.client.emit('stopV2ray');
-        }
-      }
-    },
     "siteSettings.repos.frontend": function() {
       if(this.siteSettings.repos.frontend !== "") {
         this.$socket.client.emit('getGithubCommit', this.siteSettings.repos.frontend);
@@ -1076,9 +1034,6 @@ export default {
       backupDuration: 1,
       dbbackupDuration: 1,
       dbbackupCopies: 1,
-      serverAddress: '',
-      v2RayChecked: false,
-      v2Ray: false,
       shellReport: '',
       githubKey: '',
       frontendRepo: '',

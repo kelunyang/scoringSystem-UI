@@ -945,6 +945,10 @@
               </div>
               <div ref='previousPlayerArea' class="compareComp"  style='clip-path: inset( 0 0 0 100% )' v-if='previousVersion._id !== ""'>
                 <div ref='previousControl' class='d-flex flex-row justify-end white' :class='pinOn ? "floatControl" : "viewControl"'>
+                  <div class='tickArea' v-if='previousData.position !== undefined || previousData.position > 0'>
+                    <span v-if='pType === "pdf"'>{{ previousData.position }}</span>
+                    <span v-if='pType === "video"'> {{ timeConvert(previousData.position) }}</span> / {{ previousData.total }}
+                  </div>
                   <v-tooltip top v-if='pType === "video"'>
                     <template v-slot:activator="{ on, attrs }">
                       <v-btn
@@ -958,10 +962,6 @@
                     </template>
                     <span>播放影片</span>
                   </v-tooltip>
-                  <div class='tickArea' v-if='previousData.position !== undefined || previousData.position > 0'>
-                    <span v-if='pType === "pdf"'>{{ previousData.position }}</span>
-                    <span v-if='pType === "video"'> {{ timeConvert(previousData.position) }}</span> / {{ previousData.total }}
-                  </div>
                   <v-tooltip top v-if='pType === "video"'>
                     <template v-slot:activator="{ on, attrs }">
                         <v-btn

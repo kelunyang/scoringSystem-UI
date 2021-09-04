@@ -16,24 +16,26 @@
           >
             <v-icon>fa-times</v-icon>
           </v-btn>
-          <v-toolbar-title>快速大量指派知識點</v-toolbar-title>
+          <v-toolbar-title>快速大量設定知識點</v-toolbar-title>
         </v-toolbar>
         <v-card-actions>
           <v-btn class='ma-1' @click='tagUserW = true'>快速建立新的用戶群組標籤</v-btn>
-          <v-btn class='ma-1' @click='execPointer'>執行指派</v-btn>
+          <v-btn class='ma-1' @click='execPointer'>執行快速設定</v-btn>
         </v-card-actions>
         <v-card-text class='pa-5 text-left black--text text-body-1'>
           <v-alert v-if='pointerMin === 0' outlined type='error' icon='fa-skull' class='text-left'>你選擇了{{ selectedKBs.length }}個知識點，其中有知識點根本沒有階段，無法派送！</v-alert>
           <div v-if='pointerMin > 0' class='d-flex flex-column'>
             <v-alert outlined type='info' icon='fa-info' class='text-left'>你選擇了{{ selectedKBs.length }}個知識點（清單在底部），他們最少具有{{ pointerMax }}個階段，變更完要請用戶重新整理才會看到</v-alert>
-            <div class='text-subtitle-2 font-weight-blod'>要權限標籤打入這些知識點的哪個階段裡？</div>
+            <div class='text-subtitle-2 font-weight-blod'>你的設定是要針對這些知識點的哪個階段？</div>
             <v-slider
-              :label='"統一打入第"+pointerStage+"個階段"'
+              :label='"針對第"+pointerStage+"個階段"'
               :min='pointerMin'
               :max='pointerMax'
               v-model="pointerStage"
               thumb-label
             ></v-slider>
+            <div class='text-subtitle-2 font-weight-blod'>將本階段設定為知識點的「當前階段」</div>
+            <v-switch v-model="globalOnStage" label="設定為當前階段"></v-switch>
             <div class='text-subtitle-2 font-weight-blod'>新增到該階段的審查目標</div>
             <v-btn @click='addpointerObj'>新增審查目標</v-btn>
             <div v-for='item in pointerObjs' :key='item.id' class='d-flex flex-row'>
@@ -850,7 +852,7 @@
               <v-icon>fa-shipping-fast</v-icon>
             </v-btn>
           </template>
-          <span>快速大量指派知識點</span>
+          <span>快速大量設定知識點</span>
         </v-tooltip>
       </v-badge>
     </v-speed-dial>
@@ -1252,11 +1254,11 @@ export default {
       });
     },
     socketpointerStageTags: function () {
-      this.$emit('toastPop', '快速指派操作完成...');
+      this.$emit('toastPop', '快速設定操作完成...');
       this.pointerW = false;
     },
     execPointer: function () {
-      this.$emit('toastPop', '送出快速指派中...');
+      this.$emit('toastPop', '送出快速設定中...');
       this.$socket.client.emit('pointerStageTags', {
         KBs: this.selectedKBs,
         tag: this.selectedKBTag,
@@ -1266,7 +1268,8 @@ export default {
         reviewerTags: this.pointerreviewerTags,
         pmTags: this.pointerpmTags,
         finalTags: this.pointerfinalTags,
-        objectives: this.pointerObjs
+        objectives: this.pointerObjs,
+        onStage: this.globalOnStage
       });
     },
     scanPointerKB: function () {
@@ -1297,6 +1300,7 @@ export default {
       this.pointerreviewerTags = [];
       this.pointerpmTags = [];
       this.pointerObjs = [];
+      this.globalOnStage = false;
       this.pointerStage = this.pointerMin;
       this.pointerW = true;
     },
@@ -1905,6 +1909,7 @@ export default {
   },
   data () {
     return {
+      globalOnStage: false,
       KBLoaded: false,
       queryTerm: '',
       flattenKBs: [],
