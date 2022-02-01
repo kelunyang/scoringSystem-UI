@@ -25,6 +25,13 @@ const router = new Router({
         import(/* webpackChunkName: 'videoReview', webpackPrefetch: true */ './views/videoReview.vue')
     },
     {
+      path: '/tagMgnt',
+      name: '標籤管理',
+      props: true,
+      component: () =>
+        import(/* webpackChunkName: 'tagMgnt', webpackPrefetch: true */ './views/tagMgnt.vue')
+    },
+    {
       path: '/userDashBoard',
       name: 'DashBoard',
       component: () =>

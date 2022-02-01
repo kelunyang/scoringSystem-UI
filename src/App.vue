@@ -72,20 +72,29 @@
     </v-dialog>
     <v-dialog
       v-model="authW"
-      persistent
-      max-width="50vw"
+      fullscreen
     >
-      <v-card>
-        <v-card-title class="headline">
-          載入權限..
-        </v-card-title>
-        <v-card-text class='d-flex flex-row justify-space-around flex-wrap'>
-          <div v-for='item in items' :key='"item" + item.title' :class='authClass(item)'>
-            <v-icon x-large>{{ item.icon }}</v-icon><br/>
-            <span class='text-caption'>{{ item.title }}</span>
-          </div>
-        </v-card-text>
-      </v-card>
+      <v-toolbar
+        dark
+        color="primary"
+      >
+        <v-toolbar-title>載入權限...</v-toolbar-title>
+      </v-toolbar>
+      <v-list dense>
+        <v-list-item
+          v-for="item in items"
+          :key='"item" + item.title'
+          :class='authClass(item)'
+        >
+          <v-list-item-icon class='pa-2'>
+            <v-icon x-large>{{ item.icon }}</v-icon>
+          </v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title class='text-left'>{{ item.title }}</v-list-item-title>
+            <v-list-item-subtitle class='text-left'>{{ item.vis ? "已取得權限" : "無使用權限" }}</v-list-item-subtitle>
+          </v-list-item-content>
+        </v-list-item>
+      </v-list>
     </v-dialog>
     <v-dialog
       v-model="messageW"
@@ -877,6 +886,9 @@ export default {
 
     this.$socket.client.on('getTags', (data) => {
       oriobj.timerOn(false);
+      data = _filter(data, (item) => {
+        return item.visibility;
+      })
       oriobj.$store.commit('updateSavedTags', data);
     });
 
@@ -1077,6 +1089,13 @@ export default {
           icon: 'fa-tachometer-alt',
           title: 'DashBoard',
           path: '/userDashBoard',
+          items: [],
+          vis: false
+        },
+        {
+          icon: 'fa-tags',
+          title: '標籤管理',
+          path: '/tagMgnt',
           items: [],
           vis: false
         },
