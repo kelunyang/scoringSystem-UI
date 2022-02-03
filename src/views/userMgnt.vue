@@ -175,53 +175,94 @@
       <v-dialog v-model='addUserW' fullscreen hide-overlay transition='dialog-bottom-transition'>
         <v-card>
           <v-toolbar dark color='primary'>
-            <v-btn icon dark @click='addUserW = false'>
+            <v-btn icon dark @click='closeAddW'>
               <v-icon>fa-times</v-icon>
             </v-btn>
             <v-toolbar-title>新增使用者</v-toolbar-title>
-            <v-spacer></v-spacer>
-            <v-btn icon dark @click='createUsers'>
-              <v-icon>fa-cloud-upload-alt</v-icon>
-            </v-btn>
           </v-toolbar>
           <v-card-text class='ma-0 pa-0'>
             <v-alert outlined type="info" icon='fa-info-circle' class='text-left'>
-              由於本系統的用戶都是廠商、各校老師，因此新增用戶功能採用邀請制，系統會寄出邀請連結，讓用戶填完自己的相關資料並修改密碼，用戶的預設密碼是：{{ defaultPassword }}
+              你可以下載範本檔後，把使用者的email和相關資訊都編輯好之後上傳，各用戶的歸屬標籤也會自動建立，請注意，如果你懶得設定密碼，密碼欄位留空，就會填入預設密碼（{{ defaultPassword }}）
+            </v-alert>
+            <v-alert outlined type="info" icon='fas fa-database' class='text-left' v-if='!listParsed'>
+              請稍後，正在匯入使用者清單中...<span v-if='currentCreated !== ""'>{{ currentCreated }}</span>
             </v-alert>
             <v-container class='pa-5'>
               <v-row>
                 <v-col class='d-flex flex-column'>
-                  <tag-filter
-                    :mustSelected='false'
-                    @updateTags='updateTags'
-                    @plusItem='plusTag'
-                    :single='false'
-                    :selectedItem='selectedAddTags'
-                    @valueUpdated='addTagUpdated'
-                    :candidatedItem='savedTags'
-                    :createable='true'
-                    label='請輸入使用者歸屬的標籤'
-                  />
-                  <v-textarea
-                    outlined clearable
-                    v-model='newEmail'
-                    label='請貼上用戶的Email'
-                  ></v-textarea>
+                  <v-btn @click='downloadCSV(sampleList,"範例用戶清單")'>按此下載範例CSV</v-btn>
+                  <v-file-input
+                    prepend-icon="fa-paperclip" 
+                    v-model="userlistFile" 
+                    label='上傳使用者清單' 
+                    accept="text/csv"
+                    :loading="uploadprogress !== 0">
+                    <template v-slot:progress>
+                      <v-progress-circular :value="uploadprogress"></v-progress-circular>速度：{{ uploadstatus }}
+                    </template>
+                  </v-file-input>
+                  <div class='gray--text text-caption'>{{ importStatus }}</div>
                 </v-col>
               </v-row>
               <v-row>
                 <v-col class='d-flex flex-column'>
-                  已記錄 {{ emailList.length + invalidEmailList.length }} 支Email，有 {{ invalidEmailList.length }} 支格式錯誤， {{ emailList.length }} 支格式正確
-                  <v-simple-table v-if='invalidEmailList.length > 0'>
+                  <v-simple-table v-if='usersConfirm.length > 0'>
                     <template v-slot:default>
                       <thead>
                         <tr>
-                          <th class='text-center'>錯誤的Email</th>
+                          <th
+                            class="text-center"
+                          >
+                            &nbsp;
+                          </th>
+                          <th class='text-left'>&nbsp;</th>
+                          <th
+                            class="text-left"
+                          >
+                            姓名
+                          </th>
+                          <th
+                            class="text-left"
+                          >
+                            Email
+                          </th>
+                          <th
+                            class="text-left"
+                          >
+                            密碼
+                          </th>
+                          <th
+                            class="text-left"
+                          >
+                            服務單位
+                          </th>
+                          <th
+                            class="text-left"
+                          >
+                            群組標籤
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
-                        <tr v-for="item in invalidEmailList" :key="'invalid' + item">
-                          <td>{{ item }}</td>
+                        <tr
+                          v-for="user in usersConfirm"
+                          :key="user._id"
+                        >
+                          <td class="text-center">
+                            <v-icon v-if='user.valid'>fa-check</v-icon>
+                            <v-icon v-else>fa-times</v-icon>
+                          </td>
+                          <td class='text-left'>
+                            <span v-if='user.emailExist'>[Email重複]</span>
+                            <span v-if='user.emailInvalid'>[Email格式錯誤]</span>
+                          </td>
+                          <td class="text-left">{{ user.name }}</td>
+                          <td class="text-left">
+                            {{ user.email }}
+                          </td>
+                          <td class="text-left">{{ user.password === "" ? "預設密碼" : user.password }}</td>
+                          <td class="text-left">{{ user.unit }}</td>
+                          <td class="text-left">{{ getTagname(user.tags) }}</td>
                         </tr>
                       </tbody>
                     </template>
@@ -343,7 +384,7 @@
                     dark
                     small
                     color="indigo"
-                    @click.stop='addUserW = true'
+                    @click.stop='openAddW'
                     v-bind="attrs" v-on="on"
                 >
                     <v-icon>fa-plus</v-icon>
@@ -451,14 +492,18 @@
 
 <script>
 // @ is an alias to /src
+import Vue from 'vue';
 import dayjs from 'dayjs';
-import isEmail from 'validator/es/lib/isEmail';
+import { v4 as uuidv4 } from 'uuid';
+import Papa from 'papaparse';
 import _filter from 'lodash/filter';
 import _includes from 'lodash/includes';
 import _flatten from 'lodash/flatten';
 import _uniq from 'lodash/uniq';
 import _find from 'lodash/find';
 import _map from 'lodash/map';
+import prettyBytes from 'pretty-bytes';
+let files = [];
 
 export default {
     name: 'userMgnt',
@@ -466,13 +511,17 @@ export default {
       this.$socket.client.off('checkTagUsers', this.socketcheckTagUsers);
       this.$socket.client.off('getUsers', this.socketgetUsers);
       this.$socket.client.off('getGlobalSettings', this.socketgetGlobalSettings);
-      this.$socket.client.off('createUsers', this.socketcreateUsers);
       this.$socket.client.off('modUserTags', this.socketmodUserTags);
       this.$socket.client.off('removeUser', this.socketremoveUser);
       this.$socket.client.off('passwordReset', this.socketpasswordReset);
       this.$socket.client.off('checkEmail', this.socketcheckEmail);
       this.$socket.client.off('setEmail', this.socketsetEmail);
       this.$socket.client.off('modUsers', this.socketmodUsers);
+      this.$socket.client.off('userlistUploadError', this.socketuserlistUploadError);
+      this.$socket.client.off('requestuserlistSlice', this.socketrequestuserlistSlice);
+      this.$socket.client.off('userlistUploadDone', this.socketuserlistUploadDone);
+      this.$socket.client.off('userlistParsed', this.socketuserlistParsed);
+      this.$socket.client.off('usercreateReport', this.socketusercreateReport);
     },
     created () {
       this.$emit('viewIn', {
@@ -485,13 +534,17 @@ export default {
       this.$socket.client.on('checkTagUsers', this.socketcheckTagUsers);
       this.$socket.client.on('getUsers', this.socketgetUsers);
       this.$socket.client.on('getGlobalSettings', this.socketgetGlobalSettings);
-      this.$socket.client.on('createUsers', this.socketcreateUsers);
       this.$socket.client.on('modUserTags', this.socketmodUserTags);
       this.$socket.client.on('removeUser', this.socketremoveUser);
       this.$socket.client.on('passwordReset', this.socketpasswordReset);
       this.$socket.client.on('checkEmail', this.socketcheckEmail);
       this.$socket.client.on('setEmail', this.socketsetEmail);
       this.$socket.client.on('modUsers', this.socketmodUsers);
+      this.$socket.client.on('userlistUploadError', this.socketuserlistUploadError);
+      this.$socket.client.on('requestuserlistSlice', this.socketrequestuserlistSlice);
+      this.$socket.client.on('userlistUploadDone', this.socketuserlistUploadDone);
+      this.$socket.client.on('userlistParsed', this.socketuserlistParsed);
+      this.$socket.client.on('usercreateReport', this.socketusercreateReport);
     },
     components: { 
       TagFilter: () => import(/* webpackChunkName: 'TagFilter', webpackPrefetch: true */ './modules/TagFilter'),
@@ -506,19 +559,6 @@ export default {
       }
     },
     watch: {
-      newEmail: function () {
-        this.invalidEmailList = [];
-        this.emailList = [];
-        let emailList = this.newEmail.split('\n');
-        for (let i = 0; i < emailList.length; i++) {
-          let email = emailList[i];
-          if (!isEmail(email)) {
-            this.invalidEmailList.push(email);
-          } else {
-            this.emailList.push(email);
-          }
-        }
-      },
       selectedFilterTags: function () {
         if (this.selectedFilterTags.length > 0) {
           let filteredList = [];
@@ -585,9 +625,94 @@ export default {
         } else {
           this.userfilteredList = this.userList;
         }
+      },
+      userlistFile: {
+        immediate: true,
+        handler () {
+          if (this.userlistFile !== undefined) {
+            let oriobj = this;
+            let fileReader = new FileReader();
+            let slice = this.userlistFile.slice(0, 100000);
+            let uuid = uuidv4();
+            files[uuid] = {
+              file: this.userlistFile,
+            };
+            fileReader.readAsArrayBuffer(slice);
+            fileReader.onload = () => {
+              var arrayBuffer = fileReader.result;
+              oriobj.$socket.client.emit('importUserlist', {
+                uuid: uuid,
+                name: oriobj.userlistFile.name,
+                type: oriobj.userlistFile.type,
+                size: oriobj.userlistFile.size,
+                data: arrayBuffer
+              });
+            };
+          }
+        }
       }
     },
     methods: {
+      socketusercreateReport: function(data) {
+        this.currentCreated = "（[" + (data.count+1) + '/' + data.total + ']' + data.name + "）";
+      },
+      getTagname: function(tag) {
+        return _map(tag, (item) => {
+          console.dir(item);
+          let created = item.newItem ? '[新建]' : '';
+          return item.name + created;
+        });
+      },
+      closeAddW: function() {
+        this.$socket.client.emit('getUsers');
+        this.addUserW = false;
+      },
+      openAddW: function() {
+        this.usersConfirm = [];
+        this.listParsed = true;
+        this.addUserW = true;
+      },
+      socketuserlistParsed: function (data) {
+        this.listParsed = true;
+        this.currentCreated = "";
+        this.usersConfirm = data;
+      },
+      socketuserlistUploadDone: function () {
+        let oriobj = this;
+        this.userlistFile = undefined;
+        this.uploadprogress = 100;
+        this.uploadstatus = '完成！';
+        this.listParsed = false;
+        Vue.nextTick(() => {
+          oriobj.uploadprogress = 0;
+          oriobj.uploadstatus = '';
+        });
+      },
+      socketuserlistUploadError: function (data) {
+        this.$emit('toastPop', '上傳失敗（原因：' + data + '），請聯絡管理員');
+        this.uploadprogress = 0;
+        this.uploadstatus = '';
+      },
+      socketrequestuserlistSlice: function (data) {
+        let oriobj = this;
+        let place = data.currentSlice * 100000;
+        let slice = files[data.uuid].file.slice(place, place + Math.min(100000, files[data.uuid].file.size - place));
+        this.uploadprogress = Math.ceil((place / files[data.uuid].file.size) * 100);
+        let nowdiff = dayjs().valueOf() - files[data.uuid].starttick;
+        this.uploadstatus = nowdiff === 0 ? '' : prettyBytes(place / (nowdiff/1000)) + '/s';
+        let fileReader = new FileReader();
+        fileReader.readAsArrayBuffer(slice);
+        fileReader.onload = () => {
+          var arrayBuffer = fileReader.result;
+          oriobj.$socket.client.emit('importUserlist', {
+            uuid: data.uuid,
+            name: files[data.uuid].file.name,
+            type: files[data.uuid].file.type,
+            size: files[data.uuid].file.size,
+            data: arrayBuffer
+          });
+        };
+      },
       updateTags: function() {
         this.$emit('updateTags');
       },
@@ -613,12 +738,6 @@ export default {
       },
       socketmodUserTags: function (data) {
         this.$emit('toastPop', '為' + data.processed + '/' + data.planned + '個用戶的加上' + data.tags + '個使用者標籤已完成');
-      },
-      socketcreateUsers: function (data) {
-        this.addUserW = false;
-        this.selectedAddTags = [];
-        this.newEmail = '';
-        this.$emit('toastPop', '新增' + data.processed + '/' + data.planned + '個用戶已完成');
       },
       socketgetGlobalSettings: function (data) {
         this.$socket.client.emit('getUsers');
@@ -686,11 +805,12 @@ export default {
         this.editingUser = obj;
       },
       createUsers: function () {
-        this.$emit('toastPop', '新增用戶中，請稍後，會另有訊息通知操作已完成...');
-        this.$socket.client.emit('createUsers', {
-          email: this.emailList,
-          tags: this.selectedAddTags
-        });
+        if(this.usersConfirm.length > 0) {
+          this.$emit('toastPop', '新增用戶中，請稍後，會另有訊息通知操作已完成...');
+          this.$socket.client.emit('createUsers', this.usersConfirm);
+        } else {
+          this.$emit('toastPop', '待新增用戶清單為空，無法上傳！');
+        }
       },
       removeUsers: function () {
         this.$socket.client.emit('removeUser', this.selectedUsers);
@@ -732,15 +852,43 @@ export default {
       filterTagUpdated: function (val) {
         this.selectedFilterTags = val;
       },
-      addTagUpdated: function (val) {
-        this.selectedAddTags = val;
-      },
       modTagUpdated: function (val) {
         this.editingUser.tags = val;
+      },
+      downloadCSV: function(arr, filename) {
+        let output = "\ufeff"+ Papa.unparse(arr);
+        let element = document.createElement('a');
+        let blob = new Blob([output], { type: 'text/csv' });
+        let url = window.URL.createObjectURL(blob);
+        element.setAttribute('href', url);
+        element.setAttribute('download', filename + ".csv");
+        element.click();
       }
     },
     data () {
       return {
+        currentCreated: "",
+        sampleList: [
+          {
+            "姓名": "諸葛村夫",
+            "密碼": "",
+            "服務單位": "大漢",
+            "email": "aaa@aaa.com",
+            "群組標籤": "南陽,蜀地"
+          },
+          {
+            "姓名": "艾莎",
+            "密碼": "",
+            "服務單位": "迪士尼",
+            "email": "bbb@bbb.com",
+            "群組標籤": "東京,加州"
+          },
+        ],
+        listParsed: true,
+        usersConfirm: [],
+        userlistFile: undefined,
+        uploadstatus: '',
+        uploadprogress: 0,
         defaultPassword: '0000',
         moduserTagMode: false,
         emailW: false,
@@ -749,13 +897,10 @@ export default {
           name: '',
           tags: []
         },
-        invalidEmailList: [],
-        emailList: [],
         tagUserW: false,
         robotFilter: true,
         functionBtn: false,
         filterBtn: false,
-        newEmail: '',
         expiredDate: 0,
         selectedUsers: [],
         newUserQuantity: 1,
@@ -764,7 +909,6 @@ export default {
         delUserW: false,
         queryTerm: '',
         selectedFilterTags: [],
-        selectedAddTags: [],
         tagList: [],
         userList: [],
         userfilteredList: [],
