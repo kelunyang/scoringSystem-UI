@@ -658,13 +658,13 @@ export default {
       },
       getTagname: function(tag) {
         return _map(tag, (item) => {
-          console.dir(item);
           let created = item.newItem ? '[新建]' : '';
           return item.name + created;
         });
       },
       closeAddW: function() {
         this.$socket.client.emit('getUsers');
+        this.updateTags();
         this.addUserW = false;
       },
       openAddW: function() {
