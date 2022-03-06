@@ -273,7 +273,7 @@
     <div class='text-subtitle-2 font-weight-blod'>受限制的使用者標籤</div>
     <tag-filter
       :mustSelected='true'
-      :single='true'
+      :single='false'
       @updateTags='updateTags'
       @plusItem='plusTag'
       :selectedItem='restrictTags'
@@ -322,7 +322,7 @@
       :mustSelected='true'
       :single='true'
       :selectedItem='PatrolAccount'
-      @valueUpdated='updateRobatAccount'
+      @valueUpdated='updateRobotAccount'
       :candidatedItem='savedUsers'
       :createable='false'
       @updateTags='updateUsers'
@@ -879,7 +879,7 @@ export default {
       this.systemName = data.systemName;
     },
     socketgetTagUsers: function (data) {
-      this.savedUsers = data;
+      this.savedUsers = data.result;
     },
     socketsetSetting: function () {
       this.$emit('toastPop', "系統設定儲存完成！");
