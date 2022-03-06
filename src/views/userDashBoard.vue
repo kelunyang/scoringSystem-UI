@@ -1,16 +1,146 @@
 <template>
-  <v-sheet class='d-flex flex-column'>
+  <v-sheet>
+    <v-dialog
+      v-model="userSelectorW"
+      persistent
+      max-width="50%"
+    >
+      <v-sheet class='d-flex flex-column pa-1'>
+        <tag-filter
+          :mustSelected='true'
+          :single='true'
+          :selectedItem='listedsUser'
+          @valueUpdated='updatelistedsUser'
+          :candidatedItem='schemaUsers'
+          :createable='false'
+          label='選擇你想查詢帳本的用戶'
+        />
+        <v-btn
+          class='white--text ma-1'
+          :disabled='loadingUser'
+          @click='assetViewer(selectedUser, undefined)'
+          color='indigo darken-4'
+        >
+          查詢指定的用戶的帳本
+        </v-btn>
+        <v-btn
+          class='white--text ma-1'
+          @click='balanceCSV()'
+          color='indigo darken-4'
+        >
+          下載這個活動全部參與用戶的財產清單
+        </v-btn>
+        <v-btn
+          class='white--text ma-1'
+          color='red darken-4'
+          @click='userSelectorW = false'
+        >
+          關閉對話框
+        </v-btn>
+      </v-sheet>
+    </v-dialog>
+    <v-dialog v-model="addGroupW" fullscreen hide-overlay transition='dialog-bottom-transition'>
+      <v-card>
+        <v-toolbar dark color='primary'>
+          <v-btn icon dark @click='addGroupW = false'>
+            <v-icon>fa-times</v-icon>
+          </v-btn>
+          <v-toolbar-title>新增分組</v-toolbar-title>
+        </v-toolbar>
+        <v-card-text class='text-left black--text text-body-1 pa-2 d-flex flex-column'>
+        <v-slider
+          :label='"新增"+groupCount+"組"'
+          :min='1'
+          :max='10'
+          v-model="groupCount"
+          thumb-label
+        ></v-slider>
+        <tag-filter
+          @updateTags='updateTags'
+          @plusItem='plusTag'
+          :mustSelected='true'
+          :single='true'
+          :selectedItem='groupTag'
+          @valueUpdated='updategroupTag'
+          :candidatedItem='savedTags'
+          :createable='true'
+          label='選擇該組別隸屬的標籤'
+        />
+        <v-btn
+          class='white--text ma-1'
+          @click='plusGroup'
+          color='indigo darken-4'
+        >
+          新增{{ groupCount }}個組
+        </v-btn>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+    <v-dialog v-model='assetViewerW' fullscreen hide-overlay transition='dialog-bottom-transition'>
+      <v-card>
+        <v-toolbar dark color='primary'>
+          <v-btn icon dark @click='closeAssetW()'>
+            <v-icon>fa-times</v-icon>
+          </v-btn>
+          <v-toolbar-title>查詢{{ defaultUser.name }}的財產</v-toolbar-title>
+        </v-toolbar>
+        <v-card-text class='text-left black--text text-body-1 pa-2 d-flex flex-column'>
+          <apexchart type="bar" width='100%' :height="balanceHeight" :options="chartOptions" :series="chartSeries"></apexchart>
+          <div class='text-body-1'>選擇查詢區間（如果你把兩個日期都選在同一天，那查詢就會查全部的時間段）</div>
+          <v-text-field label='關鍵字（可搜尋用戶名、動作名、描述）' hint='支援正規表達式，用|表示OR，用(?=.*集合一)(?=.*集合二)表示AND' outlined clearable dense v-model='assetKeyword'></v-text-field>
+          <v-slider
+            label='下載條目數量'
+            min='10'
+            max='500'
+            v-model="assetNum"
+            thumb-label
+          ></v-slider>
+          <v-date-picker
+            v-model="assetDates"
+            full-width
+            range
+          ></v-date-picker>
+          <v-btn class='ma-1' @click='filterAsset'>篩選帳本</v-btn>
+          <v-simple-table v-if="assetLog.length > 0" class='black--text'>
+            <template v-slot:default>
+              <thead>
+                <tr>
+                  <th class="text-left">時間</th>
+                  <th class="text-left">點數</th>
+                  <th class="text-left">註解</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="event in assetLog"
+                  :key="event._id"
+                >
+                  <td class="text-left">
+                    {{ dateConvert(event.tick) }}
+                  </td>
+                  <td class="text-left">
+                    {{ event.value }}
+                  </td>
+                  <td class="text-left">
+                    {{ event.desc }}
+                  </td>
+                </tr>
+              </tbody>
+            </template>
+          </v-simple-table>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
     <v-dialog v-model='eventlogW' fullscreen hide-overlay transition='dialog-bottom-transition'>
       <v-card>
         <v-toolbar dark color='primary'>
           <v-btn icon dark @click='eventlogW = false'>
             <v-icon>fa-times</v-icon>
           </v-btn>
-          <v-toolbar-title>查詢{{ currentKB.title }}的編審紀錄</v-toolbar-title>
+          <v-toolbar-title>查詢{{ defaultSchema.name }}的事件紀錄</v-toolbar-title>
         </v-toolbar>
         <v-card-text class='text-left black--text text-body-1 pa-2 d-flex flex-column'>
           <v-text-field label='關鍵字（可搜尋用戶名、動作名、描述）' hint='支援正規表達式，用|表示OR，用(?=.*集合一)(?=.*集合二)表示AND' outlined clearable dense v-model='eventKeyword'></v-text-field>
-          <v-switch v-model="eventIgnore" label="忽略「儲存知識點順序」"></v-switch>
           <div class='text-body-1'>選擇查詢區間（如果你把兩個日期都選在同一天，那查詢就會查全部的時間段）</div>
           <v-date-picker
             v-model="eventsRange"
@@ -24,9 +154,8 @@
             v-model="eventNum"
             thumb-label
           ></v-slider>
-          <v-btn class='ma-1' @click='filterKBLog'>篩選編審紀錄</v-btn>
-          <v-btn class='ma-1' @click='downloadKBLog'>下載篩選的編審紀錄</v-btn>
-          <v-simple-table v-if="KBLog.length > 0" class='black--text'>
+          <v-btn class='ma-1' @click='filterLog'>篩選紀錄</v-btn>
+          <v-simple-table v-if="schemaLog.length > 0" class='black--text'>
             <template v-slot:default>
               <thead>
                 <tr>
@@ -38,7 +167,7 @@
               </thead>
               <tbody>
                 <tr
-                  v-for="event in KBLog"
+                  v-for="event in schemaLog"
                   :key="event._id"
                 >
                   <td class="text-left">
@@ -60,1884 +189,1148 @@
         </v-card-text>
       </v-card>
     </v-dialog>
-    <v-dialog
-      v-model="stageFW"
-      persistent
-      max-width="50vw"
-    >
-      <v-card>
-        <v-toolbar
-          color="primary"
-          dark
-        >按照流程檢視知識點
-        </v-toolbar>
-        <v-card-text class='d-flex flex-column pa-1 text-left black--text text-body-1'>
-          <v-alert outlined type='info' icon='fa-info-circle' class='text-left'>這個功能是提供給您篩選目前階段已經在您指定的位置的知識點</v-alert>
-          <v-slider
-            label='請指定階段（0代表不過濾，-1代表未啟動）'
-            min='-1'
-            :max='maxStep'
-            v-model="stageFilter"
-            thumb-label
-          ></v-slider>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn
-            color='indigo darken-4'
-            class='white--text'
-            @click='generateList'
-          >
-            啟動流程過濾器
-          </v-btn>
-          <v-btn
-            color='red'
-            class='white--text'
-            @click='stageFW = false'
-          >
-            關閉對話框
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-    <v-dialog
-      v-model="priviledgeVW"
-      persistent
-      max-width="50vw"
-    >
-      <v-card>
-        <v-toolbar
-          color="primary"
-          dark
-        >按照你在當前步驟的權限檢視知識點
-        </v-toolbar>
-        <v-card-text class='d-flex flex-column pa-0 text-left black--text text-body-1'>
-          <v-alert outlined type='info' icon='fa-info-circle' class='text-left'>您可以在此按照您的角色／權限篩選知識點</v-alert>
-          <div class='d-flex flex-column pa-1'>
-            <v-switch
-              v-model="viewReviewer"
-              v-if='countReviewer > 0'
-              :label="'查看我有審查者權限的' + countReviewer + '支影片'"
-            ></v-switch>
-            <v-switch
-              v-model="viewPM"
-              v-if='countPM > 0'
-              :label="'查看我有PM權限的' + countPM + '支影片'"
-            ></v-switch>
-            <v-switch
-              v-model="viewWriter"
-              v-if='countWriter > 0'
-              :label="'查看我有寫手權限的' + countWriter + '支影片'"
-            ></v-switch>
-            <v-switch
-              v-model="viewFinal"
-              v-if='countFinal > 0'
-              :label="'查看我有行政端權限的' + countFinal + '支影片'"
-            ></v-switch>
-            <v-switch
-              v-model="viewVendor"
-              v-if='countVendor > 0'
-              :label="'查看我有廠商權限的' + countVendor + '支影片'"
-            ></v-switch>
-          </div>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn
-            color='indigo darken-4'
-            class='white--text'
-            @click='generateList'
-          >
-            啟動權限/角色過濾器
-          </v-btn>
-          <v-btn
-            color='red'
-            class='white--text'
-            @click='priviledgeVW = false'
-          >
-            關閉對話框
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-    <v-dialog
-      v-model="initW"
-      persistent
-      max-width="50vw"
-    >
-      <v-card>
-        <v-toolbar
-          color="primary"
-          dark
-        >初次使用設定
-        </v-toolbar>
-        <v-card-text class='d-flex flex-column pa-0 text-left black--text text-body-1'>
-          <v-alert outlined type='info' icon='fa-info-circle' class='text-left'>若您日後還要修改這條設定，請選擇右下角工具箱的i圖示開啟即可</v-alert>
-          <div class='d-flex flex-column pa-1'>
-            <v-switch
-              v-model="initStatstics"
-              label="每次開啟Dashboard都先打開知識點進度總統計（通常是PM、行政才會需要打開）"
-            ></v-switch>
-            <v-switch
-              v-model="initHistory"
-              label="打開所有和我有關的知識點，就算當前階段與我無關我也要看到（通常是PM、行政才會需要打開）"
-            ></v-switch>
-            <v-switch
-              v-model="initSorting"
-              label="按照完成時間排序，如果關掉的話就會按照知識點順序排序"
-            ></v-switch>
-          </div>
-          <div class='text-caption red--text'>統計圖表的開關在右下角折線圖圖示，您就算不開啟此設定，平時也可以自己點擊叫出統計圖</div>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn
-            color='red'
-            class='white--text'
-            @click='closeInitW'
-          >
-            關閉對話框
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-    <v-dialog
-      v-model="tagW"
-      persistent
-      max-width="50vw"
-    >
-      <v-card>
-        <v-toolbar
-          color="primary"
-          dark
-        >指定 {{ currentKB.title }} 的標籤
-        </v-toolbar>
-        <v-card-text class='d-flex flex-column pa-0'>
-          <v-alert outlined type='info' icon='fa-info-circle' class='text-left'>PM可以針對不同知識點下行銷或管理需要的標籤（如「粉紅色」、「買賣問題」、「時事性」之類），請不要刪除你看不懂的標籤，否則知識點管理中找不到這個知識點</v-alert>
-          <tag-filter
-            @updateTags='updateTags'
-            @plusItem='plusTag'
-            :mustSelected='true'
-            :single='false'
-            :selectedItem='currentKB.tag'
-            @valueUpdated='updateKBTag'
-            :candidatedItem='savedTags'
-            :createable='true'
-            label='請輸入標籤'
-          />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn
-            color='red'
-            class='white--text'
-            @click='saveKBTag'
-          >
-            儲存標籤
-          </v-btn>
-          <v-btn
-            color="primary"
-            @click="tagW = false"
-          >
-            關閉對話框
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-    <v-dialog
-      v-model="downloadW"
-      persistent
-      max-width="50vw"
-    >
+    <v-dialog v-model='stageeditorW' fullscreen hide-overlay transition='dialog-bottom-transition'>
       <v-card>
         <v-toolbar dark color='primary'>
-          <v-toolbar-title>下載 {{ selectedpmKBs.length }} 個知識點的最新版本</v-toolbar-title>
-        </v-toolbar>
-        <v-card-text class='d-flex flex-column text-left black--text text-body-1 pa-0'>
-          <v-alert outlined type='info' icon='fa-info-circle' class='text-left'>請注意，為節省系統資源，系統不會幫你把這些檔案壓縮，而會同時發送這些檔案給你，你應該會在瀏覽器正下方（或是正上方）看到「是否允許下載多個檔案」的提示，請務必按「同意」</v-alert>
-          <div class='pa-1'>
-            <div class='red--text text-caption'>你要下載最新的幾個版本呢？（{{ latestCount }}）</div>
-            <v-slider
-              label='最新版本數量'
-              min='1'
-              max='10'
-              v-model="latestCount"
-              thumb-label
-            ></v-slider>
-          </div>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn @click='getlatestVersions'>點此開始下載</v-btn>
-          <v-btn
-            color="primary"
-            @click="downloadW = false"
-          >
-            關閉對話框
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-    <v-dialog
-      v-model='versionW'
-      fullscreen
-      hide-overlay
-      transition="dialog-bottom-transition"
-    >
-      <v-card>
-        <v-toolbar dark color='primary'>
-          <v-btn
-            icon
-            dark
-            @click="closeVersionW"
-          >
+          <v-btn icon dark @click='closeStageW()'>
             <v-icon>fa-times</v-icon>
           </v-btn>
-          <v-toolbar-title>管理知識點版本</v-toolbar-title>
+          <v-toolbar-title>回合編輯器</v-toolbar-title>
         </v-toolbar>
-        <v-card-text class='d-flex flex-column pa-0'>
-          <v-alert outlined type='info' v-if='currentKB.isVendor || currentKB.isPM' icon='fa-info-circle' class='text-left'>
-            廠商/PM請注意：基本上你只能上傳影片（H.264/VP9）、PDF檔案（分鏡圖使用），除非是最終階段需要上傳可編輯原始檔，否則請勿上傳zip檔，另外，你的檔名就會是版本代號，請謹慎命名（如「腳本第一版」）
-          </v-alert>
-          <v-alert outlined type='info' v-if='currentKB.isWriter' icon='fa-info-circle' class='text-left'>
-            寫手請注意：你只能上傳PDF檔案，請把你的腳本都轉換成PDF再上傳，另外，你的檔名就會是版本代號，請謹慎命名（如「腳本第一版」）
-          </v-alert>
-          <div v-if='currentKB.isWriter || currentKB.isVendor || currentKB.isPM' class='d-felx flex-column'>
-            <div class='text-subtitle-2 font-weight-blod'>版本發行說明（必填但不得超過30個字）</div>
-            <v-text-field outlined placeholder='請輸入一些說明，上傳檔案選單才會出現喔！' clearable dense hint='請輸入這個新版本的註解，不得超過30個字' v-model='versionComment' />
-            <div class='text-subtitle-2 font-weight-blod'>版本檔案</div>
-            <v-file-input
-              v-if="versionComment !== ''"
-              prepend-icon="fa-paperclip" 
-              v-model="versionFile" 
-              label='上傳知識點版本' 
-              :accept="currentKB.isWriter ? 'application/pdf' : 'application/zip, application/pdf, video/mp4, video/webm'"
-              :loading="uploadprogress !== 0">
-              <template v-slot:progress>
-                <v-progress-circular :value="uploadprogress"></v-progress-circular>速度：{{ uploadstatus }}
-              </template>
-            </v-file-input>
-          </div>
-          <div v-if='versionPopulated'>
-            <span v-if='currentVersions.length === 0' class='text-body-1 text-center'>
-              目前沒有任何版本
-            </span>
-            <v-simple-table v-show="currentVersions.length > 0">
-              <template v-slot:default>
-                <thead>
-                  <tr>
-                    <th class="text-left" style="width:200px">
-                      版本發行日期（版號）
-                    </th>
-                    <th class="text-left" style="width:200px">
-                      原始檔名
-                    </th>
-                    <th class="text-left" style="width:250px">
-                      狀態
-                    </th>
-                    <th class="text-left">
-                      版本發行紀錄（以及格式檢查紀錄）
-                    </th>
-                    <th class="text-left" style="width:25px">
-                      &nbsp;
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr
-                    v-for="version in currentVersions"
-                    :key="'ver'+version._id"
-                  >
-                    <td class="text-left">
-                      <span v-if='version.readed' class='indigo--text darken-4'>[已看過]</span>
-                      <span v-else class='red--text darken-4'>[未看過]</span>
-                      {{ dateConvert(version.tick) }}
-                    </td>
-                    <td class="text-left">
-                      {{ version.name }}
-                    </td>
-                    <td class="text-left">
-                      <span v-if='version.status === 1'>
-                        <span v-if='/video\//g.test(version.type)'>尚未格式檢查</span>
-                        <span v-else>非影片不需檢查</span>
-                      </span>
-                      <span v-if='version.status === 0'>格式檢查失敗</span>
-                      <span v-if='version.status >= 2'>格式
-                        <span>{{ version.fileInfo.formatCheck ? '正確' : '錯誤' }}</span><br/>
-                        <span v-if='version.status === 2'>({{ dateConvert(version.fileInfo.checkTick) }})</span>
-                        <span v-if='version.status === 4'>({{ dateConvert(version.fileInfo.queueDate) }}已排入轉檔佇列)</span>
-                        <span v-if='version.status === 3'>({{ dateConvert(version.fileInfo.converisionDate) }}已轉換為VP9/WebM)</span>
-                      </span>
-                    </td>
-                    <td class="text-left">
-                      {{ version.comment }}<br/>
-                      <span v-if='version.status >= 2' class='codecSign'>{{ version.fileInfo.videoCodec }}</span>
-                      <span v-if='version.status >= 2'>{{ version.fileInfo.hasAudio ? '🔊' : '' }}</span>
-                      <span v-if='version.status >= 2'>{{ version.validAudio ? '' : '❌' }}</span>
-                      <span v-if='version.status >= 2'>{{ version.fileInfo.width }}</span>
-                      <span v-if='version.status >= 2'>{{ version.validWidth ? '' : '❌' }}</span>
-                      <span v-if='version.status >= 2'>×{{ version.fileInfo.height }}</span>
-                      <span v-if='version.status >= 2'>{{ version.validHeight ? '' : '❌' }}</span>
-                      <span v-if='version.status >= 2'>@ {{ timeConvert(version.fileInfo.duration) }}</span>
-                      <span v-if='version.status >= 2'>{{ version.validRange ? '' : '❌' }}</span>
-                    </td>
-                    <td class='d-flex flex-row'>
-                      <v-menu
-                        bottom
-                        left
-                        offset-y
-                        attach
-                        transition="slide-y-transition"
-                      >
+        <v-card-text class='pa-0 ma-0 text-left black--text text-body-1'>
+          <v-container class='pa-5'>
+            <v-row class='d-flex flex-column'>
+              <v-col>
+                <v-tooltip bottom>
+                  <template v-slot:activator="{ on, attrs }">
+                    <v-btn icon v-bind="attrs" v-on="on" @click='plusStage()'>
+                      <v-icon>fa-plus</v-icon>
+                    </v-btn>
+                  </template>
+                  <span>新增回合</span>
+                </v-tooltip>                    
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col class='d-flex flex-column'>
+                <draggable group="stages" v-model="stageList" style="min-height: 10px" handle='.handle'>
+                  <v-list-item v-for="item in stageList" :key='"stage" + item._id'>
+                    <v-list-item-content class="text-left">
+                      <v-list-item-title>
+                        <span v-if='item.matchPoint'>[賽點]</span>
+                        <span v-if='item.closed > 0'>[關閉]</span>
+                        {{ item.name }}({{ item.value }})
+                      </v-list-item-title>
+                      <v-list-item-subtitle>
+                        <span>開始於{{ dateConvert(item.startTick) }}</span>
+                        <span>結束於{{ dateConvert(item.endTick) }}</span>
+                      </v-list-item-subtitle>
+                    </v-list-item-content>
+                    <v-list-item-action class='d-flex flex-row'>
+                      <v-tooltip bottom>
                         <template v-slot:activator="{ on, attrs }">
                           <v-btn
-                            outlined
                             icon
+                            @click.stop='closeStage(item)'
                             v-bind="attrs" v-on="on"
                           >
+                            <v-icon v-if='item.closed === 0'>fa-times-circle</v-icon>
+                            <v-icon v-if='item.closed > 0'>fa-play-circle</v-icon>
+                          </v-btn>
+                        </template>
+                        <span v-if='item.closed === 0'>關閉回合</span>
+                        <span v-if='item.closed > 0'>啟動回合</span>
+                      </v-tooltip>
+                      <v-tooltip bottom>
+                        <template v-slot:activator="{ on, attrs }">
+                          <v-btn icon v-bind="attrs" v-on="on" @click='getStage(item)'>
+                            <v-icon>fa-pencil-alt</v-icon>
+                          </v-btn>
+                        </template>
+                        <span>編輯回合</span>
+                      </v-tooltip>
+                      <v-tooltip bottom>
+                        <template v-slot:activator="{ on, attrs }">
+                          <v-btn v-bind="attrs" v-on="on" icon @click='removeStage(item)'>
                             <v-icon>fa-trash</v-icon>
                           </v-btn>
                         </template>
-                        <v-sheet class='d-flex flex-column pa-1'>
-                          <div class='text-h6'>確認刪除版本？</div>
-                          <v-btn
-                            color='red accent-4'
-                            class='white--text ma-1'
-                            @click='deleteKBVersion(version._id)'
-                          >
-                            是，我要刪除這個版本
+                        <span>刪除回合</span>
+                      </v-tooltip>
+                      <v-tooltip bottom>
+                        <template v-slot:activator="{ on, attrs }">
+                          <v-btn v-bind="attrs" v-on="on" icon class='handle'>
+                            <v-icon>fa-arrows-alt</v-icon>
                           </v-btn>
-                          <div class='text-caption'>如果你只是誤觸，請隨意點擊其他地方即會關閉本對話框</div>
-                        </v-sheet>
-                      </v-menu>
-                      <v-btn
-                        @click='downloadFile(version)'
-                        outlined
-                        icon>
-                        <v-icon>fa-file-download</v-icon>
-                      </v-btn>
-                    </td>
-                  </tr>
-                </tbody>
-              </template>
-            </v-simple-table>
-          </div>
+                        </template>
+                        <span>上下移動本分類</span>
+                      </v-tooltip>
+                    </v-list-item-action>
+                  </v-list-item>
+                </draggable>
+              </v-col>
+            </v-row>
+          </v-container>
         </v-card-text>
       </v-card>
     </v-dialog>
-    <v-dialog
-      v-model='participantW'
-      fullscreen
-      hide-overlay
-      transition="dialog-bottom-transition"
-    >
+    <v-dialog v-model='groupeditorW' fullscreen hide-overlay transition='dialog-bottom-transition'>
       <v-card>
         <v-toolbar dark color='primary'>
-          <v-btn
-            icon
-            dark
-            @click="participantW = false"
-          >
+          <v-btn icon dark @click='groupeditorW = false'>
             <v-icon>fa-times</v-icon>
           </v-btn>
-          <v-toolbar-title>{{ participantsDB.proceedKBs.length }}個知識點的參與者們（{{ participantsDB.proceedUsers.length }}）</v-toolbar-title>
-          <v-spacer></v-spacer>
-          <v-btn
-            icon
-            dark
-            @click="exportParticipant"
-          >
-            <v-icon>fa-download</v-icon>
-          </v-btn>
+          <v-toolbar-title>分組編輯器</v-toolbar-title>
         </v-toolbar>
-        <v-card-text class='pa-0 ma-0 d-flex flex-column text-left black--text text-body-1'>
-          <v-alert outlined type="info" icon='fa-info-circle' class='text-left'>你如果發現你勾選的知識點少於系統回傳的知識點，那很明顯是因為你不具有該知識點的行政管理權，請洽你的知識點PM，把你放進行政組中</v-alert>
-          <div v-if='participantsDB.statistics.length === 0'>
-            你不具備你勾選的知識點的行政管理權，回傳的知識點數量為0
-          </div>
-          <div v-if='participantsDB.statistics.length > 0' class='ma-1'>
-            <div class='text-left' v-for='participant in participantsDB.statistics' :key='"uid"+participant._id'>
-              <div class='text-h6 indigo darken-4 font-weight-black white--text'>{{participant.name}} @ {{participant.unit}}</div>
-              <v-divider></v-divider>
-              <div class='text-subtitle-1 indigo--text darken-4 font-weight-medium'>參與PM工作（{{ participant.pmStages.length }}次）</div>
-              <v-divider></v-divider>
-              <div class='d-flex flex-row flex-wrap'>
-                <v-chip
-                  class="ma-2 white--text"
-                  :color="tagColor(0)"
-                  label
-                  v-for='stage in participant.pmStages'
-                  :key='"parp"+stage._id'
-                >
-                  {{ stage.KBtitle }} | {{ stage.name }}
-                </v-chip>
-              </div>
-              <div class='text-subtitle-1 indigo--text darken-4 font-weight-medium'>參與審查者工作（{{ participant.reviewerStages.length }}次）</div>
-              <v-divider></v-divider>
-              <div class='d-flex flex-row flex-wrap'>
-                <v-chip
-                  class="ma-2 white--text"
-                  :color="tagColor(1)"
-                  label
-                  v-for='stage in participant.reviewerStages'
-                  :key='"parr"+stage._id'
-                >
-                  {{ stage.KBtitle }} | {{ stage.name }}
-                </v-chip>
-              </div>
-              <div class='text-subtitle-1 indigo--text darken-4 font-weight-medium'>參與廠商工作（{{ participant.vendorStages.length }}次）</div>
-              <v-divider></v-divider>
-              <div class='d-flex flex-row flex-wrap'>
-                <v-chip
-                  class="ma-2 white--text"
-                  :color="tagColor(2)"
-                  label
-                  v-for='stage in participant.vendorStages'
-                  :key='"parv"+stage._id'
-                >
-                  {{ stage.KBtitle }} | {{ stage.name }}
-                </v-chip>
-              </div>
-              <div class='text-subtitle-1 indigo--text darken-4 font-weight-medium'>參與寫手工作（{{ participant.writerStages.length }}次）</div>
-              <v-divider></v-divider>
-              <div class='d-flex flex-row flex-wrap'>
-                <v-chip
-                  class="ma-2 white--text"
-                  :color="tagColor(3)"
-                  label
-                  v-for='stage in participant.writerStages'
-                  :key='"parw"+stage._id'
-                >
-                  {{ stage.KBtitle }} | {{ stage.name }}
-                </v-chip>
-              </div>
-              <div class='text-subtitle-1 indigo--text darken-4 font-weight-medium'>參與行政工作（{{ participant.finalStages.length }}次）</div>
-              <v-divider></v-divider>
-              <div class='d-flex flex-row flex-wrap'>
-                <v-chip
-                  class="ma-2 white--text"
-                  :color="tagColor(4)"
-                  label
-                  v-for='stage in participant.finalStages'
-                  :key='"parf"+stage._id'
-                >
-                  {{ stage.KBtitle }} | {{ stage.name }}
-                </v-chip>
-              </div>
-            </div>
-          </div>
+        <v-card-text class='pa-0 ma-0 text-left black--text text-body-1'>
+          <v-container class='pa-5'>
+            <v-row class='d-flex flex-row'>
+              <v-col>
+                <v-tooltip bottom>
+                  <template v-slot:activator="{ on, attrs }">
+                    <v-btn icon v-bind="attrs" v-on="on" @click='addGroupW = true'>
+                      <v-icon>fa-plus</v-icon>
+                    </v-btn>
+                  </template>
+                  <span>新增分組</span>
+                </v-tooltip>                    
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col class='d-flex flex-column'>
+                <v-list-item v-for="item in groupList" :key='"stage" + item._id'>
+                  <v-list-item-content class="text-left">
+                    <v-list-item-title>
+                      <v-icon v-if='item.locked'>fa-user-lock</v-icon>
+                      組長：{{ arrayConverter(item.groupLeaderNames) }}
+                    </v-list-item-title>
+                    <v-list-item-subtitle>
+                      <span>組員共{{ item.members.length }}人</span>
+                    </v-list-item-subtitle>
+                  </v-list-item-content>
+                  <v-list-item-action class='d-flex flex-row'>
+                    <v-tooltip bottom>
+                      <template v-slot:activator="{ on, attrs }">
+                        <v-btn icon v-bind="attrs" v-on="on" @click='editGroup(item)'>
+                          <v-icon>fa-pencil-alt</v-icon>
+                        </v-btn>
+                      </template>
+                      <span>編輯小組</span>
+                    </v-tooltip>
+                    <v-tooltip bottom>
+                      <template v-slot:activator="{ on, attrs }">
+                        <v-btn v-bind="attrs" v-on="on" icon @click='removeGroup(item)'>
+                          <v-icon>fa-trash</v-icon>
+                        </v-btn>
+                      </template>
+                      <span>刪除小組</span>
+                    </v-tooltip>
+                  </v-list-item-action>
+                </v-list-item>
+              </v-col>
+            </v-row>
+          </v-container>
         </v-card-text>
       </v-card>
     </v-dialog>
-    <v-dialog v-model="authDetailW" persistent>
+    <v-dialog v-model='modStageW' fullscreen hide-overlay transition='dialog-bottom-transition'>
       <v-card>
-        <v-toolbar
-          dark
-          color="primary"
-        >
-          <v-toolbar-title>你在 {{ currentKB.title }} 目前階段中的的角色</v-toolbar-title>
+        <v-toolbar dark color='primary'>
+          <v-btn icon dark @click='modStageW = false'>
+            <v-icon>fa-times</v-icon>
+          </v-btn>
+          <v-toolbar-title>修改活動回合</v-toolbar-title>
+          <v-spacer></v-spacer>
+          <v-btn icon dark @click='saveStage'>
+            <v-icon>fa-cloud-upload-alt</v-icon>
+          </v-btn>
         </v-toolbar>
-        <v-card-text class='d-flex flex-column text-h6 font-weight-medium black--text text-left'>
-          <div v-if='currentKB.isPM'>
-            專案管理者：你可以關閉／開啟任何的Issue，並且在知識點編輯器中強制改變專案進度
-          </div>
-          <div v-if='currentKB.isVendor'>
-            廠商：你可以在DashBoard中上傳知識點的版本，並且回復Issue
-          </div>
-          <div v-if='currentKB.isWriter'>
-            寫手：你可以開啟Issue，上傳腳本，並回復Issue
-          </div>
-          <div v-if='currentKB.isReviewer'>
-            審查者：你可以開啟／關閉Issue，並且決定本階段是否結束
-          </div>
-          <div v-if='currentKB.isFinal'>
-            行政組：你只能看Issue，並在DashBoard中匯出專案統計
-          </div>
+        <v-card-text class='pa-0 ma-0 text-left black--text text-body-1'>
+          <v-container class='pa-5'>
+            <v-row>
+              <v-col class='d-flex flex-column'>
+                <v-text-field outlined clearable dense label='回合名稱' v-model='defaultStage.name'></v-text-field>
+                <Tip-Tap
+                  v-model="defaultStage.desc"
+                  maxHeight="10vh"
+                  minHeight="5vh"
+                  hint='請輸入回合描述'
+                />
+                <div class='text-subtitle-2 font-weight-blod'>賽點</div>
+                <v-switch
+                  v-model="defaultStage.matchPoint"
+                  label="如果是賽點，就會用總分排名計分，而非時間先後計分"
+                ></v-switch>
+                <div class='text-subtitle-2 font-weight-blod'>回合倍率</div>
+                <v-slider
+                  :label='"回合倍率為"+defaultStage.value+"倍"'
+                  :min='1'
+                  :max='10'
+                  v-model="defaultStage.value"
+                  thumb-label
+                ></v-slider>
+                <div class='text-subtitle-2 font-weight-blod'>回合開始日期</div>
+                <VueCtkDateTimePicker :noKeyboard='true' :inline='true' v-model="stagestartDate" label='請選擇開始日期' locale='zh-tw' format='YYYY-MM-DD HH:mm:ss' class='ma-2' />
+                <div class='text-subtitle-2 font-weight-blod'>回合結束日期</div>
+                <VueCtkDateTimePicker :noKeyboard='true' :inline='true' v-model="stageendDate" label='請選擇結束日期' locale='zh-tw' format='YYYY-MM-DD HH:mm:ss' class='ma-2' />
+                <v-btn @click='saveStage'>
+                  儲存回合
+                </v-btn>
+              </v-col>
+            </v-row>
+          </v-container>
         </v-card-text>
-        <v-card-actions>
-        <v-spacer></v-spacer>
-          <v-btn color="green darken-1" text @click="authDetailW = false">關閉角色說明</v-btn>
-        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog v-model='modGroupW' fullscreen hide-overlay transition='dialog-bottom-transition'>
+      <v-card>
+        <v-toolbar dark color='primary'>
+          <v-btn icon dark @click='closeGroupW()'>
+            <v-icon>fa-times</v-icon>
+          </v-btn>
+          <v-toolbar-title>修改分組</v-toolbar-title>
+        </v-toolbar>
+        <v-card-text class='ma-0 pa-0'>
+          <v-container class='pa-5'>
+            <v-row>
+              <v-col class='d-flex flex-column'>
+                <v-alert v-show='isSupervisor(defaultSchema)' type="error" outlined icon='fa-exclamation-triangle' class='text-left' v-if='!defaultSchema.tagGroupped'>本活動按照標籤分組，如果你隨意更改各組所屬的標籤，可能導致成員看不到分組</v-alert>
+                <div v-if='isSupervisor(defaultSchema)' class='text-subtitle-2 font-weight-blod'>分組標籤</div>
+                <tag-filter
+                  v-if='isSupervisor(defaultSchema)'
+                  :mustSelected='true'
+                  :single='true'
+                  @updateTags='updateTags'
+                  :selectedItem='defaultGroup.tag'
+                  @valueUpdated='updatedefaultGTag'
+                  :candidatedItem='savedTags'
+                  :createable='false'
+                  label='分組標籤指的是該組隸屬的標籤'
+                />
+                <div v-if='isSupervisor(defaultSchema)' class='text-subtitle-2 font-weight-blod'>禁止調整組員</div>
+                <v-switch
+                  v-if='isSupervisor(defaultSchema)'
+                  v-model="defaultGroup.locked"
+                  label="鎖住分組，禁止組員更動"
+                ></v-switch>
+                <div v-if='isSupervisor(defaultSchema)' class='text-subtitle-2 font-weight-blod'>組長</div>
+                <tag-filter
+                  v-if='isSupervisor(defaultSchema)'
+                  :mustSelected='false'
+                  :single='false'
+                  @updateTags='updateTags'
+                  :selectedItem='leaderTag'
+                  @valueUpdated='updateleaderTag'
+                  :candidatedItem='savedTags'
+                  :createable='false'
+                  label='請在此輸入你要篩選的用戶標籤，該標籤的用戶會顯示在下面'
+                />
+                <tag-filter
+                  v-if='isSupervisor(defaultSchema)'
+                  :mustSelected='false'
+                  :single='false'
+                  :selectedItem='defaultGroup.leaders'
+                  @valueUpdated='updateleaders'
+                  :candidatedItem='savedLeaders'
+                  @updateTags='fetchLeaders'
+                  :createable='false'
+                  label='請輸入用戶名稱'
+                />
+                <div class='text-subtitle-2 font-weight-blod'>組員（組長會自動成為組員）</div>
+                <tag-filter
+                  v-if='isSupervisor(defaultSchema)'
+                  :mustSelected='false'
+                  :single='false'
+                  @updateTags='updateTags'
+                  :selectedItem='memberTag'
+                  @valueUpdated='updatememberTag'
+                  :candidatedItem='savedTags'
+                  :createable='false'
+                  label='請在此輸入你要篩選的用戶標籤，該標籤的用戶會顯示在下面'
+                />
+                <tag-filter
+                  :mustSelected='false'
+                  :single='false'
+                  :selectedItem='defaultGroup.members'
+                  @valueUpdated='updatemembers'
+                  :candidatedItem='savedMembers'
+                  @updateTags='fetchMembers'
+                  :createable='false'
+                  label='請輸入用戶名稱'
+                />
+                <div class='text-subtitle-2 font-weight-blod'>成員資產表</div>
+                <v-simple-table v-show="assetMembers.length > 0" class='black--text'>
+                  <template v-slot:default>
+                    <thead>
+                      <tr>
+                        <th class="text-center">
+                          名稱
+                        </th>
+                        <th class="text-left" style="width:25px">
+                          總資產
+                        </th>
+                        <th class='text-center'>
+                          &nbsp;
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr
+                        v-for="member in assetMembers"
+                        :key="member._id+'asset'"
+                      >
+                        <td class="text-center">
+                          {{ member.uid.name }}
+                        </td>
+                        <td class="text-left">
+                          {{ member.balance }}
+                        </td>
+                        <td class='text-center'>
+                          <v-tooltip top>
+                            <template v-slot:activator="{ on, attrs }">
+                              <v-btn @click="assetViewer(member.uid, undefined)" v-bind="attrs" v-on="on" icon>
+                                <v-icon>fa-money-bill-alt</v-icon>
+                              </v-btn>
+                            </template>
+                            <span>檢視帳本</span>
+                          </v-tooltip>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </template>
+                </v-simple-table>
+                <v-btn @click='queryAssets'>
+                  查詢全組資產表
+                </v-btn>
+              </v-col>
+            </v-row>
+          </v-container>
+        </v-card-text>
       </v-card>
     </v-dialog>
     <v-fab-transition>
       <v-tooltip bottom>
         <template v-slot:activator="{ on, attrs }">
           <v-btn
-            v-bind="attrs" v-on="on"
-            color="pink"
-            fixed
             fab
             dark
             bottom
             right
-            style='margin-bottom: 160px'
-            @click.stop='showStatstics = !showStatstics'
+            fixed
+            color="indigo darken-4"
+            @click.stop='statusFilter = !statusFilter'
+            v-bind="attrs" v-on="on"
           >
-            <v-icon>fa-chart-line</v-icon>
+            <v-icon v-if='!statusFilter'>fa-play</v-icon>
+            <v-icon v-else>fa-square</v-icon>
           </v-btn>
         </template>
-        <span v-if='!showStatstics'>顯示完成度統計</span>
-        <span v-if='showStatstics'>隱藏完成度統計</span>
+        <span v-if='!statusFilter'>顯示活動中的項目</span>
+        <span v-else>顯示已結束的項目</span>
       </v-tooltip>
     </v-fab-transition>
-    <v-speed-dial style='margin-bottom: 80px' v-model="pmtoolsBtns" fixed bottom right direction="left" :open-on-hover="true" transition="slide-y-reverse-transition">
-      <template v-slot:activator>
-        <v-btn
-          v-model="pmtoolsBtns"
-          color="brown darken-4"
-          dark
-          fab
-        >
-          <v-icon v-if="configBtn">fa-chevron-up</v-icon>
-          <v-icon v-else>fa-toolbox</v-icon>
-        </v-btn>
-      </template>
-      <v-badge
-        color="red"
-        overlap
-        :content='selectedpmKBs.length'
-        :value='selectedpmKBs.length'
-      >
-        <v-tooltip bottom>
-          <template v-slot:activator="{ on, attrs }">
-            <v-btn
-              v-bind="attrs" v-on="on"
-              fab
-              dark
-              small
-              color="deep-orange darken-4"
-              @click.stop='selectAllKBs'
-            >
-              <v-icon v-if='selectedpmKBs.length > 0'>far fa-circle</v-icon>
-              <v-icon v-if='selectedpmKBs.length === 0'>far fa-check-circle</v-icon>
-            </v-btn>
-          </template>
-          <span v-if='selectedpmKBs.length > 0'>清除全部選擇的知識點</span>
-          <span v-if='selectedpmKBs.length === 0'>選擇全部的知識點</span>
-        </v-tooltip>
-      </v-badge>
-      <!-- <v-badge
-        color="red"
-        overlap
-        :content='selectedpmKBs.length'
-        :value='selectedpmKBs.length'
-      >
-        <v-tooltip bottom>
-          <template v-slot:activator="{ on, attrs }">
-            <v-btn
-              v-bind="attrs" v-on="on"
-              fab
-              dark
-              small
-              color="deep-orange darken-4"
-              @click.stop='youtubeW = true'
-            >
-              <v-icon>fab fa-youtube</v-icon>
-            </v-btn>
-          </template>
-          <span>上傳到Youtube（尚未開發）</span>
-        </v-tooltip>
-      </v-badge> 本功能棄置，Youtube點數不足-->
-      <v-badge
-        color="red"
-        overlap
-        :content='selectedpmKBs.length'
-        :value='selectedpmKBs.length'
-        v-if='selectedpmKBs.length > 0'
-      >
-        <v-tooltip bottom>
-          <template v-slot:activator="{ on, attrs }">
-            <v-btn
-              v-bind="attrs" v-on="on"
-              fab
-              dark
-              small
-              color="deep-orange darken-4"
-              @click.stop='downloadW = true'
-            >
-              <v-icon>fa-file-download</v-icon>
-            </v-btn>
-          </template>
-          <span>下載最新版本</span>
-        </v-tooltip>
-      </v-badge>
-      <v-badge
-        color="red"
-        overlap
-        :content='selectedpmKBs.length'
-        :value='selectedpmKBs.length'
-        v-if='selectedpmKBs.length > 0'
-      >
-        <v-tooltip bottom>
-          <template v-slot:activator="{ on, attrs }">
-            <v-btn
-              v-bind="attrs" v-on="on"
-              fab
-              dark
-              small
-              color="deep-orange darken-4"
-              @click.stop='participantStatstics'
-            >
-              <v-icon>fa-users</v-icon>
-            </v-btn>
-          </template>
-          <span>參與者名單</span>
-        </v-tooltip>
-      </v-badge>
-      <v-badge
-        color="red"
-        overlap
-        :content='selectedpmKBs.length'
-        :value='selectedpmKBs.length'
-        v-if='selectedpmKBs.length > 0'
-      >
-        <v-tooltip bottom>
-          <template v-slot:activator="{ on, attrs }">
-            <v-btn
-              v-bind="attrs" v-on="on"
-              fab
-              dark
-              small
-              color="deep-orange darken-4"
-              @click.stop='exportKBCSV'
-            >
-              <v-icon>fa-table</v-icon>
-            </v-btn>
-          </template>
-          <span>知識點報表（就你現在篩選的知識點結果匯出成報表）</span>
-        </v-tooltip>
-      </v-badge>
-      <v-tooltip bottom>
-        <template v-slot:activator="{ on, attrs }">
-          <v-btn
-            v-bind="attrs" v-on="on"
-            fab
-            dark
-            small
-            color="deep-orange darken-4"
-            @click.stop='initW = true'
-          >
-            <v-icon>fas fa-info</v-icon>
-          </v-btn>
-        </template>
-        <span>修改預設值</span>
-      </v-tooltip>
-    </v-speed-dial>
-    <v-speed-dial v-model="filterBtns" fixed bottom right direction="left" :open-on-hover="true" transition="slide-y-reverse-transition">
-      <template v-slot:activator>
-        <v-btn
-          v-model="filterBtns"
-          color="pink"
-          dark
-          fab
-        >
-          <v-icon v-if="filterBtn">fa-chevron-up</v-icon>
-          <v-icon v-else>fa-filter</v-icon>
-        </v-btn>
-      </template>
-      <!-- <v-tooltip bottom>
-        <template v-slot:activator="{ on, attrs }">
-          <v-btn
-            v-bind="attrs" v-on="on"
-            fab
-            dark
-            small
-            color="pink darken-4"
-            @click.stop='queryHistory = !queryHistory'
-          >
-            <v-icon>fa-history</v-icon>
-          </v-btn>
-        </template>
-        <span v-if='queryHistory'>查看目前屬於你的知識點</span>
-        <span v-if='!queryHistory'>查看所有和你有關的知識點</span>
-      </v-tooltip>
-      <v-tooltip bottom>
-        <template v-slot:activator="{ on, attrs }">
-          <v-btn
-            v-bind="attrs" v-on="on"
-            fab
-            dark
-            small
-            color="pink darken-4"
-            @click.stop='sortingRule = !sortingRule'
-          >
-            <v-icon>fa-sort-numeric-down-alt</v-icon>
-          </v-btn>
-        </template>
-        <span v-if='sortingRule'>按照死線時間排序</span>
-        <span v-if='!sortingRule'>按照知識點名稱排序</span>
-      </v-tooltip> -->
-      <v-tooltip bottom v-if='!queryHistory'>
-        <template v-slot:activator="{ on, attrs }">
-          <v-btn
-            v-bind="attrs" v-on="on"
-            fab
-            dark
-            small
-            color="pink darken-4"
-            @click.stop='priviledgeVW = !priviledgeVW'
-          >
-            <v-icon>fa-user-tag</v-icon>
-          </v-btn>
-        </template>
-        開啟權限/角色過濾器
-      </v-tooltip>
-      <v-tooltip bottom>
-        <template v-slot:activator="{ on, attrs }">
-          <v-btn
-            v-bind="attrs" v-on="on"
-            fab
-            dark
-            small
-            color="pink darken-4"
-            @click.stop='stageFW = !stageFW'
-          >
-            <v-icon>fa-map-marker</v-icon>
-          </v-btn>
-        </template>
-        開啟流程過濾器
-      </v-tooltip>
-    </v-speed-dial>
-    <div v-show='showStatstics'>
-      <div class='d-flex flex-row'>
-        <tag-filter
-          class='flex-grow-1'
-          @updateTags='updateTags'
-          :mustSelected='false'
-          :single='false'
-          :selectedItem='selectedFilterTags'
-          @valueUpdated='updateFilterTag'
-          :candidatedItem='savedTags'
-          :createable='false'
-          label='請輸入過濾用的標籤（如：國中、理化）'
-        />
-        <v-btn color='indigo darken-4' class='white--text ma-1' @click="generateList">搜尋</v-btn>
-        <v-btn color="brown darken-4" class='white--text ma-1' @click="clearFilterTag">清除</v-btn>
-      </div>
-      <div class='text-body-2'>最近查詢的標籤（查詢紀錄與知識點編輯器共用，點擊後載入）</div>
-      <div class='d-flex flex-row flex-wrap ma-1'>
-        <v-chip
-          v-for='ch in queriedChapters'
-          :key="'recent'+ch" @click='addFilterTags(ch)'
-          class='ma-1'
-        >
-          {{ tagQuery(ch) }}
-        </v-chip>
-      </div>
-      <v-slider
-        label='需要統計的階段數量'
-        hint="請注意，如果你要統計的專案有6個階段，你只填了5個，這裡真的不會幫你算到第6階段"
-        min='1'
-        :max='maxStep'
-        v-model="statisticSteps"
-        thumb-label
-      ></v-slider>
-      <apexchart width="100%" height="150" type="bar" :options="chartOptions" :series="chartSeries"></apexchart>
-      <v-simple-table>
-        <template v-slot:default>
-          <thead>
-            <tr>
-              <th class='text-center' v-for='(step,n) in chartSeries' :key='"stepth" + n'>
-                <span v-if='step.name === 0'>尚未啟動</span>
-                <span v-else>{{ step.name }}</span>
-              </th>
-              <th class="text-center">
-                總計
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class='text-center' v-for='(step,n) in chartSeries' :key='"steptd" + n'>{{ step.data[0] }}</td>
-              <td>{{ convertedList.length }}</td>
-            </tr>
-          </tbody>
-        </template>
-      </v-simple-table>
+    <div class='d-flex flex-row'>
+      <v-text-field outlined clearable dense class='flex-grow-1' label='搜尋關鍵字' prepend-icon='fa-search' v-model='queryTerm' hint='系統會針對活動名稱進行關鍵字搜尋（可使用正規表達式）'></v-text-field>
+      <v-btn color='indigo darken-4' class='white--text ma-1' @click="termQuery">搜尋</v-btn>
+      <v-btn color="brown darken-4" class='white--text ma-1' @click="schemafilteredList = schemaList">清除</v-btn>
     </div>
-    <v-skeleton-loader
-      class="mx-auto"
-      type="card"
-      v-if='!dashboardPopulated'
-      width="100%"
-    ></v-skeleton-loader>
-    <v-sheet v-if='dashboardPopulated' class='pa-0 ma-0 d-flex flex-column'>
-      <div v-if='progressList.length === 0'>您目前沒有待處理的項目</div>
-      <div class='d-flex flex-row' v-if='KBLoaded'>
-        <v-text-field outlined clearable dense class='flex-grow-1' label='搜尋知識點關鍵字，可以搜科目、章節、排序、標題，輸入部分關鍵字即可' hint='支援正規表達式（可上網查詢語法），例如你可以使，用|表示OR，用(?=.*集合一)(?=.*集合二)表示AND' prepend-icon="fa-search" v-model="queryTerm"></v-text-field>
-        <v-btn color='indigo darken-4' class='white--text ma-1' @click="execSearch">搜尋</v-btn>
-        <v-btn color="brown darken-4" class='white--text ma-1' @click="clearQueryTerm">清除</v-btn>
+    <div class='blue-grey--text darken-1 text-caption'>已篩選出{{ schemafilteredList.length }}個活動，為節省資源，不會全部展現出來，往下滑會載入更多</div>
+    <v-lazy
+      :options="{
+        threshold: 0.5
+      }"
+      min-height="70"
+      transition="fade-transition"
+      v-for='item in schemafilteredList' :key='item._id'
+    >
+      <div class='d-flex flex-column' :key="item._id + 'handler'">
+        <div class='d-flex flex-row '>
+          <div class='flex-grow-1 text-left text-h6'>
+            <span v-if='item.status === 1'>[進行中]</span>
+            <span v-else>[已結束]</span>
+            {{ item.name }}
+          </div>
+          <div class='align-center flex-grow-0 flex-shrink-1 ma-0 pa-0 d-flex flex-row'>
+            <v-tooltip top v-if='isLeader(item)'>
+              <template v-slot:activator="{ on, attrs }">
+                <v-btn @click="manageMembers(item)" v-bind="attrs" v-on="on" icon>
+                  <v-icon>fa-users</v-icon>
+                </v-btn>
+              </template>
+              <span>新增／刪除組員</span>
+            </v-tooltip>
+            <v-tooltip top v-if='isSupervisor(item)'>
+              <template v-slot:activator="{ on, attrs }">
+                <v-btn @click="groupEditor(item)" v-bind="attrs" v-on="on" icon>
+                  <v-icon>fa-user-cog</v-icon>
+                </v-btn>
+              </template>
+              <span>組別管理</span>
+            </v-tooltip>
+            <v-tooltip top v-if='isSupervisor(item)'>
+              <template v-slot:activator="{ on, attrs }">
+                <v-btn @click="stageEditor(item)" v-bind="attrs" v-on="on" icon>
+                  <v-icon>fa-code-branch</v-icon>
+                </v-btn>
+              </template>
+              <span>回合管理</span>
+            </v-tooltip>
+            <v-tooltip top v-if='isSupervisor(item)'>
+              <template v-slot:activator="{ on, attrs }">
+                <v-btn @click="eventViewer(item)" v-bind="attrs" v-on="on" icon>
+                  <v-icon>fa-clipboard</v-icon>
+                </v-btn>
+              </template>
+              <span>檢視事件</span>
+            </v-tooltip>
+            <v-tooltip top>
+              <template v-slot:activator="{ on, attrs }">
+                <v-btn v-if='isSupervisor(item)' @click="queryUsers(item)" v-bind="attrs" v-on="on" icon>
+                  <v-icon>fa-money-bill-alt</v-icon>
+                </v-btn>
+                <v-btn v-else @click="assetViewer(currentUser, item)" v-bind="attrs" v-on="on" icon>
+                  <v-icon>fa-money-bill-alt</v-icon>
+                </v-btn>
+              </template>
+              <span>檢視帳本</span>
+            </v-tooltip>
+            <v-tooltip top>
+              <template v-slot:activator="{ on, attrs }">
+                <v-btn link :href='"#/reportViewer/" + item._id' v-bind="attrs" v-on="on" icon>
+                  <v-icon>fa-sign-in-alt</v-icon>
+                </v-btn>
+              </template>
+              <span>進入活動</span>
+            </v-tooltip>
+          </div>
+        </div>
+        <div class='d-flex flex-column'>
+          <div class='text-center text-caption grey--text darken-1 flex-grow-1' v-if='item.stages.length === 0'>
+            本活動沒有任何回合，點右上方樹枝圖案去增加回合吧
+          </div>
+          <v-stepper v-model="item.stepPointer" width="100%">
+            <v-stepper-header>
+              <template
+                v-for='(stage, index) in item.stages'
+              >
+                <v-stepper-step
+                  :key='stage._id'
+                  :complete="item.stepPointer > index"
+                  :step='index + 1'
+                  complete-icon='fa-check-circle'
+                  edit-icon='fa-pencil-alt'
+                >
+                  <span :class='(index + 1) === item.stepPointer ? "text--indigo darken-4" : ""'>
+                    <v-icon v-if='stage.matchPoint'>fa-bomb</v-icon>
+                    <v-icon v-if='stage.closed > 0'>fa-times-circle</v-icon>
+                    {{ stage.name }}
+                  </span>
+                </v-stepper-step>
+                <v-divider
+                  :key='"divider" + stage._id'
+                  v-if='(index + 1) !== item.stages.length'
+                ></v-divider>
+              </template>
+            </v-stepper-header>
+          </v-stepper>
+        </div>
       </div>
-      <div class='d-flex flex-lg-row flex-md-row flex-xl-row justify-space-between align-center flex-sm-column'>
-        <v-btn-toggle
-          v-model="filterHistory"
-          mandatory
-          class='ma-1'
-        >
-          <v-btn>
-            顯示當前處理階段和你有關的{{ renderList.length }}個知識點
-          </v-btn>
-          <v-btn>
-            顯示全部你曾經手以及正在處理的{{ progressList.length }}個知識點
-          </v-btn>
-        </v-btn-toggle>
-        <v-btn-toggle
-          v-model="sortingBtns"
-          mandatory
-          class='ma-1'
-        >
-          <v-btn>
-            按照死線時間先後排序
-          </v-btn>
-          <v-btn>
-            按照知識點名稱及編號排序
-          </v-btn>
-        </v-btn-toggle>
-      </div>
-      <v-lazy
-        :options="{
-          threshold: 0.5
-        }"
-        min-height="100"
-        transition="fade-transition"
-        v-for="(item,n) in renderList" :key="'KB'+n"
-      >
-        <progress-tile @events='getKBLog' @tags='openTagW' @requestUpload='openUploadW' @viewDetail='openauthDetail' @KBselected='KBupdated' :progressItem='item' :selectedItems='selectedpmKBs' />
-      </v-lazy>
-    </v-sheet>
+    </v-lazy>
   </v-sheet>
 </template>
 
-<style scoped>
-  .codecSign {
-    border: 1px solid black;
-    padding: 1px;
-  }
-</style>
-
 <script>
+// @ is an alias to /src
 import Vue from 'vue';
 import dayjs from 'dayjs';
-import duration from 'dayjs/plugin/duration';
-import { randomColor } from 'randomcolor';
-import _filter from 'lodash/filter';
-import _find from 'lodash/find';
-import _uniq from 'lodash/uniq';
-import _orderBy from 'lodash/orderBy';
-import _uniqWith from 'lodash/uniqWith';
+import _toString from 'lodash/toString';
 import _map from 'lodash/map';
-import _includes from 'lodash/includes';
-import _flatten from 'lodash/flatten';
-import _countBy from 'lodash/countBy';
-import _findIndex from 'lodash/findIndex';
-import _intersectionWith from 'lodash/intersectionWith';
-import _head from 'lodash/head';
-import _unionWith from 'lodash/unionWith';
 import _inRange from 'lodash/inRange';
-import { v4 as uuidv4 } from 'uuid';
+import _intersectionWith from 'lodash/intersectionWith';
+import _unionWith from 'lodash/unionWith';
+import _orderBy from 'lodash/orderBy';
+import _find from 'lodash/find';
+import _filter from 'lodash/filter';
+import _isEqual from 'lodash/isEqual';
 import VueApexCharts from 'vue-apexcharts';
-import prettyBytes from 'pretty-bytes';
 import Papa from 'papaparse';
+import 'vue-ctk-date-time-picker/dist/vue-ctk-date-time-picker.css';
+
 Vue.use(VueApexCharts);
 Vue.component('apexchart', VueApexCharts);
-dayjs.extend(duration);
-let files = [];
 
 export default {
-  name: 'userDashBoard',
+  name: 'userDashboard',
+  beforeDestroy () {
+    this.$socket.client.off('statusSchema', this.socketstatusSchema);
+    this.$socket.client.off('getJoined', this.socketgetJoined);
+    this.$socket.client.off('addStage', this.socketaddStage);
+    this.$socket.client.off('getStage', this.socketgetStage);
+    this.$socket.client.off('getStages', this.socketgetStages);
+    this.$socket.client.off('modStage', this.socketmodStage);
+    this.$socket.client.off('removeStage', this.socketremoveStage);
+    this.$socket.client.off('closeStage', this.socketcloseStage);
+    this.$socket.client.off('getTagUsers', this.socketgetTagUsers);
+    this.$socket.client.off('getGroups', this.socketgetGroups);
+    this.$socket.client.off('addGroup', this.socketaddGroup);
+    this.$socket.client.off('removeGroup', this.socketremoveGroup);
+    this.$socket.client.off('getLeaders', this.socketgetLeaders);
+    this.$socket.client.off('setLeader', this.socketsetLeader);
+    this.$socket.client.off('getEventLog', this.socketgetEventLog);
+    this.$socket.client.off('getPersonalAccounting', this.socketgetPersonalAccounting);
+    this.$socket.client.off('getSchemaBalance', this.socketgetSchemaBalance);
+    this.$socket.client.off('orderStages', this.socketorderStages);
+    this.$socket.client.off('getSelectedUsers', this.socketgetSupervisors);
+    this.$socket.client.off('getSchemaUsers', this.socketgetSchemaUsers);
+  },
   components: { 
     TagFilter: () => import(/* webpackChunkName: 'TagFilter', webpackPrefetch: true */ './modules/TagFilter'),
-    ProgressTile: () => import(/* webpackChunkName: 'ProgressTile', webpackPrefetch: true */ './modules/ProgressTile')
+    draggable: () => import(/* webpackChunkName: 'daraggable', webpackPrefetch: true */ 'vuedraggable'),
+    TipTap: () => import(/* webpackChunkName: 'TipTap', webpackPrefetch: true */ './modules/TipTap'),
+    VueCtkDateTimePicker: () => import(/* webpackChunkName: 'ctkPicker', webpackPrefetch: true */ 'vue-ctk-date-time-picker')
+  },
+  watch: {
+    statusFilter: function () {
+      this.termQuery();
+    },
+    stagestartDate: function () {
+      this.defaultStage.startTick = dayjs(this.stagestartDate).unix();
+    },
+    stageendDate: function () {
+      this.defaultStage.endTick = dayjs(this.stageendDate).unix();
+    },
+    'defaultStage.startTick': function () {
+      this.stagestartDate = dayjs.unix(this.defaultStage.startTick).format("YYYY-MM-DDTHH:mm");
+    },
+    'defaultStage.endTick': function () {
+      this.stageendDate = dayjs.unix(this.defaultStage.endTick).format("YYYY-MM-DDTHH:mm");
+    },
+    'defaultGroup.locked': function() {
+      this.$socket.client.emit('setLocker',{
+        gid: this.defaultGroup._id,
+        sid: this.defaultSchema._id,
+        locked: this.defaultGroup.locked
+      });
+    }
+  },
+  created () {
+    this.$emit('viewIn', {
+      text: 'Dashboard',
+      icon: 'fa-tachometer-alt',
+      module: '活動模組',
+      location: '/userDashBoard'
+    });
+    this.$socket.client.emit('getJoined');
+    this.$socket.client.on('statusSchema', this.socketstatusSchema);
+    this.$socket.client.on('getJoined', this.socketgetJoined);
+    this.$socket.client.on('getStage', this.socketgetStage);
+    this.$socket.client.on('getStages', this.socketgetStages);
+    this.$socket.client.on('addStage', this.socketaddStage);
+    this.$socket.client.on('modStage', this.socketmodStage);
+    this.$socket.client.on('closeStage', this.socketcloseStage);
+    this.$socket.client.on('removeStage', this.socketremoveStage);
+    this.$socket.client.on('getTagUsers', this.socketgetTagUsers);
+    this.$socket.client.on('getGroups', this.socketgetGroups);
+    this.$socket.client.on('addGroup', this.socketaddGroup);
+    this.$socket.client.on('removeGroup', this.socketremoveGroup);
+    this.$socket.client.on('getLeaders', this.socketgetLeaders);
+    this.$socket.client.on('setLeader', this.socketsetLeader);
+    this.$socket.client.on('getEventLog', this.socketgetEventLog);
+    this.$socket.client.on('getPersonalAccounting', this.socketgetPersonalAccounting);
+    this.$socket.client.on('getSchemaBalance', this.socketgetSchemaBalance);
+    this.$socket.client.on('orderStages', this.socketorderStages);
+    this.$socket.client.on('getSelectedUsers', this.socketgetSupervisors);
+    this.$socket.client.on('getSchemaUsers', this.socketgetSchemaUsers);
+  },
+  computed: {
+    savedTags: function () {
+      return this.$store.state.savedTags;
+    },
+    currentUser: function () {
+      return this.$store.state.currentUser;
+    }
   },
   methods: {
-    exportKBCSV: function() {
-      let oriobj = this;
-      let queryTerm = '無';
-      if(this.queryTerm !== '') {
-        queryTerm = queryTerm === '無' ? '關鍵字:' + this.queryTerm : queryTerm + '關鍵字:' + this.queryTerm;
-      }
-      if(this.selectedFilterTags.length > 0) {
-        let tags = _map(this.selectedFilterTags, (tag) => {
-          return oriobj.tagQuery(tag)+',';
-        })
-        queryTerm = queryTerm === '無' ? '過濾標籤:' + tags : queryTerm + '/過濾標籤:' + tags;
-      }
-      let output = [];
-      for(let i=0; i< this.renderList.length; i++) {
-        let item = this.renderList[i];
-        let inSelected = _find(this.selectedpmKBs, (sItem) => {
-          return sItem === item._id;
-        });
-        if(inSelected === undefined) { continue; }
-        let csName = item.currentStep > 0 ? '[' + item.stages[item.currentStep - 1].name + ']' : "無";
-        let outputItem = {
-          '知識點ID': item._id,
-          '知識點標題': item.title,
-          '隸屬科目': item.mainTag,
-          '隸屬章節': item.mainChapter,
-          '目前步驟編號': item.currentStep === -1 ? '未啟動' : item.currentStep,
-          '目前步驟名稱': csName,
-          '目前步驟審查目標數量': item.currentObjs,
-          '目前步驟完成審查目標數': item.finishedObjs
-        };
-        for(let k=0; k<this.maxStep; k++) {
-          let otStatus = '無此階段';
-          let osTime = '無此階段'
-          let oeTime = '無此階段'
-          let opTime = '無此階段'
-          if(item.stages.length > k) {
-            otStatus = item.currentStep - 1 === k ? 'dueTick' in item.stages[k] ? '已完成' : '進行中' : item.currentStep - 1 < k ? '尚未發生' : '已完成';
-            osTime = 'startTick' in item.stages[k] ? dayjs.unix(item.stages[k].startTick).format('YYYY/MM/DD HH:mm:ss') : '未設定開始時間';
-            oeTime = 'dueTick' in item.stages[k] ? dayjs.unix(item.stages[k].dueTick).format('YYYY/MM/DD HH:mm:ss') : '未設定死線時間';
-            opTime = 'passTick' in item.stages[k] ? dayjs.unix(item.stages[k].passTick).format('YYYY/MM/DD HH:mm:ss') : '未設定完成時間';
-          }
-          outputItem['第' + (k+1) + '階段執行狀態'] = otStatus;
-          outputItem['第' + (k+1) + '階段開始時間'] = osTime;
-          outputItem['第' + (k+1) + '階段死線時間'] = oeTime;
-          outputItem['第' + (k+1) + '階段完成時間'] = opTime;
-        }
-        output.push(outputItem);
-      }
-      var element = document.createElement('a');
-      element.setAttribute('href', 'data:text/plain;charset=utf-8,' + "\ufeff"+ Papa.unparse(output));
-      element.setAttribute('download', dayjs().format('YYYY/MM/DD HH:mm:ss') + "知識點狀態報表，過濾條件：" + queryTerm + ".csv");
-      element.style.display = 'none';
-      element.click();
+    balanceCSV: function() {
+      this.$socket.client.emit('getSchemaBalance', {
+        sid: this.defaultSchema._id,
+        uids: undefined,
+        usage: 2
+      });
     },
-    selectAllKBs: function() {
-      if(this.selectedpmKBs.length > 0) {
-        this.selectedpmKBs = [];
-      } else {
-        this.selectedpmKBs = _map(this.renderList, '_id');
-      }
+    socketgetSchemaUsers: function(data) {
+      this.schemaUsers = data;
+      this.userSelectorW = true;
     },
-    timeConvert: function (time) {
-      return dayjs.duration(time, 'second').format('mm分ss秒');
+    queryUsers: function(schema) {
+      this.defaultSchema = schema;
+      this.$socket.client.emit('getSchemaUsers', schema._id);
     },
-    execSearch:async function() {
-      if(this.initialized) {
-        this.initialized = false;
-        await this.generateList();
-        this.renderChart();
-        this.initialized = true;
-      }
+    arrayConverter: function(array) {
+      return _toString(array);
     },
-    socketdashBoardEventLog: function(data) {
-      this.$emit('timerOn', false);
-      this.$emit('toastPop', '知識點編審紀錄已下載，更新清單中');
-      this.eventList = data;
-      this.injectEvents(data);
-      this.$emit('toastPop', '知識點編審紀錄更新完成');
+    closeGroupW: function() {
+      this.$socket.client.emit('getGroups', {
+        sid: this.defaultSchema._id
+      });
+      this.modGroupW = false;
     },
-    socketdashboardObjectives: function(data) {
-      this.$emit('timerOn', false);
-      this.$emit('toastPop', '知識點審查目標已下載，更新清單中');
-      this.objectiveStats = data;
-      this.injectObjective(data);
-      this.$emit('toastPop', '知識點審查目標更新完成');
-    },
-    socketdashboardUnreadedVersions: function(data) {
-      this.$emit('timerOn', false);
-      this.$emit('toastPop', '知識點檔案清單已下載，更新清單中');
-      this.unreadedVersions = data;
-      this.injectVersion(data);
-      if(this.currentVersions.length > 0) {
-        let currentList = this.currentVersions;
-        this.currentVersions = [];
-        this.injectVersionW(currentList);
-      }
-      this.$emit('toastPop', '知識點檔案清單更新完成');
-    },
-    injectEvents: function(data) {
-      for(let i=0; i<data.length; i++) {
-        let event = data[i];
-        if(!('events' in data)) {
-          data.events = {
-            desc: '',
-            user: {
-              name: ''
-            },
-            tick: 0
-          }
-        }
-        let eventRender = _find(this.renderList, (item) => {
-          return item._id === event._id;
-        });
-        if(eventRender !== undefined) {
-          eventRender.eventLog = event.events;
-        }
-        let eventProgress = _find(this.progressList, (item) => {
-          return item._id === event._id;
-        });
-        if(eventProgress !== undefined) {
-          eventProgress.eventLog = event.events;
-        }
-      }
-    },
-    injectObjective: function(data) {
-      for(let i=0; i<data.length; i++) {
-        let objective = data[i];
-        let objRender = _find(this.renderList, (item) => {
-          return item._id === objective._id;
-        });
-        if(objRender !== undefined) {
-          objRender.finishedObjs = (_filter(objective.objectives, (item) => {
-                                        return ('signUser' in item)
-                                      })).length;
-          objRender.currentObjs = objective.objectives.length
-        }
-        let objProgress = _find(this.progressList, (item) => {
-          return item._id === objective._id;
-        });
-        if(objProgress !== undefined) {
-          objProgress.finishedObjs = (_filter(objective.objectives, (item) => {
-                                        return ('signUser' in item)
-                                      })).length;
-          objProgress.currentObjs = objective.objectives.length
-        }
-      }
-    },
-    injectVersion: function(data) {
-      for(let i=0; i<data.length; i++) {
-        let version = data[i];
-        let versionRender = _find(this.renderList, (item) => {
-          return item._id === version._id;
-        });
-        if(versionRender !== undefined) {
-          versionRender.unreadedVersion = version.versions.length;
-        }
-        let versionProgress = _find(this.progressList, (item) => {
-          return item._id === version._id;
-        });
-        if(versionProgress !== undefined) {
-          versionProgress.unreadedVersion = version.versions.length;
-        }
-      }
-    },
-    injectUnread: function(data) {
-      for(let i=0; i<data.length; i++) {
-        let unreadKB = data[i];
-        let readedRender = _find(this.renderList, (item) => {
-          return item._id === unreadKB._id;
-        });
-        if(readedRender !== undefined) {
-          readedRender.unreaded = unreadKB.numberOfissue;
-        }
-        let readedProgress = _find(this.progressList, (item) => {
-          return item._id === unreadKB._id;
-        });
-        if(readedProgress !== undefined) {
-          readedProgress.unreaded = unreadKB.numberOfissue;
-        }
-      }
-    },
-    addFilterTags: function(data) {
-      let selectedFilterTags = [...this.selectedFilterTags];
-      selectedFilterTags.push(data);
-      this.selectedFilterTags = _uniq(selectedFilterTags);
-    },
-    socketdashBoardUnreaded: function(data) {
-      this.$emit('timerOn', false);
-      this.$emit('toastPop', '未讀取Issue清單已下載，更新清單中');
-      this.unreadedList = data;
-      this.injectUnread(data);
-      this.$emit('toastPop', '未讀取Issue清單更新完成');
-    },
-    clearQueryTerm:async function() {
-      this.queryTerm = '';
-      await this.generateList();
-      this.renderChart();
-    },
-    clearFilterTag:async function() {
-      this.selectedFilterTags = [];
-      await this.generateList();
-      this.renderChart();
-    },
-    generateList: async function() {
-      if(this.currentUser.tags.length > 0) {
-        let now = dayjs().unix();
-        let list = [];
-        let oriobj = this;
-        this.$emit('toastPop', '整理清單中，請稍後...');
-        this.countReviewer = 0;
-        this.countVendor = 0;
-        this.countWriter = 0;
-        this.countPM = 0;
-        this.countFinal = 0;
-        if(this.selectedFilterTags.length > 0) {
-          for (let i = 0; i < this.selectedFilterTags.length; i++) {
-            let tag = this.selectedFilterTags[i];
-            let found = _filter(this.progressList, (item) => {
-              return _includes(item.tag, tag);
-            });
-            if(found.length > 0) {
-              this.queriedChapters.push(this.selectedKBTag);
-              this.queriedChapters = _uniq(this.queriedChapters);
-              localStorage.setItem('queriedChapters', JSON.stringify(this.queriedChapters));
-              list.push(found);
-            }
-          }
-          list = _flatten(list);
+    manageMembers: function(item) {
+      let defaultGroup = _filter(this.leaders, (leader) => {
+        return leader.sid === item._id;
+      });
+      if(defaultGroup.length > 0) {
+        let group = defaultGroup[0].group;
+        if(!group.locked) {
+          this.defaultSchema = item;
+          this.memberTag = [group.tag];
+          this.$socket.client.emit('getTagUsers', this.memberTag);
+          this.editGroup(group);
         } else {
-          list = this.progressList;
-        }
-        if(this.queryTerm !== '') {
-          list = _filter(list, (item) => {
-            return (new RegExp(oriobj.queryTerm, 'g')).test(item.mainTag+item.mainChapter+item.sort+item.title + item.desc);
-          });
-        }
-        for (let i = 0; i< list.length; i++) {
-          let KB = list[i];
-          KB.attention = 0;
-          KB.selected = false;
-          let chapter = _head(KB.chapter);
-          KB.mainChapter = chapter === undefined ? '' : chapter.title;
-          let mtag = _head(KB.tag);
-          let mainTag = undefined;
-          if(mtag !== undefined) {
-            mainTag = _find(this.savedTags, (tag) => {
-              return tag._id === mtag;
-            });
-          }
-          KB.mainTag = mainTag === undefined ? '' : mainTag.name;
-          KB.currentStep = (_countBy(KB.stages, {
-            current: false
-          })) === KB.stages.length ? 0 : (_findIndex(KB.stages, {
-            current: true
-          })) + 1 ;
-          for (let k = 0; k < KB.stages.length; k++) {
-            let stage = KB.stages[k];
-            stage.special = false;
-            if(!('passTick' in stage)) {
-              if(stage.current) {
-                if(stage.dueTick < dayjs().unix()) {
-                  stage.special = true;
-                }
-                KB.attention = dayjs().unix() - stage.dueTick;
-              }
-            }
-          }
-          if(KB.currentStep > 0) {
-            KB.isPM = (_intersectionWith(KB.stages[KB.currentStep - 1].pmTags, this.currentUser.tags, (cTag, uTag) => {
-              return cTag === uTag._id;
-            })).length > 0;
-            KB.isVendor = (_intersectionWith(KB.stages[KB.currentStep - 1].vendorTags, this.currentUser.tags, (cTag, uTag) => {
-              return cTag === uTag._id;
-            })).length > 0;
-            KB.isFinal = (_intersectionWith(KB.stages[KB.currentStep - 1].finalTags, this.currentUser.tags, (cTag, uTag) => {
-              return cTag === uTag._id;
-            })).length > 0;
-            KB.isWriter = (_intersectionWith(KB.stages[KB.currentStep - 1].writerTags, this.currentUser.tags, (cTag, uTag) => {
-              return cTag === uTag._id;
-            })).length > 0;
-            KB.isReviewer = (_intersectionWith(KB.stages[KB.currentStep - 1].reviewerTags, this.currentUser.tags, (cTag, uTag) => {
-              return cTag === uTag._id;
-            })).length > 0;
-            if(KB.isPM) this.countPM++;
-            if(KB.isReviewer) this.countReviewer++;
-            if(KB.isVendor) this.countVendor++;
-            if(KB.isFinal) this.countFinal++;
-            if(KB.isWriter) this.countWriter++;
-          }
-          KB.dueTick = 0;
-          let found = _find(this.selectedpmKBs, (item) => {
-            return KB._id === item;
-          });
-          if (found !== undefined) {
-            KB.selected = true;
-          }
-          KB.remainTick = KB.currentStep > 0 ? KB.stages[KB.currentStep - 1].dueTick - now: Number.MAX_SAFE_INTEGER ;
-        }
-        if(list.length > 0) {
-          if(!this.queryHistory) {
-            let result = [];
-            for (let i = 0; i < this.currentUser.tags.length; i++) {
-              let tag = this.currentUser.tags[i];
-              result.push(_filter(list, (item) => {
-                if(item.currentStep === 0) {
-                  return false;
-                } else {
-                  return _includes(_flatten([
-                          item.stages[item.currentStep - 1].pmTags,
-                          item.stages[item.currentStep - 1].reviewerTags,
-                          item.stages[item.currentStep - 1].vendorTags,
-                          item.stages[item.currentStep - 1].writerTags,
-                          item.stages[item.currentStep - 1].finalTags
-                        ]), tag._id);
-                }
-              }));
-            }
-            list = _flatten(result);
-          }
-          list = _uniqWith(list, (aKB, bKB) => {
-            return aKB._id === bKB._id;
-          });
-          if(!this.queryHistory) {
-            list = _filter(list, (KB) => {
-              if(oriobj.viewReviewer) {
-                if(KB.isReviewer) return true;
-              }
-              if(oriobj.viewPM) {
-                if(KB.isPM) return true;
-              }
-              if(oriobj.viewFinal) {
-                if(KB.isFinal) return true;
-              }
-              if(oriobj.viewWriter) {
-                if(KB.isWriter) return true;
-              }
-              if(oriobj.viewVendor) {
-                if(KB.isVendor) return true;
-              }            
-              return false;
-            });
-          }
-          if(this.stageFilter !== 0) {
-            list = _filter(list, (KB) => {
-              let filter = this.stageFilter === -1 ? 0 : this.stageFilter;
-              return KB.currentStep === filter;
-            });
-          }
-          list.sort((a, b) => {
-            let aTime = a.attention > 0 ? aTime * 100000 : Math.abs(aTime);
-            let bTime = b.attention > 0 ? bTime * 100000 : Math.abs(bTime);
-            return aTime - bTime;
-          });
-        }
-        this.convertedList = [];
-        this.renderList = [];
-        let convertedList = this.sortingRule ? _orderBy(list, ['remainTick'], ['asc']) : _orderBy(list, ['mainTag', 'sort'], ['asc', 'asc']);
-        let steps = _map(convertedList, (item) => {
-          return item.stages.length;
-        });
-        let orderedSteps = steps.sort((a, b) => {
-          return b - a;
-        });
-        this.maxStep = orderedSteps.length > 0 ? orderedSteps[0] : 5;
-        this.initialized = true;
-        this.statisticSteps = this.maxStep;
-        this.convertedList = convertedList;
-        let requestList = _map(this.progressList, (item) => {
-          return item._id;
-        });
-        let requestStages = _map(this.progressList, (item) => {
-          if(item.currentStep === 0) { return false; }
-          if(item.currentStep > 0) {
-            if(item.stages.length < item.currentStep) { return false; }
-            return item.stages[item.currentStep - 1]._id;
-          }
-        });
-        requestStages = _filter(requestStages, (item) => {
-          return item !== false;
-        });
-        window.clearTimeout(this.issueTimer);
-        window.clearTimeout(this.eventTimer);
-        window.clearTimeout(this.versionTimer);
-        window.clearTimeout(this.objectiveTimer);
-        window.clearTimeout(this.renderTimer);
-        this.issueTimer = undefined;
-        this.versionTimer = undefined;
-        this.objectiveTimer = undefined;
-        this.eventTimer = undefined;
-        this.renderTimer = undefined;
-        this.$emit('toastPop', '清單整理完成，請稍後...');
-        this.renderTimer = setTimeout(() => {
-          oriobj.renderList = convertedList;
-          if(oriobj.unreadedList.length === 0) {
-            oriobj.$emit('toastPop', '5秒後開始下載未讀取Issue清單（完成後您會在每個知識點左下方看到數量）');
-            oriobj.issueTimer = setTimeout(() => {
-              oriobj.$socket.client.emit('dashBoardUnreaded', requestList);
-            }, 5000);
-          } else {
-            oriobj.injectUnread(oriobj.unreadedList);
-          }
-          if(oriobj.eventList.length === 0) {
-            oriobj.$emit('toastPop', '3秒後開始下載知識點編審紀錄（完成後您會在每個知識點右上方看到最後一次的編審紀錄）');
-            oriobj.eventTimer = setTimeout(() => {
-              oriobj.$socket.client.emit('dashBoardEventLog', requestList);
-            }, 3000);
-          } else {
-            oriobj.injectEvents(oriobj.eventList);
-          }
-          if(oriobj.unreadedVersions.length === 0) {
-            oriobj.$emit('toastPop', '7秒後開始下載未讀取版本清單（完成後您會在每個知識點左下方看到數量）');
-            oriobj.versionTimer = setTimeout(() => {
-              oriobj.$socket.client.emit('dashboardUnreadedVersions', requestList);
-            }, 7000);
-          } else {
-            oriobj.injectVersion(oriobj.unreadedVersions);
-          }
-          if(oriobj.objectiveStats.length === 0) {
-            oriobj.$emit('toastPop', '10秒後開始下載階段目標統計（完成後您會在每個知識點左下方看到數量）');
-            oriobj.objectiveTimer = setTimeout(() => {
-              oriobj.$socket.client.emit('dashboardObjectives', requestStages);
-            }, 10000);
-          } else {
-            oriobj.injectObjective(oriobj.objectiveStats);
-          }
-        }, 10);
-      }
-    },
-    renderChart: function() {
-      let steps = [];
-      for (let i = 0; i <= this.statisticSteps; i++) {
-        steps[i] = {
-          name: i === 0 ? "尚未啟動" : "第"+ i +"階段",
-          data: [0]
-        };
-      }
-      for (let i = 0; i < this.convertedList.length; i++) {
-        let KB = this.convertedList[i];
-        if(KB.currentStep < steps.length) {
-          steps[KB.currentStep].data[0]++;
+          this.$emit('toastPop', '管理員已經鎖定這個編組了，無法變更組員！');
         }
       }
-      this.chartSeries = steps;
     },
-    closeInitW: function() {
-      this.initW = false;
-      window.localStorage.setItem('dashBoardFirstUse', JSON.stringify(false));
+    closeAssetW: function() {
+      this.assetViewerW = false;
+      this.balanceHeight = 10;
     },
-    updateTags: function() {
-      this.$emit('updateTags');
+    socketgetSupervisors: function(data) {
+      if(data.type === 0) {
+        this.savedLeaders = data.users;
+        this.savedMembers = data.users;
+      } else {
+        if(data.users.length > 0) {
+          this.loadingUser = false;
+          this.selectedUser = data.users[0];
+        }
+      }
     },
-    saveKBTag: function () {
-      this.$emit('toastPop', '新增標籤中...');
-      this.$socket.client.emit('setKBTag', this.currentKB);
+    socketgetStages: function(data) {
+      this.stageList = data;
     },
-    updateKBTag: function (val) {
-      this.currentKB.tag = val;
+    socketorderStages: function() {
+      this.$socket.client.emit('getJoined');
+    },
+    socketgetSchemaBalance: function(data) {
+      let oriobj = this;
+      if(data.usage === 1) {
+        this.balanceList = _orderBy(data.data, ['balance'], ['desc']);
+        if(this.balanceList.length > 0) {
+          this.maxBalance = this.balanceList[0];
+          this.minBalance = this.balanceList[this.balanceList.length - 1];
+          let self = _find(this.balanceList, (record) => {
+            return record.uid._id === oriobj.defaultUser._id;
+          });
+          if(self !== undefined) {
+            this.ownBalance = self;
+          }
+        }
+        this.assetViewerW = true;
+        this.renderChart();
+      } else if(data.usage === 0) {
+        this.assetMembers = data.data;
+      } else if(data.usage === 2) {
+        let exportArray = [];
+        for(let i=0; i<data.data.length; i++) {
+          let user = data.data[i];
+          exportArray.push({
+            "單位": user.uid.unit,
+            "姓名": user.uid.name,
+            "財產": user.balance
+          });
+        }
+        let output = "\ufeff"+ Papa.unparse(exportArray);
+        let element = document.createElement('a');
+        let blob = new Blob([output], { type: 'text/csv' });
+        let url = window.URL.createObjectURL(blob);
+        element.setAttribute('href', url);
+        element.setAttribute('download', "財產清單.csv");
+        element.click();
+      }
+    },
+    filterAsset: function() {
+      this.$socket.client.emit('getPersonalAccounting', {
+        sid: this.defaultSchema._id,
+        uid: this.currentUser._id,
+        assetDates: this.assetDates,
+        assetNum: this.assetNum,
+        assetKeyword: this.assetKeyword
+      });
+      this.assetLog = [];
+      this.balanceList = [];
+    },
+    socketgetPersonalAccounting: function(data) {
+      this.assetLog = data;
+      this.$socket.client.emit('getSchemaBalance', {
+        sid: this.defaultSchema._id,
+        uids: undefined,
+        usage: 1
+      });
+    },
+    assetViewer: function(uid, schema) {
+      this.userSelectorW = false;
+      this.selectedUser = undefined;
+      this.listedsUser = undefined;
+      this.schemaUsers = [];
+      let now = dayjs().format("YYYY-MM-DD");
+      if(schema !== undefined) { this.defaultSchema = schema; }
+      this.assetKeyword = "";
+      this.assetNum = 10;
+      this.assetDates = [now, now];
+      this.defaultUser = uid;
+      this.$socket.client.emit('getPersonalAccounting', {
+        sid: this.defaultSchema._id,
+        uid: this.defaultUser._id,
+        assetDates: this.assetDates,
+        assetNum: this.assetNum,
+        assetKeyword: this.assetKeyword
+      });
+      this.assetLog = [];
+      this.balanceList = [];
+    },
+    filterLog: function() {
+      this.$socket.client.emit('getEventLog', {
+        sid: this.defaultSchema._id,
+        keyword: this.eventKeyword,
+        ignore: this.eventIgnore,
+        logNum: this.eventNum,
+        logRange: this.eventsRange
+      });
+      this.schemaLog = [];
+    },
+    eventViewer: function(schema) {
+      let now = dayjs().format("YYYY-MM-DD");
+      this.defaultSchema = schema;
+      this.eventNum = 10;
+      this.eventKeyword = '';
+      this.eventsRange = [now, now];
+      this.$socket.client.emit('getEventLog', {
+        sid: this.defaultSchema._id,
+        keyword: this.eventKeyword,
+        logNum: this.eventNum,
+        logRange: this.eventsRange
+      });
+      this.schemaLog = [];
+    },
+    socketgetEventLog: function(data) {
+      this.schemaLog = data;
+      this.eventlogW = true;
+    },
+    editGroup: function(item) {
+      this.defaultGroup = item;
+      if(item.members.length > 0 || item.leaders.length > 0) {
+        this.$socket.client.emit('getSelectedUsers', {
+          users: _unionWith(item.members, item.leaders, (a, b) => {
+            return a === b;
+          }),
+          type: 0
+        });
+      }
+      this.assetMembers = [];
+      this.modGroupW = true;
+    },
+    socketsetLeader: function() {
+      this.$socket.client.emit('getGroups', {
+        sid: this.defaultSchema._id
+      });
+    },
+    socketgetLeaders: function(data) {
+      for(let i=0; i<data.length; i++) {
+        let gData = data[i];
+        let existGroup = _find(this.groupList, (group) => {
+          return group._id === gData.gid;
+        })
+        if(existGroup !== undefined) {
+          existGroup.groupLeaderNames = _map(gData.leaders, (leader) => {
+            return leader.name;
+          }, 10);
+        }
+      }
+    },
+    removeGroup: function(group) {
+      this.$socket.client.emit('removeGroup', {
+        sid: this.defaultSchema._id,
+        gid: group._id
+      });
+    },
+    socketaddGroup: function() {
+      this.$socket.client.emit('getGroups', {
+        sid: this.defaultSchema._id
+      });
+      this.$emit('toastPop', '新增完成');
+      this.addGroupW = false;
+    },
+    socketgetGroups: function(data) {
+      for(let i=0; i<data.length; i++) {
+        data[i].groupLeaderNames = "載入中...";
+      }
+      this.groupList = data;
+      this.$socket.client.emit('getLeaders', _map(this.groupList, (group) => { return group._id; }));
+      this.$emit('toastPop', '分組列表已更新');
+      if(this.isSupervisor(this.defaultSchema)) {
+        this.groupeditorW = true;
+      }
+    },
+    groupEditor: function(schema) {
+      this.defaultSchema = schema;
+      this.$socket.client.emit('getGroups', {
+        sid: this.defaultSchema._id
+      });
+    },
+    plusGroup: function() {
+      this.$socket.client.emit('addGroup', {
+        sid: this.defaultSchema._id,
+        tag: this.groupTag,
+        groupCount: this.groupCount
+      }); //取得整個分組列表
+    },
+    saveStage: function() {
+      this.$socket.client.emit('modStage', this.defaultStage);
+    },
+    socketgetStage: function(data) {
+      this.defaultStage = data;
+      this.modStageW = true;
+    },
+    getStage: function(item) {
+      this.defaultStage = item;
+      this.modStageW = true;
+    },
+    plusStage: function() {
+      this.$socket.client.emit('addStage', {
+        sid: this.defaultSchema._id,
+        order: this.stageList.length
+      });
+    },
+    closeStage: function(stage) {
+      this.$socket.client.emit('closeStage', stage);
+    },
+    removeStage: function(stage) {
+      this.$socket.client.emit('removeStage', stage);
+    },
+    stageEditor: function(schema) {
+      this.defaultSchema = schema;
+      this.stageList = schema.stages;
+      this.stageeditorW = true;
+    },
+    dateConvert: function (time) {
+      return time === 0 ? '尚未設定' : dayjs.unix(time).format('YYYY/MM/DD HH:mm:ss');
+    },
+    selectAllTags: function () {
+      if(this.selectedSchemas.length > 0) {
+        this.selectedSchemas = [];
+      } else {
+        this.selectedSchemas = _map(this.schemafilteredList, '_id');
+      }
+    },
+    socketaddStage: function (data) {
+      this.$socket.client.emit('getStage', {
+        _id: data
+      });
+      this.$emit('toastPop', '新增完成');
+    },
+    socketmodStage: function () {
+      this.$socket.client.emit('getStages', this.defaultSchema._id);
+      this.$emit('toastPop', '修改完成');
+      this.modStageW = false;
+    },
+    socketremoveGroup: function () {
+      this.$socket.client.emit('getGroups', {
+        sid: this.defaultSchema._id
+      });
+    },
+    socketcloseStage: function () {
+      this.$socket.client.emit('getStages', this.defaultSchema._id);
+      this.$emit('toastPop', '關閉完成');
+    },
+    socketremoveStage: function () {
+      this.$socket.client.emit('getStages', this.defaultSchema._id);
+      this.$emit('toastPop', '刪除完成');
+    },
+    socketstatusSchema: function () {
+      this.$socket.client.emit('getJoined');
+      this.$emit('toastPop', '修改完成');
+    },
+    socketgetJoined: function (data) {
+      let now = dayjs().unix();
+      this.schemaList = data.schemas;
+      this.supervisors= data.supervisorList;
+      this.leaders = data.leaderList;
+      for(let i=0; i<this.schemaList.length; i++) {
+        let schema = this.schemaList[i];
+        for(let k=0; k<schema.stages.length; k++) {
+          if(_inRange(now, schema.stages[k].startTick, schema.stages[k].endTick)) {
+            schema.stepPointer = k;
+          }
+        }
+      }
+      this.selectedSchemas = [];
+      this.termQuery();
+    },
+    statusSchema: function (item) {
+      this.$socket.client.emit('statusSchema', {
+        sid: item._id,
+        status: !item.status
+      });
+    },
+    termQuery: function () {
+      let oriobj = this;
+      this.schemafilteredList = this.schemaList.filter((item) => {
+        if(oriobj.statusFilter) {
+          return item.status === 1;
+        } else {
+          return item.status === 0;
+        }
+      });
+      this.schemafilteredList = this.schemafilteredList.filter((item) => {
+        let regex = new RegExp(this.queryTerm, 'g');
+        return regex.test(item.name);
+      });
+    },
+    removeSchema: function(item) {
+      this.$socket.client.emit('removeSchema', item);
+    },
+    updateleaderTag: function(value) {
+      this.leaderTag = value;
+      this.$socket.client.emit('getTagUsers', this.leaderTag);
+    },
+    updatedefaultGTag: function(value) {
+      this.defaultGroup.tag = value;
+      this.$socket.client.emit('setGroupTag',{
+        gid: this.defaultGroup._id,
+        sid: this.defaultSchema._id,
+        tag: this.defaultGroup.tag
+      });
+    },
+    updatememberTag: function(value) {
+      this.memberTag = value;
+      this.$socket.client.emit('getTagUsers', this.memberTag);
+    },
+    updatelistedsUser: function (val) {
+      this.listedsUser = val;
+      this.loadingUser = true;
+      this.$socket.client.emit('getSelectedUsers',{
+        users: [this.listedsUser],
+        type: 1
+      });
+    },
+    updategroupTag: function (val) {
+      this.groupTag = val;
+    },
+    updateleaders: function(value) {
+      this.defaultGroup.leaders = value;
+      this.$socket.client.emit('setLeader',{
+        gid: this.defaultGroup._id,
+        sid: this.defaultSchema._id,
+        leaders: this.defaultGroup.leaders
+      });
+    },
+    updatemembers: function(value) {
+      this.defaultGroup.members = value;
+      this.$socket.client.emit('setMember',{
+        gid: this.defaultGroup._id,
+        sid: this.defaultSchema._id,
+        members: this.defaultGroup.members
+      });
     },
     plusTag: function (val) {
       this.$emit('addTag', val);
     },
-    openTagW: function (item) {
-      this.currentKB = item;
-      this.tagW = true;
-    },
-    openauthDetail: function (item) {
-      this.currentKB = item;
-      this.authDetailW = true;
-    },
-    participantStatstics: function () {
-      this.$emit('toastPop', '參與者清單產生中，請稍後...');
-      this.$socket.client.emit('participantStatstics', this.selectedpmKBs);
-    },
-    KBupdated:  function (data) {
-      let found = _find(this.selectedpmKBs, (KB) => {
-        return KB === data._id;
-      });
-      if(found !== undefined) {
-        let newpmKB = _filter(this.selectedpmKBs, (item) => {
-          return item !== data._id;
-        });
-        this.selectedpmKBs = newpmKB;
-      } else {
-        this.selectedpmKBs.push(data._id);
+    fetchLeaders: function() {
+      if(this.leaderTag.length > 0) {
+        this.$socket.client.emit('getTagUsers', this.leaderTag);
       }
     },
-    openUploadW: function (data) {
-      this.currentKB = data;
-      this.$socket.client.emit('getKBVersions', data._id);
+    fetchMembers: function() {
+      if(this.memberTag.length > 0) {
+        this.$socket.client.emit('getTagUsers', this.memberTag);
+      }
     },
-    socketlistDashBoard:async function (data) {
+    updateTags: function() {
+      this.$emit('updateTags');
+    },
+    socketgetTagUsers: function(data) {
+      let leaderCheck = _isEqual(data.query, [...this.leaderTag]);
+      let memberCheck = _isEqual(data.query, [...this.memberTag]);
+      if(leaderCheck) {
+        let selectedLeader = _intersectionWith(this.savedLeaders, this.defaultGroup.leaders, (user, leader) => {
+          return user._id === leader;
+        });
+        this.savedLeaders = _unionWith(data.result, selectedLeader, (a,b) => {
+          return a._id === b._id;
+        });
+      }
+      if(memberCheck) {
+        let selectedMemeber = _intersectionWith(this.savedMembers, this.defaultGroup.members, (user, member) => {
+          return user._id === member;
+        });
+        this.savedMembers = _unionWith(data.result, selectedMemeber, (a,b) => {
+          return a._id === b._id;
+        });
+      }
+    },
+    closeStageW: function() {
+      for(let i=0; i<this.stageList.length; i++) {
+        this.stageList[i].order = i;
+      }
+      this.$socket.client.emit('orderStages', {
+        sid: this.defaultSchema._id,
+        stageList: this.stageList
+      });
+      this.stageeditorW = false;
+    },
+    isSupervisor: function(schema) {
+      return (_filter(this.supervisors, (supervisor) => {
+        return supervisor === schema._id;
+      })).length > 0;
+    },
+    isLeader: function(schema) {
+      return (_filter(this.leaders, (leader) => {
+        return leader.sid === schema._id;
+      })).length > 0;
+    },
+    queryAssets: function() {
+      this.$socket.client.emit('getSchemaBalance', {
+        sid: this.defaultSchema._id,
+        uids: _unionWith(this.defaultGroup.leaders, this.defaultGroup.members, (a, b) => {
+          return a === b;
+        }),
+        usage: 0
+      });
+    },
+    renderChart: function() {
       let oriobj = this;
-      this.$emit('timerOn', false);
-      this.$emit('toastPop', '清單下載完成，請稍後...');
-      this.lastCheckTime = dayjs().unix();
-      for(let i=0; i<data.length;i++) {
-        data[i].unreaded = 0;
-        data[i].eventLog = {
-          desc: '',
-          user: {
-            name: ''
-          },
-          tick: 0
-        };
-        data[i].unreadedVersion = 0;
-        data[i].currentObjs = 0;
-        data[i].finishedObjs = 0;
-      }
-      this.progressList = data;
-      await this.generateList();
-      this.renderChart();
-      this.dashboardPopulated = true;
-      //this.dashboardPopulated = true;
-      this.$emit('toastPop', '更新清單完成');
-      //if(this.exeUnread) {
-      /*}
-      if(this.firstRun) {
-        this.unreadW = true;
-        this.firstRun = false;
-      }*/
-      clearTimeout(this.queryTimer);
-      this.queryTimer = setTimeout(() => {
-        this.initialized = false;
-        oriobj.$emit('timerOn', true);
-        oriobj.$emit('toastPop', 'DashBoard更新中');
-        oriobj.$socket.client.emit('listDashBoard');
-      }, this.siteSettings.userCheckTime * 60 * 1000);
-      this.KBLoaded = true;
+      let chartOptions = {...this.chartOptions};
+      chartOptions.xaxis.categories = [this.maxBalance.uid.name, this.ownBalance.uid.name, this.minBalance.uid.name];
+      this.chartOptions = chartOptions;
+      this.chartSeries = [{ data: [this.maxBalance.balance, this.ownBalance.balance, this.minBalance.balance] }];
+      Vue.nextTick(() => {
+        oriobj.balanceHeight = 200;
+      })
     },
-    updateFilterTag: function (value) {
-      this.selectedFilterTags = value;
-    },
-    filterKBLog: function() {
-      this.$socket.client.emit('listKBLog', {
-        KBID: this.currentKB._id,
-        keyword: this.eventKeyword,
-        ignore: this.eventIgnore,
-        logNum: this.eventNum,
-        logRange: this.eventsRange
-      });
-      this.KBLog = [];
-    },
-    downloadKBLog: function() {
-      let output = [];
-      for(let i=0; i<this.KBLog.length; i++) {
-        let event = this.KBLog[i];
-        output.push({
-          "事件時間": this.dateConvert(event.tick),
-          "使用者": event.user.name + "(" + event.user._id + ")",
-          "事件類型": event.type,
-          "事件描述": event.desc
-        });
-      }
-      var element = document.createElement('a');
-      element.setAttribute('href', 'data:text/plain;charset=utf-8,' + "\ufeff"+ Papa.unparse(output));
-      element.setAttribute('download', dayjs().format('YYYY/MM/DD HH:mm:ss') + this.currentKB.title + "編審紀錄報表.csv");
-      element.style.display = 'none';
-      element.click();
-    },
-    getKBLog: function(KB) {
-      let now = dayjs().format("YYYY-MM-DD");
-      this.currentKB = KB;
-      this.eventNum = 10;
-      this.eventKeyword = '';
-      this.eventIgnore = true;
-      this.eventsRange = [now, now];
-      this.$socket.client.emit('listKBLog', {
-        KBID: this.currentKB._id,
-        keyword: this.eventKeyword,
-        ignore: this.eventIgnore,
-        logNum: this.eventNum,
-        logRange: this.eventsRange
-      });
-      this.KBLog = [];
-    },
-    socketlistKBLog: function(data) {
-      this.KBLog = data;
-      this.eventlogW = true;
-    },
-    dateConvert: function (time) {
-      return time === null || time === undefined ? dayjs().format('YYYY/MM/DD HH:mm:ss') : dayjs.unix(time).format('YYYY/MM/DD HH:mm:ss');
-    },
-    sockparticipantStatstics: function (data) {
-      data.proceedUsers = _uniq(data.proceedUsers);
-      let newuserData = [];
-      for(let i=0; i<data.statistics.length; i++) {
-        let userData = data.statistics[i];
-        let existuserData = _find(newuserData, (item) => {
-          return item._id === userData._id;
-        });
-        if(existuserData === undefined) {
-          newuserData.push(userData);
-        } else {
-          existuserData.finalStages = _unionWith(existuserData.finalStages, userData.finalStages);
-          existuserData.reviewerStages = _unionWith(existuserData.reviewerStages, userData.reviewerStages);
-          existuserData.pmStages = _unionWith(existuserData.pmStages, userData.pmStages);
-          existuserData.vendorStages = _unionWith(existuserData.vendorStages, userData.vendorStages);
-          existuserData.writerStages = _unionWith(existuserData.writerStages, userData.writerStages);
-        }
-      }
-      data.statistics = newuserData;
-      this.participantsDB = data;
-      this.participantW = true;
-    },
-    tagColor: function(n) {
-      return this.randomColors[n];
-    },
-    exportParticipant: function () {
-      this.$emit('toastPop', '參與者清單產生完成！');
-      let output = [];
-      for (let i = 0; i < this.participantsDB.statistics.length; i++) {
-        let user = this.participantsDB.statistics[i];
-        let pmKB = _map(user.pmStages, (item) => {
-          return item.KBID;
-        });
-        pmKB = _uniq(pmKB);
-        let reviewerKB = _map(user.reviewerStages, (item) => {
-          return item.KBID;
-        });
-        reviewerKB = _uniq(reviewerKB);
-        let writerKB = _map(user.writerStages, (item) => {
-          return item.KBID;
-        });
-        writerKB = _uniq(writerKB);
-        let vendorKB = _map(user.vendorStages, (item) => {
-          return item.KBID;
-        });
-        vendorKB = _uniq(vendorKB);
-        let finalKB = _map(user.finalStages, (item) => {
-          return item.KBID;
-        });
-        finalKB = _uniq(finalKB);
-        let outputItem = {
-          '使用者ID': user._id,
-          '參與者': user.name,
-          '服務單位': user.unit,
-          '擔任PM次數(階段別)': user.pmStages.length,
-          '擔任PM次數(知識點別)': pmKB.length,
-          '擔任審查者次數(階段別)': user.reviewerStages.length,
-          '擔任審查者次數(知識點別)': reviewerKB.length,
-          '擔任寫手次數(階段別)': user.writerStages.length,
-          '擔任寫手次數(知識點別)': writerKB.length,
-          '擔任廠商次數(階段別)': user.vendorStages.length,
-          '擔任廠商次數(知識點別)': vendorKB.length,
-          '擔任行政組次數(階段別)': user.finalStages.length,
-          '擔任行政組次數(知識點別)': finalKB.length,
-          '參與PM階段清單': _map(user.pmStages, (item) => {
-            return '[' + item.KBtitle + '|' + item.name + ']';
-          }),
-          '參與審查者階段清單': _map(user.reviewerStages, (item) => {
-            return '[' + item.KBtitle + '|' + item.name + ']';
-          }),
-          '參與寫手階段清單': _map(user.writerStages, (item) => {
-            return '[' + item.KBtitle + '|' + item.name + ']';
-          }),
-          '參與廠商階段清單': _map(user.vendorStages, (item) => {
-            return '[' + item.KBtitle + '|' + item.name + ']';
-          }),
-          '參與行政組階段清單': _map(user.finalStages, (item) => {
-            return '[' + item.KBtitle + '|' + item.name + ']';
-          }),
-        };
-        output.push(outputItem);
-      }
-      var element = document.createElement('a');
-      element.setAttribute('href', 'data:text/plain;charset=utf-8,' + "\ufeff"+ Papa.unparse(output));
-      element.setAttribute('download', dayjs().format('YYYY/MM/DD HH:mm:ss') + "參與者統計匯出報表.csv");
-      element.style.display = 'none';
-      element.click();
-    },
-    sockgetKBVersions: function (data) {
-      this.versionPopulated = true;
-      this.currentVersions = data;
-      this.$socket.client.emit('dashboardUnreadedVersions', [this.currentKB._id]);
-      this.versionComment = '';
-      this.versionW = true;
-    },
-    injectVersionW: function(data) {
-      let readedVersions = _find(this.unreadedVersions, (item) => {
-        return item._id === this.currentKB._id;
-      });
-      for(let i=0; i<data.length; i++) {
-        let currentVersion = data[i];
-        let version = readedVersions === undefined ? undefined : {}; //如果沒有回傳unreadedversion，代表整篇都讀過，不然預設值就是沒讀
-        if(readedVersions !== undefined) {
-          version = _find(readedVersions.versions, (item) => {
-            return item === currentVersion._id;
-          });
-        }
-        currentVersion.readed = version === undefined;
-        if('fileInfo' in currentVersion) {
-          currentVersion.validHeight = currentVersion.fileInfo.height >= this.siteSettings.validFormat.validHeight;
-          currentVersion.validWidth = currentVersion.fileInfo.width >= this.siteSettings.validFormat.validWidth;
-          currentVersion.validAudio = this.siteSettings.validFormat.withAudio ? currentVersion.fileInfo.hasAudio : true;
-          currentVersion.validRange = _inRange(currentVersion.fileInfo.duration, this.siteSettings.validFormat.validRange[0], this.siteSettings.validFormat.validRange[1]) || currentVersion.fileInfo.duration === this.siteSettings.validFormat.validRange[1];
-        }
-      }
-      this.currentVersions = data;
-    },
-    getlatestVersions: function () {
-      this.$socket.client.emit('getlatestVersions', {
-        limit: this.latestCount,
-        KBs: this.selectedpmKBs
-      });
-    },
-    closeVersionW: function () {
-      this.versionW = false;
-      this.versionPopulated = false;
-    },
-    deleteKBVersion: function (data) {
-      this.$socket.client.emit('deleteKBVersion', {
-        fileID: data,
-        KBID: this.currentKB._id
-      });
-    },
-    socketrequestKBVersionSlice: function (data) {
-      let oriobj = this;
-      let place = data.currentSlice * 100000;
-      let slice = files[data.uuid].file.slice(place, place + Math.min(100000, files[data.uuid].file.size - place));
-      this.uploadprogress = Math.ceil((place / files[data.uuid].file.size) * 100);
-      let nowdiff = dayjs().valueOf() - files[data.uuid].starttick;
-      this.uploadstatus = nowdiff === 0 ? '' : prettyBytes(place / (nowdiff/1000)) + '/s';
-      let fileReader = new FileReader();
-      fileReader.readAsArrayBuffer(slice);
-      fileReader.onload = () => {
-        var arrayBuffer = fileReader.result;
-        oriobj.$socket.client.emit('sendKBVersion', {
-          uid: files[data.uuid]._id,
-          uuid: data.uuid,
-          name: files[data.uuid].file.name,
-          type: files[data.uuid].file.type,
-          size: files[data.uuid].file.size,
-          comment: oriobj.versionComment,
-          data: arrayBuffer
-        });
-      };
-    },
-    socketKBVersionDeleteError: function (data) {
-      this.$emit('toastPop', '刪除檔案失敗（原因：' + data + '），請聯絡管理員');
-      this.uploadprogress = 0;
-      this.uploadstatus = '';
-    },
-    socketKBVersionUploadError: function (data) {
-      this.$emit('toastPop', '上傳失敗（原因：' + data + '），請聯絡管理員');
-      this.uploadprogress = 0;
-      this.uploadstatus = '';
-    },
-    soketKBVersionUploadDone: function (data) {
-      let oriobj = this;
-      if (data === this.currentKB._id) {
-        this.$socket.client.emit('getKBVersions', data);
-        this.versionFile = undefined;
-        this.uploadprogress = 100;
-        this.uploadstatus = '完成！';
-        this.importW = false;
-        this.statusMsg = '';
-        this.$socket.client.emit('dashboardUnreadedVersions', [data]);
-        Vue.nextTick(() => {
-          oriobj.uploadprogress = 0;
-          oriobj.uploadstatus = '';
-        });
-      }
-    },
-    socketdeleteKBVersion: function(data) {
-      if(data) {
-        this.$socket.client.emit('getKBVersions', this.currentKB._id);
-      }
-    },
-    soketsetKBTag: function (data) {
-      if(data) {
-        this.$socket.client.emit('listDashBoard');
-        this.$emit('toastPop', '新增標籤完成！');
-        this.tagW = false;
-      } else {
-        this.$emit('toastPop', '你不可以把全部的標籤都清除啦！');
-      }
-    },
-    soketgetlatestVersions: function (data) {
-      for (let i = 0; i < data.length; i++) {
-        let file = data[i];
-        this.downloadFile(file);
-      }
-    },
-    socketcreateUsersReport: function (data) {
-      this.$emit('toastPop', data);
-    },
-    downloadFile: function (file) {
-      this.$emit('downloadFile', file);
-    },
-    tagQuery: function(tag) {
-      let tagItem = _find(this.savedTags, (item) => {
-        return item._id === tag
-      });
-      return tagItem === undefined ? '' : tagItem.name;
-    }
-  },
-  watch: {
-    "currentUser.tags": async function() {
-      if(this.currentUser.tags.length > 0) {
-        if(this.progressList.length > 0) {
-          await this.generateList();
-          this.renderChart();
-          this.initialized = true;
-          this.dashboardPopulated = true;
-        }
-      }
-    },
-    showStatstics: async function () {
-      if(this.showStatstics) {
-        if(this.convertedList.length > 0) {
-          this.renderChart();
-        }
-      }
-    },
-    queryHistory: async function () {
-      if(this.initialized) {
-        this.initialized = false;
-        await this.generateList();
-        this.renderChart();
-        this.initialized = true;
-      }
-    },
-    sortingRule:async function () {
-      if(this.initialized) {
-        this.initialized = false;
-        await this.generateList();
-        this.renderChart();
-        this.initialized = true;
-      }
-    },
-    statisticSteps: function () {
-      if(this.initialized) {
-        this.initialized = false;
-        this.renderChart();
-        this.initialized = true;
-      }
-    },
-    dashBoardFirstUse: function () {
-      if(this.localLoaded) {
-        window.localStorage.setItem('dashBoardFirstUse', JSON.stringify(this.dashBoardFirstUse));
-      }
-    },
-    initStatstics: function () {
-      if(this.localLoaded) {
-        window.localStorage.setItem('initStatstics', JSON.stringify(this.initStatstics));
-      }
-      this.showStatstics = this.initStatstics;
-    },
-    initHistory: function () {
-      if(this.localLoaded) {
-        window.localStorage.setItem('initHistory', JSON.stringify(this.initHistory));
-      }
-      this.queryHistory = this.initHistory;
-    },
-    initSorting: function () {
-      if(this.localLoaded) {
-        window.localStorage.setItem('initSorting', JSON.stringify(this.initSorting));
-      }
-      this.sortingRule = this.initSorting;
-    },
-    versionFile: {
-      immediate: true,
-      handler () {
-        if (this.versionFile !== undefined) {
-          let oriobj = this;
-          let fileReader = new FileReader();
-          let slice = this.versionFile.slice(0, 100000);
-          let uuid = uuidv4();
-          files[uuid] = {
-            _id: this.currentKB._id,
-            file: this.versionFile,
-            starttick: dayjs().valueOf()
-          };
-          fileReader.readAsArrayBuffer(slice);
-          fileReader.onload = () => {
-              var arrayBuffer = fileReader.result;
-              oriobj.$socket.client.emit('sendKBVersion', {
-                uid: oriobj.versionFile._id,
-                uuid: uuid,
-                name: oriobj.versionFile.name,
-                type: oriobj.versionFile.type,
-                size: oriobj.versionFile.size,
-                comment: oriobj.versionComment.substring(0, 30),
-                data: arrayBuffer
-              });
-          };
-        }
-      }
-    }
-  },
-  computed: {
-    filterHistory: {
-      get: function() {
-        return this.queryHistory ? 1 : 0;
-      },
-      set: function(value) {
-        this.queryHistory = value === 0 ? false : true;
-      }
-    },
-    sortingBtns: {
-      get: function() {
-        return this.sortingRule ? 0 : 1;
-      },
-      set: function(value) {
-        this.sortingRule = value === 0 ? true : false;
-      }
-    },
-    currentUser: function () {
-      return this.$store.state.currentUser;
-    },
-    savedTags: function () {
-      return this.$store.state.savedTags;
-    },
-    siteSettings: function () {
-      return this.$store.state.siteSettings;
-    },
-    randomColors: function () {
-      let color = randomColor({
-          luminosity: 'dark',
-          count: 5,
-          format: 'rgb',
-          hue: this.$store.state.siteColor
-      });
-      return color;
-    },
-    filterColor: function () {
-      return this.selectedFilterTags.length > 0 || this.queryTerm !== '' || this.queryHistory === true ? '#B71C1C' : '#00B0FF';
-    }
   },
   data () {
     return {
-      downloadW: false,
-      eventsRange: [],
-      eventKeyword: '',
-      eventIgnore: true,
+      loadingUser: false,
+      selectedUser: undefined,
+      listedsUser: undefined,
+      userSelectorW: false,
+      schemaUsers: [],
+      addGroupW: false,
+      balanceHeight: 50,
+      maxBalance: {
+        uid: {
+          name: ""
+        },
+        balance: 0
+      },
+      minBalance: {
+        uid: {
+          name: ""
+        },
+        balance: 0
+      },
+      ownBalance: {
+        uid: {
+          name: ""
+        },
+        balance: 0
+      },
+      eventKeyword: "",
+      balanceList: [],
+      assetDates: [],
+      assetLog: [],
+      assetNum: 10,
+      assetKeyword: "",
+      assetViewerW: false,
+      schemaLog: [],
       eventNum: 10,
-      KBLog: [],
+      eventsRange: [],
       eventlogW: false,
-      stageFilter: 0,
-      stageFW: false,
-      KBLoaded: false,
-      priviledgeVW: false,
-      viewReviewer: true,
-      viewPM: true,
-      viewFinal: true,
-      viewWriter: true,
-      viewVendor: true,
-      countReviewer: 0,
-      countVendor: 0,
-      countPM: 0,
-      countFinal: 0,
-      countWriter: 0,
-      unreadedVersions: [],
-      issueTimer: undefined,
-      eventTimer: undefined,
-      versionTimer: undefined,
-      objectiveTimer: undefined,
-      renderTimer: undefined,
-      objectiveStats: [],
-      eventList: [],
-      renderList: [],
-      /*firstRun: true,
-      unreadW: false,
-      exeUnread: false,*/
-      unreadedList: [],
-      sortingRule: true,
-      queriedChapters: [],
-      initialized: false,
-      maxStep: 5,
-      convertedList: [],
+      modGroupW: false,
+      assetMembers: [],
+      leaderTag: [],
+      memberTag: [],
+      groupCount: 1,
+      groupTag: "",
+      stageendDate: 0,
+      stagestartDate: 0,
+      supervisors: [],
+      leaders: [],
+      groupeditorW: false,
+      stageeditorW: false,
+      savedLeaders: [],
+      savedMembers: [],
+      statusFilter: true,
+      queryTerm: '',
+      schemaList: [],
+      schemafilteredList: [],
+      modStageW: false,
+      groupList: [],
+      stageList: [],
+      defaultUser: {
+        _id: "",
+        name: ""
+      },
+      defaultSchema: {
+        _id: "",
+        tagGroupped: false
+      },
+      defaultStage: {
+        createTick: 0,
+        modTick: 0,
+        name: "",
+        desc: "",
+        startTick: 0,
+        endTick: 0,
+        order: 0,
+        value: 0,
+        sid: "",
+        matchPoint: false,
+        closed: 0
+      },
+      defaultGroup: {
+        createTick: 0,
+        modTick: 0,
+        locked: false,
+        sid: "",
+        leaders: [],
+        members: [],
+        tags: []
+      },
       chartSeries: [
         {
-          name: '0',
-          data: [0]
+          data: [100, 100, 100]
         }
       ],
       chartOptions: {
         chart: {
           type: 'bar',
-          height: 150,
-          stacked: true,
-          stackType: '100%'
+          height: 150
         },
         plotOptions: {
           bar: {
+            barHeight: '100%',
+            distributed: true,
             horizontal: true,
+            dataLabels: {
+              position: 'bottom'
+            }
           },
+        },
+        dataLabels: {
+          enabled: true,
+          textAnchor: 'start',
+          style: {
+            colors: ['#fff']
+          },
+          formatter: function (val, opt) {
+            return opt.w.globals.labels[opt.dataPointIndex] + ":  " + val
+          },
+          offsetX: 0,
+          dropShadow: {
+            enabled: true
+          }
         },
         stroke: {
           width: 1,
@@ -1952,13 +1345,11 @@ export default {
           '#577590'
         ],
         xaxis: {
-          categories: ['專案完成度'],
+          categories: ['test', 'test', 'test'],
         },
-        tooltip: {
-          y: {
-            formatter: function (val) {
-              return val + "個知識點"
-            }
+        yaxis: {
+          labels: {
+            show: false
           }
         },
         fill: {
@@ -1968,132 +1359,22 @@ export default {
           position: 'top',
           horizontalAlign: 'left',
           offsetX: 40
+        },
+        tooltip: {
+          theme: 'dark',
+          x: {
+            show: false
+          },
+          y: {
+            title: {
+              formatter: function () {
+                return ''
+              }
+            }
+          }
         }
-      },
-      statisticSteps: 1,
-      initStatstics: false,
-      initHistory: false,
-      initSorting: true,
-      initW: false,
-      dashBoardFirstUse: true,
-      localLoaded: false,
-      tagW: false,
-      authDetailW: false,
-      dashboardPopulated: false,
-      showStatstics: false,
-      latestCount: 1,
-      currentKB: {
-        _id: '',
-        title: '',
-        tag: []
-      },
-      versionComment: '',
-      uploadprogress: 0,
-      uploadstatus: '',
-      versionW: false,
-      versionPopulated: false,
-      currentVersions: [],
-      participantsDB: {
-        proceedUsers: [],
-        proceedKBs: [],
-        statistics: []
-      },
-      youtubeW: false,
-      participantW: false,
-      versionFile: undefined,
-      selectedpmKBs: [],
-      pmtoolsBtns: false,
-      queryTimer: null,
-      queryHistory: false,
-      filterBtn: false,
-      filterTags: [],
-      queryTerm: '',
-      selectedFilterTags: [],
-      progressList: []
-    };
-  },
-  beforeDestroy () {
-    this.$socket.client.off('dashboardObjectives', this.socketdashboardObjectives);
-    this.$socket.client.off('dashBoardEventLog', this.socketdashBoardEventLog);
-    this.$socket.client.off('dashBoardUnreaded', this.socketdashBoardUnreaded);
-    this.$socket.client.off('createUsersReport', this.socketcreateUsersReport);
-    this.$socket.client.off('listDashBoard', this.socketlistDashBoard);
-    this.$socket.client.off('participantStatstics', this.sockparticipantStatstics);
-    this.$socket.client.off('getKBVersions', this.sockgetKBVersions);
-    this.$socket.client.off('KBVersionUploadError', this.socketKBVersionUploadError);
-    this.$socket.client.off('KBVersionDeleteError', this.socketKBVersionDeleteError);
-    this.$socket.client.off('requestKBVersionSlice', this.socketrequestKBVersionSlice);
-    this.$socket.client.off('KBVersionUploadDone', this.soketKBVersionUploadDone);
-    this.$socket.client.off('getlatestVersions', this.soketgetlatestVersions);
-    this.$socket.client.off('setKBTag', this.soketsetKBTag);
-    this.$socket.client.off('dashboardUnreadedVersions', this.socketdashboardUnreadedVersions);
-    this.$socket.client.off('deleteKBVersion', this.socketdeleteKBVersion);
-    this.$socket.client.off('listKBLog', this.socketlistKBLog);
-    window.clearTimeout(this.queryTimer);
-    this.queryTimer = null;
-    window.clearTimeout(this.issueTimer);
-    window.clearTimeout(this.versionTimer);
-    window.clearTimeout(this.objectiveTimer);
-    window.clearTimeout(this.eventTimer);
-    this.issueTimer = undefined;
-    this.versionTimer = undefined;
-    this.objectiveTimer = undefined;
-    this.eventTimer = undefined;
-  },
-  mounted () {
-    let dashBoardFirstUse = window.localStorage.getItem('dashBoardFirstUse');
-    if(dashBoardFirstUse) {
-      this.dashBoardFirstUse = JSON.parse(dashBoardFirstUse);
+      }
     }
-    let initStatstics = window.localStorage.getItem('initStatstics');
-    if(initStatstics) {
-      this.initStatstics = JSON.parse(initStatstics);
-    }
-    let initHistory = window.localStorage.getItem('initHistory');
-    if(initHistory) {
-      this.initHistory = JSON.parse(initHistory);
-    }
-    let initSorting = window.localStorage.getItem('initSorting');
-    if(initSorting) {
-      this.initSorting = JSON.parse(initSorting);
-    }
-    if(this.dashBoardFirstUse) {
-      this.initW = true;
-    }
-    this.localLoaded = true;
-  },
-  created () {
-    this.$emit('viewIn', {
-      text: 'DashBoard',
-      icon: 'fa-tachometer-alt',
-      module: '審查模組',
-      location: '/userDashBoard'
-    });
-    this.$emit('timerOn', true);
-    this.$emit('toastPop', 'DashBoard更新中');
-    let now = dayjs().format("YYYY-MM-DD");
-    this.eventsRange = [now, now];
-    this.$socket.client.on('listKBLog', this.socketlistKBLog);
-    this.$socket.client.on('dashboardObjectives', this.socketdashboardObjectives);
-    this.$socket.client.on('dashBoardEventLog', this.socketdashBoardEventLog);
-    this.$socket.client.on('dashBoardUnreaded', this.socketdashBoardUnreaded);
-    this.$socket.client.on('createUsersReport', this.socketcreateUsersReport);
-    this.$socket.client.on('listDashBoard', this.socketlistDashBoard);
-    this.$socket.client.on('participantStatstics', this.sockparticipantStatstics);
-    this.$socket.client.on('getKBVersions', this.sockgetKBVersions);
-    this.$socket.client.on('KBVersionUploadError', this.socketKBVersionUploadError);
-    this.$socket.client.on('KBVersionDeleteError', this.socketKBVersionDeleteError);
-    this.$socket.client.on('requestKBVersionSlice', this.socketrequestKBVersionSlice);
-    this.$socket.client.on('KBVersionUploadDone', this.soketKBVersionUploadDone);
-    this.$socket.client.on('getlatestVersions', this.soketgetlatestVersions);
-    this.$socket.client.on('setKBTag', this.soketsetKBTag);
-    this.$socket.client.on('dashboardUnreadedVersions', this.socketdashboardUnreadedVersions);
-    this.$socket.client.on('deleteKBVersion', this.socketdeleteKBVersion);
-    let queriedChapters = window.localStorage.getItem('queriedChapters');
-    if(queriedChapters) {
-      this.queriedChapters = JSON.parse(queriedChapters);
-    }
-    this.$socket.client.emit('listDashBoard');
   }
 };
 </script>

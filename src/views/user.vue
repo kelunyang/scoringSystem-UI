@@ -24,7 +24,7 @@
           <div>請注意以下事項：</div>
           <ol>
             <li>你必須變更密碼，沒有密碼規則，隨便設定，但是只要你不改，你每次都會看到這個視窗</li>
-            <li>建議綁定LINE，這樣你可以收到專案進度機器人的即時通知（請不要跟機器人講話，因為根本收不到）</li>
+            <li>建議綁定LINE，這樣你可以收到進度機器人的即時通知（請不要跟機器人講話，因為根本收不到）</li>
           </ol>
         </v-card-text>
         <v-card-actions>
@@ -56,7 +56,10 @@
           <v-text-field class='flex-grow-1' outlined clearable dense prepend-icon='fa-key' type='password' label='你的新密碼' hint="如果你要設定密碼的話，請輸入您的新密碼" v-model='password' :class='firstRun'></v-text-field>
           <div class='mr-1'>{{ passwordStrength }}</div>
         </div>
-        <v-text-field outlined clearable dense prepend-icon='fa-user-alt' label='您的真實姓名' hint="事涉核銷，請務必輸入中文完整姓名" v-model='currentUser.name' :class='firstRun'></v-text-field>
+        <v-text-field outlined clearable dense prepend-icon='fa-user-alt' label='您的真實姓名' hint="請務必輸入中文完整姓名" v-model='currentUser.name' :class='firstRun' v-if='!currentUser.restricted'></v-text-field>
+        <span v-else>姓名：{{ currentUser.name }}</span>
+        <v-text-field outlined clearable dense prepend-icon='fa-building' label='單位' hint="請確實完整填寫，格示範例：臺北市立明德國中、新北市立海山高中" v-model='currentUser.unit' v-if='!currentUser.restricted'></v-text-field>
+        <span v-else>單位：{{ currentUser.unit }}</span>
         <v-select
           prepend-icon='fa-transgender-alt'
           v-model='currentUser.types'
@@ -66,13 +69,12 @@
           label='性別'
           outlined
         ></v-select>
-        <v-text-field outlined clearable dense prepend-icon='fa-building' label='您的真實服務單位' hint="請確實完整填寫，格示範例：臺北市立明德國中、新北市立海山高中" v-model='currentUser.unit'></v-text-field>
         <div class='d-flex flex-row'>
           <v-icon>fa-link</v-icon>
           <span class="text-subtitle-2 font-weight-bold">社交媒體帳號綁定</span><br />
         </div>
         <span class="text-body-1 font-weight-bold" v-if='currentUser.lineDate === 0 || currentUser.lineDate === undefined'>
-          請授權我們的機器人能用LINE Notify通知您專案進度
+          請授權機器人能用LINE Notify通知您專案進度
         </span>
         <span class="text-body-1 font-weight-bold" v-else>
           您已經於 {{ dateConvert(currentUser.lineDate) }} 綁定過了
@@ -168,13 +170,13 @@ export default {
       return '';
     },
     randomColors: function () {
-        let color = randomColor({
-            luminosity: 'dark',
-            count: this.currentUser.tags.length,
-            format: 'rgb',
-            hue: this.$store.state.siteColor
-        });
-        return color;
+      let color = randomColor({
+        luminosity: 'dark',
+        count: this.currentUser.tags.length,
+        format: 'rgb',
+        hue: this.$store.state.siteColor
+      });
+      return color;
     },
     lineAPI: function () {
       let randomNum = random.int(10000, 99999);
@@ -214,26 +216,26 @@ export default {
     }
   },
   data () {
-      return {
-        modify: false,
-        firstRunW: true,
-        lineKey: '',
-        password: '',
-        types: [
-            {
-                title: '男',
-                value: 'male'
-            },
-            {
-                title: '女',
-                value: 'female'
-            },
-            {
-                title: '不想說',
-                value: 'human'
-            }
-        ]
-      };
+    return {
+      modify: false,
+      firstRunW: true,
+      lineKey: '',
+      password: '',
+      types: [
+        {
+            title: '男',
+            value: 'male'
+        },
+        {
+            title: '女',
+            value: 'female'
+        },
+        {
+            title: '不想說',
+            value: 'human'
+        }
+      ]
+    };
   }
 };
 </script>

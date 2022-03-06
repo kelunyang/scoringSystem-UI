@@ -18,11 +18,11 @@ const router = new Router({
         import(/* webpackChunkName: 'msgMgnt', webpackPrefetch: true */ './views/messageMgnt.vue')
     },
     {
-      path: '/videoReview/:KBid',
-      name: '審查頁面',
+      path: '/reportViewer/:sid',
+      name: '專案頁面',
       props: true,
       component: () =>
-        import(/* webpackChunkName: 'videoReview', webpackPrefetch: true */ './views/videoReview.vue')
+        import(/* webpackChunkName: 'reportViewer', webpackPrefetch: true */ './views/reportViewer.vue')
     },
     {
       path: '/tagMgnt',
@@ -34,14 +34,21 @@ const router = new Router({
     {
       path: '/userDashBoard',
       name: 'DashBoard',
+      props: true,
       component: () =>
-        import(/* webpackChunkName: 'Dashboard', webpackPrefetch: true */ './views/userDashBoard.vue')
+        import(/* webpackChunkName: 'DashBoard', webpackPrefetch: true */ './views/userDashBoard.vue')
     },
     {
       path: '/userMgnt',
       name: '使用者管理',
       component: () =>
         import(/* webpackChunkName: 'userMgnt', webpackPrefetch: true */ './views/userMgnt.vue')
+    },
+    {
+      path: '/schMgnt',
+      name: '活動管理',
+      component: () =>
+        import(/* webpackChunkName: 'schMgnt', webpackPrefetch: true */ './views/schMgnt.vue')
     },
     {
       path: '/setting',
@@ -68,22 +75,10 @@ const router = new Router({
         import(/* webpackChunkName: 'info', webpackPrefetch: true */ './views/Info.vue')
     },
     {
-      path: '/createKB',
-      name: '知識點管理',
-      component: () =>
-        import(/* webpackChunkName: 'createKB', webpackPrefetch: true */ './views/createKB.vue')
-    },
-    {
       path: '/logout',
       name: '登出',
       component: () =>
           import(/* webpackChunkName: 'logout', webpackPrefetch: true */ './views/Logout.vue')
-    },
-    {
-      path: '/Chart',
-      name: '統計功能',
-      component: () =>
-          import(/* webpackChunkName: 'chart', webpackPrefetch: true */ './views/Chart.vue')
     }
   ]
 });

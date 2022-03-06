@@ -270,6 +270,18 @@
       :createable='true'
       label='請輸入授權用戶管理功能的使用者標籤'
     />
+    <div class='text-subtitle-2 font-weight-blod'>受限制的使用者標籤</div>
+    <tag-filter
+      :mustSelected='true'
+      :single='true'
+      @updateTags='updateTags'
+      @plusItem='plusTag'
+      :selectedItem='restrictTags'
+      @valueUpdated='updateRestrictTag'
+      :candidatedItem='savedTags'
+      :createable='true'
+      label='請輸入授權用戶管理功能的使用者標籤'
+    />
     <div class='text-h5 text-center pt-5 font-weight-black'>機器人巡邏參數</div>
     <v-divider inset></v-divider>
     <v-alert type='info' icon="fa-robot" outlined class='text-left'>
@@ -849,6 +861,7 @@ export default {
       this.selectedUsrTags = data.userTags;
       this.selectedflowTags = data.projectTags;
       this.selectedstatisticsTags = data.statisticsTags;
+      this.restrictTags = data.restrictTags;
       this.selectedrobotTag = data.robotTag;
       this.siteLocation = data.siteLocation;
       this.userCheckTime = data.userCheckTime;
@@ -891,6 +904,7 @@ export default {
         selectedSysTags: this.selectedSysTags,
         selectedUsrTags: this.selectedUsrTags,
         selectedflowTags: this.selectedflowTags,
+        restrictTags: this.restrictTags,
         selectedrobotTag: this.selectedrobotTag,
         selectedstatisticsTags: this.selectedstatisticsTags,
         reportDuration: this.reportDuration,
@@ -954,6 +968,9 @@ export default {
     updateRobotTag: function (value) {
       this.selectedrobotTag = value;
     },
+    updateRestrictTag: function (value) {
+      this.restrictTags = value;
+    },
     updateUsrTag: function (value) {
       this.selectedUsrTags = value;
     },
@@ -987,6 +1004,7 @@ export default {
   },
   data () {
     return {
+      restrictTags: [],
       botComment: '',
       botNum: 10,
       botAction: '',

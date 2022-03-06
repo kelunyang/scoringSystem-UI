@@ -2,15 +2,15 @@ import dayjs from 'dayjs';
 import Vue from 'vue';
 import Vuex, {Store} from "vuex";
 import _orderBy from 'lodash/orderBy';
-import VueGtag from "vue-gtag";
+//import VueGtag from "vue-gtag";
 
 Vue.config.productionTip = false;
 Vue.config.devtools = false;
 
 Vue.use(Vuex);
-Vue.use(VueGtag, {
-  config: { id: "G-HJFFVTFX4X" }  //CooC GA
-});
+/*Vue.use(VueGtag, {
+  config: { id: "" }  //GA
+});*/
 
 const store = new Store({
   state: {
@@ -50,7 +50,7 @@ const store = new Store({
       systemName: ''
     },
     savedTags: [],
-    siteColor: '#15858A',
+    siteColor: '#D3B865',
     isiOS: false,
     isIE: false,
     isSafari: false,

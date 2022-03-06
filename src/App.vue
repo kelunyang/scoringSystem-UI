@@ -56,7 +56,7 @@
           <v-toolbar-title>發生嚴重錯誤</v-toolbar-title>
         </v-toolbar>
         <v-card-text class='text-left black--text text-body-1'>
-          <div>系統發生嚴重錯誤，請複製以下訊息並聯絡管理團隊：</div>
+          <div>系統發生嚴重錯誤，請複製以下訊息並聯絡管理者：</div>
           <code>{{ JSON.stringify(fatalMsg) }}！</code>
         </v-card-text>
         <v-card-actions>
@@ -383,14 +383,14 @@
                     </template>
                     <span>查看用戶檔案</span>
                   </v-tooltip>
-                  <v-tooltip bottom>
+                  <!-- <v-tooltip bottom>
                     <template v-slot:activator="{ on, attrs }">
                       <v-btn icon @click='startDialog(user)' v-bind="attrs" v-on="on">
                         <v-icon>fa-comments</v-icon>
                       </v-btn>
                     </template>
                     <span>發送訊息</span>
-                  </v-tooltip>
+                  </v-tooltip> -->
                 </v-list-item-action>
               </v-list-item>
             </div>
@@ -1100,9 +1100,9 @@ export default {
           vis: false
         },
         {
-          icon: 'fa-network-wired',
-          title: '知識點管理',
-          path: '/createKB',
+          icon: 'fa-calendar-alt',
+          title: '活動管理',
+          path: '/schMgnt',
           items: [],
           vis: false
         },
@@ -1117,13 +1117,6 @@ export default {
           icon: 'fa-comment-alt',
           title: '系統訊息管理',
           path: '/messageMgnt',
-          items: [],
-          vis: false
-        },
-        {
-          icon: 'fa-chart-bar',
-          title: '知識點影片數據',
-          path: '/Chart',
           items: [],
           vis: false
         },
