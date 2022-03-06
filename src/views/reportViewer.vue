@@ -254,7 +254,9 @@
             minHeight="5vh"
             hint='請不要留白'
           />
-          <v-btn class='ma-1' :disabled='suggestedValue === 0' @click='submitReport'>送出報告</v-btn>
+          <div class='text-caption'>請參考下圖，自行複製你的Google文件連結，記得要開啟「檢視者」權限喔！</div>
+          <v-btn class='ma-1' :disabled='suggestedValue === 0' color='red accent-4' @click='submitReport'>送出報告</v-btn>
+          <v-img width="100%" src="@/assets/googlelink.gif" />
         </v-card-text>
       </v-card>
     </v-dialog>
@@ -423,7 +425,7 @@ import _orderBy from 'lodash/orderBy';
 import _unionWith from 'lodash/unionWith';
 import _toString from 'lodash/toString';
 import VueApexCharts from 'vue-apexcharts';
-import marked from 'marked';
+import { marked } from 'marked';
 const renderer = new marked.Renderer();
 const linkRenderer = renderer.link;
 Vue.use(VueApexCharts);

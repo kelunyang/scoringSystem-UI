@@ -35,7 +35,7 @@
     </v-dialog>
     <v-row no-gutters>
       <v-col class="text-left d-flex flex-column">
-        <v-btn color="blue darken-4" v-if='modify === true' class='white--text' link href="#/userDashBoard">修改完成了嗎？請按此進入你的知識點審查頁面（以後你也可以從右上角三條線點開進入）</v-btn>
+        <v-btn color="blue darken-4" v-if='modify === true' class='white--text' link href="#/userDashBoard">修改完成了嗎？請按此進入你的活動儀錶板（以後你也可以從右上角三條線點開進入）</v-btn>
         <v-container>
           <v-row no-gutters>
             <v-col class='flex-shrink-1'>
@@ -69,7 +69,7 @@
           label='性別'
           outlined
         ></v-select>
-        <div class='d-flex flex-row'>
+        <!-- <div class='d-flex flex-row'>
           <v-icon>fa-link</v-icon>
           <span class="text-subtitle-2 font-weight-bold">社交媒體帳號綁定</span><br />
         </div>
@@ -92,7 +92,7 @@
         <span class="text-subtitle-2 font-weight-bold">您所隸屬的使用者標籤：</span><br/>
         <div class='d-flex flex-row flex-wrap'>
           <v-chip v-for='(item, k) in currentUser.tags' :key='k' class='ma-2' :color='tagColor(k)' label text-color='white'>{{ item.name }}</v-chip>
-        </div>
+        </div> -->
         <v-btn color="red darken-4" class='white--text' @click="saveUser">儲存修改（本按鈕於畫面上下方各有一顆，任何修改請務必儲存）</v-btn>
       </v-col>
     </v-row>

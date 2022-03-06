@@ -99,7 +99,7 @@
 </template>
 
 <script>
-import marked from 'marked';
+import { marked } from 'marked';
 import dayjs from 'dayjs';
 import prettyBytes from 'pretty-bytes';
 

@@ -283,8 +283,7 @@ import { v4 as uuidv4 } from 'uuid';
 import dayjs from 'dayjs';
 import prettyBytes from 'pretty-bytes';
 import TurndownService from 'turndown';
-import marked from 'marked';
-
+import { marked } from 'marked';
 let files = [];
 
 const turndownService = new TurndownService();

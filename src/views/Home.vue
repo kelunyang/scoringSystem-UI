@@ -56,8 +56,7 @@
 <script>
 import dayjs from 'dayjs';
 import prettyBytes from 'pretty-bytes';
-import marked from 'marked';
-
+import { marked } from 'marked';
 const renderer = new marked.Renderer();
 const linkRenderer = renderer.link;
 renderer.link = (href, title, text) => {

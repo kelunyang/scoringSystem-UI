@@ -377,7 +377,7 @@ import Vue from 'vue';
 import VueClipboard from 'vue-clipboard2';
 import dayjs from 'dayjs';
 import TurndownService from 'turndown';
-import marked from 'marked';
+import { marked } from 'marked';
 import { v4 as uuidv4 } from 'uuid';
 import prettyBytes from 'pretty-bytes';
 import _find from 'lodash/find';
@@ -751,8 +751,8 @@ export default {
         selectedFeature: null,
         wishFeatures: [
           '不明確功能（其他）',
-          '前置功能編輯器（知識點編輯器）',
-          '影片編輯器（影片審查）',
+          '發送報告',
+          '發送評分',
           'DashBoard儀錶板'
         ],
         feedbackList: [],

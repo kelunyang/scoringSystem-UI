@@ -439,11 +439,7 @@
     </v-app-bar>
     <v-alert type="error" v-if='syncW' outlined icon='fas fa-plug' class='text-left'>同步連線中斷！可能是網頁剛剛開啟，連與伺服器間的同步連線尚未啟動，但如果您是使用到一半看到本訊息，請嘗試重新整理網頁（可能需要重新登入），如重複發生請聯絡管理員</v-alert>
     <v-alert type="error" outlined icon='fab fa-internet-explorer' class='text-left' v-if='isIE'>請勿使用Internet Explorer！</v-alert>
-    <v-alert type="error" outlined icon='fas fa-mobile-alt' class='text-left' v-if='isPortrait'>請勿使用直立操作！</v-alert>
-    <v-alert type="error" outlined icon='fab fa-safari' class='text-left' v-if='isSafari'>Safari瀏覽器可能會導致同步連線異常，建議不要使用！</v-alert>
-    <v-alert type="error" outlined icon='fab fa-apple' class='text-left' v-if="isiOS">
-      iOS有限度支援通知：iOS裝置<a href="https://developer.apple.com/documentation/webkitjs/canvasrenderingcontext2d/1630282-drawimage" target="_blank">本身系統限制</a>會導致「切換影片」／「手繪標記」等功能失效，您還是可以審查，但使用者體驗不佳，請注意
-    </v-alert>
+    <v-alert type="error" outlined icon='fab fa-safari' class='text-left' v-if='isSafari'>Safari瀏覽器可能會導致同步連線異常，如果遇到奇特現象請回報！</v-alert>
     <div class='pa-5 ma-0' style='width: 100vw'>
       <router-view @updateTags='updateTags' @addTag='addTag' @viewIn='changePage' @toastPop='sendToast' @timerOn='timerOn' @preventReloadDetect='preventReloadDetect' @downloadFile='downloadFile'></router-view>
     </div>
@@ -480,7 +476,7 @@ import Vue from 'vue';
 import io from 'socket.io-client';
 import VueSocketIOExt from 'vue-socket.io-extended';
 import dayjs from 'dayjs';
-import marked from 'marked';
+import { marked } from 'marked';
 import duration from 'dayjs/plugin/duration';
 import TurndownService from 'turndown';
 import { v4 as uuidv4 } from 'uuid';

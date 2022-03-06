@@ -523,7 +523,7 @@
 // @ is an alias to /src
 import Vue from 'vue';
 import TurndownService from 'turndown';
-import marked from 'marked';
+import { marked } from 'marked';
 import dayjs from 'dayjs';
 import _find from 'lodash-es/find';
 import _map from 'lodash-es/map';
