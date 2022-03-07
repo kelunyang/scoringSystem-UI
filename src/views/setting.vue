@@ -222,7 +222,7 @@
       :createable='true'
       label='請輸入授權用戶管理功能的使用者標籤'
     />
-    <div class='text-subtitle-2 font-weight-blod'>授權知識點管理功能的使用者標籤</div>
+    <div class='text-subtitle-2 font-weight-blod'>授權活動管理功能的使用者標籤</div>
     <tag-filter
       :mustSelected='true'
       :single='false'

@@ -34,15 +34,44 @@
         </v-btn>
       </v-sheet>
     </v-dialog>
-    <v-dialog v-model="falserateW" fullscreen hide-overlay transition='dialog-bottom-transition'
-    >
+    <v-dialog v-model="descW" fullscreen hide-overlay transition='dialog-bottom-transition'>
+      <v-card>
+        <v-toolbar dark color='primary'>
+          <v-btn icon dark @click='descW = false'>
+            <v-icon>fa-times</v-icon>
+          </v-btn>
+          <v-toolbar-title>
+            {{ defaultSchema.name }}的階段目標說明
+          </v-toolbar-title>
+        </v-toolbar>
+        <v-card-text class='text-left black--text text-body-1 pa-2 d-flex flex-column'>
+          <div class='text-body-1' v-html="HTMLConverter(defaultStage.desc)"></div>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+    <v-dialog v-model="googlelinkW" fullscreen hide-overlay transition='dialog-bottom-transition'>
+      <v-card>
+        <v-toolbar dark color='primary'>
+          <v-btn icon dark @click='googlelinkW = false'>
+            <v-icon>fa-times</v-icon>
+          </v-btn>
+          <v-toolbar-title>
+            說明：如何從Google文件取得可分享連結
+          </v-toolbar-title>
+        </v-toolbar>
+        <v-card-text class='text-left black--text text-body-1 pa-2 d-flex flex-column'>
+          <v-img width="100%" src="@/assets/googlelink.gif" />
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+    <v-dialog v-model="falserateW" fullscreen hide-overlay transition='dialog-bottom-transition'>
       <v-card>
         <v-toolbar dark color='primary'>
           <v-btn icon dark @click='falserateW = false'>
             <v-icon>fa-times</v-icon>
           </v-btn>
           <v-toolbar-title>
-            批改報告
+            批改階段成果
           </v-toolbar-title>
         </v-toolbar>
         <v-card-text class='text-left black--text text-body-1 pa-2 d-flex flex-column'>
@@ -78,7 +107,7 @@
             <v-icon>fa-times</v-icon>
           </v-btn>
           <v-toolbar-title>
-            檢視{{ getCoworkers(defaultReport.coworkers) }}的報告
+            檢視{{ getCoworkers(defaultReport.coworkers) }}的本階段成果
             <span v-if='defaultReport.grantedDate > 0'>(已在{{ dateConvert(defaultReport.grantedDate) }}批改，獲得{{ defaultReport.grantedValue }}點)</span>
           </v-toolbar-title>
           <v-spacer></v-spacer>
@@ -98,7 +127,7 @@
           </v-alert>
           <apexchart type="bar" width='100%' :height="scoreHeight" :options="chartOptions" :series="chartSeries"></apexchart>
           <v-btn class='ma-1' v-if='!isAuthor' v-show='enableAudit' @click='addAudit'>給予評分</v-btn>
-          <div class='text-subtitle-2 font-weight-blod'>報告內容</div>
+          <div class='text-subtitle-2 font-weight-blod'>成果內容</div>
           <v-divider></v-divider>
           <div class='text-body-1' v-html="HTMLConverter(defaultReport.content)"></div>
           <div class='text-subtitle-2 font-weight-blod'>評分列表（已有{{ defaultReport.audits.length }}份互評）</div>
@@ -120,39 +149,26 @@
                   <span v-else>[好評]</span>
                   <span>給分<span v-if='item.short' v-show='item.feedback > 0'>-</span>{{ item.value }}點</span>
                   <span> | 建立於{{ dateConvert(item.tick) }}</span>
-                  <span v-show='isAuthor' v-if='item.feedbackTick === 0'>，快去給它一個確認分吧</span>
+                  <span v-show='isAuthor' v-if='item.feedbackTick === 0'>，快去回復他的評分吧</span>
                   <span v-if='item.feedbackTick > 0'> | 已於{{ dateConvert(item.feedbackTick) }}確認為{{ item.feedback }}，預估這份評分值{{ predictScore(item.value, item.feedback, item.short) }}</span>
                 </v-list-item-subtitle>
               </v-list-item-content>
               <v-list-item-action class='d-flex flex-row'>
-                <v-tooltip bottom v-if="isSupervisor" v-show='defaultReport.gained === 0'>
-                  <template v-slot:activator="{ on, attrs }">
-                    <v-btn
-                      icon
-                      @click.stop='agreeAudit(item)'
-                      v-bind="attrs" v-on="on"
-                    >
-                      <v-icon v-if='item.confirm === 0'>fa-check</v-icon>
-                      <v-icon v-if='item.confirm > 0'>fa-times</v-icon>
-                    </v-btn>
-                  </template>
-                  <span v-if='item.confirm === 0'>確認報告</span>
-                  <span v-if='item.confirm > 0'>撤回確認</span>
-                </v-tooltip>
-                <v-tooltip bottom v-if='isAuthor' v-show='item.feedbackTick === 0'>
-                  <template v-slot:activator="{ on: tooltip }">
-                    <v-btn
-                      icon
-                      v-bind="attrs"
-                      v-on="tooltip"
-                      @click='setFeedback(item)'
-                      v-show='item.feedbackTick === 0'
-                    >
-                      <v-icon>fa-star-half-alt</v-icon>
-                    </v-btn>
-                  </template>
-                  <span>確認評分</span>
-                </v-tooltip>
+                <v-btn
+                  @click='agreeAudit(item)'
+                  v-if="isSupervisor" v-show='defaultReport.gained === 0'
+                  class='ma-1'
+                >
+                  <span v-if='item.confirm === 0'>認可評分</span>
+                  <span v-if='item.confirm > 0'>撤回認可</span>
+                </v-btn>
+                <v-btn
+                  @click='setFeedback(item)'
+                  v-if='isAuthor' v-show='item.feedbackTick === 0'
+                  class='ma-1'
+                >
+                  回復評分
+                </v-btn>
               </v-list-item-action>
             </v-list-item>
           </v-lazy>
@@ -191,7 +207,7 @@
             label='請輸入用戶名稱'
           />
           <div class='text-subtitle-2 font-weight-blod'>投入點數</div>
-          <div class='text-caption'>而這份報告的自評分為{{ defaultReport.value }}，而你的財產是{{ userBalance }}，因此你能投下去的點數不可以超過{{ auditsuggestValue }}</div>
+          <div class='text-caption'>而這份階段成果的自評分為{{ defaultReport.value }}，而你的財產是{{ userBalance }}，因此你能投下去的點數不可以超過{{ auditsuggestValue }}</div>
           <v-slider
             :label='"投入"+defaultAudit.value+"點"'
             min='0'
@@ -204,7 +220,7 @@
           <Tip-Tap
             v-model="defaultAudit.content"
             maxHeight="10vh"
-            minHeight="5vh"
+            minHeight="10vh"
             hint='請不要留白'
           />
           <v-btn class='ma-1' :disabled='defaultAudit.content === ""' v-if='defaultAudit.value > 0' @click='submitAudit'>送出評分</v-btn>
@@ -217,7 +233,7 @@
           <v-btn icon dark @click='addreportW = false'>
             <v-icon>fa-times</v-icon>
           </v-btn>
-          <v-toolbar-title>發送報告</v-toolbar-title>
+          <v-toolbar-title>發送階段成果</v-toolbar-title>
         </v-toolbar>
         <v-card-text class='pa-0 ma-0 text-left black--text text-body-1 pa-2 d-flex flex-column'>
           <v-alert outlined v-if='waitValue' type="info" icon='fa-info-circle' class='text-left'>
@@ -247,75 +263,84 @@
             v-model="defaultReport.value"
             thumb-label
           ></v-slider>
-          <div class='text-subtitle-2 font-weight-blod'>報告內容（Google文件請貼連結）</div>
+          <div class='text-subtitle-2 font-weight-blod'>成果內容（Google文件請貼連結）</div>
           <Tip-Tap
             v-model="defaultReport.content"
             maxHeight="10vh"
-            minHeight="5vh"
+            minHeight="10vh"
             hint='請不要留白'
           />
-          <div class='text-caption'>請參考下圖，自行複製你的Google文件連結，記得要開啟「檢視者」權限喔！</div>
-          <v-btn class='ma-1' :disabled='suggestedValue === 0' color='red accent-4' @click='submitReport'>送出報告</v-btn>
-          <v-img width="100%" src="@/assets/googlelink.gif" />
+          <v-btn class='ma-1 white--text' :disabled='suggestedValue === 0' color='red accent-4' @click='submitReport'>送出成果</v-btn>
+          <v-btn
+            @click='viewDesc()'
+            v-if='defaultStage._id !== undefined'
+            class='ma-1'
+          >
+            送出前最好點此再看一次階段說明喔！
+          </v-btn>
+          <v-btn
+            @click='googlelinkW = true'
+            v-if='defaultStage._id !== undefined'
+            class='ma-1'
+          >
+            按此查看如何複製Google文件的可檢視連結說明
+          </v-btn>
         </v-card-text>
       </v-card>
     </v-dialog>
-    <v-fab-transition v-if='defaultStage._id !== undefined'>
-      <v-tooltip bottom>
-        <template v-slot:activator="{ on, attrs }">
-          <v-btn
-            fab
-            dark
-            bottom
-            right
-            fixed
-            color="indigo darken-4"
-            @click.stop='addReport()'
-            v-bind="attrs" v-on="on"
-            v-show='defaultStage.closed === 0'
-          >
-            <v-icon>fa-plus</v-icon>
-          </v-btn>
-        </template>
-        <span>發布報告</span>
-      </v-tooltip>
-    </v-fab-transition>
     <v-alert outlined type="info" icon='fa-info-circle' v-if='defaultStage._id !== undefined' class='text-left'>
-      {{ defaultStage.name }}：回合倍率為{{ defaultStage.value }}倍，組員得分倍率{{ defaultSchema.memberRate }}倍，組長得分倍率{{ defaultSchema.leaderRate }}倍，實際工作者得分倍率{{ defaultSchema.workerRate }}倍，截止時間是：{{ dateConvert(defaultStage.endTick) }}，已收到{{ defaultStage.reports.length }}份報告
+      {{ defaultStage.name }}：回合倍率為{{ defaultStage.value }}倍，組員得分倍率{{ defaultSchema.memberRate }}倍，組長得分倍率{{ defaultSchema.leaderRate }}倍，實際工作者得分倍率{{ defaultSchema.workerRate }}倍，截止時間是：{{ dateConvert(defaultStage.endTick) }}，已收到{{ defaultStage.reports.length }}份階段成果
     </v-alert>
     <v-alert outlined type="info" icon='fa-info-circle' v-if='defaultStage.matchPoint' class='text-left'>
-      決勝點：本回合是按照每份報告的得分高低計算名次，得分會根據名次加成
+      決勝點：本回合是按照每份階段成果的得分高低計算名次，得分會根據名次加成
     </v-alert>
     <v-alert outlined type="error" icon='fa-skull' v-if='defaultStage.closed > 0' class='text-left'>
-      {{ dateConvert(defaultStage.closed) }}起，本回合不收報告啦！
+      {{ dateConvert(defaultStage.closed) }}起，本回合不收成果啦！
     </v-alert>
-    <div class='blue-grey--text darken-1 text-caption' v-if='defaultStage._id === undefined'>本活動共{{ defaultSchema.stages.length }}個回合，請點擊任何一個回合後點右下角繳交報告</div>
-    <v-stepper v-model="stepPointer">
-      <v-stepper-header>
-        <template
-          v-for='(stage, index) in defaultSchema.stages'
-        >
-          <v-stepper-step
-            :key='stage._id'
-            :complete="stepPointer > index"
-            :step='index + 1'
-            complete-icon='fa-check-circle'
-            edit-icon='fa-pencil-alt'
-            @click="getStage(stage)"
+    <div class='d-flex flex-column pa-1'>
+      <div class='blue-grey--text darken-1 text-caption' v-if='defaultStage._id === undefined'>本活動共{{ defaultSchema.stages.length }}個回合，請點擊任何一個回合後點右下角繳交本階段成果</div>
+      <v-stepper v-model="stepPointer">
+        <v-stepper-header>
+          <template
+            v-for='(stage, index) in defaultSchema.stages'
           >
-            <span :class='(index + 1) === stepPointer ? "text--indigo darken-4" : ""'>
-              <v-icon v-if='stage.matchPoint'>fa-bomb</v-icon>
-              {{ stage.name }}
-            </span>
-          </v-stepper-step>
-          <v-divider
-            :key='"divider" + stage._id'
-            v-if='(index + 1) !== defaultSchema.stages.length'
-          ></v-divider>
-        </template>
-      </v-stepper-header>
-    </v-stepper>
-    <div class='text-body-1' v-if='defaultStage._id !== undefined' v-html="HTMLConverter(defaultStage.desc)"></div>
+            <v-stepper-step
+              :key='stage._id'
+              :complete="stepPointer > index"
+              :step='index + 1'
+              complete-icon='fa-check-circle'
+              edit-icon='fa-pencil-alt'
+              @click="getStage(stage)"
+            >
+              <span :class='(index + 1) === stepPointer ? "text--indigo darken-4" : ""'>
+                <v-icon v-if='stage.matchPoint'>fa-bomb</v-icon>
+                {{ stage.name }}
+              </span>
+            </v-stepper-step>
+            <v-divider
+              :key='"divider" + stage._id'
+              v-if='(index + 1) !== defaultSchema.stages.length'
+            ></v-divider>
+          </template>
+        </v-stepper-header>
+      </v-stepper>
+      <v-btn
+        @click='viewDesc()'
+        class='ma-1'
+        v-if='defaultStage._id !== undefined'
+      >
+        查看本階段說明
+      </v-btn>
+      <v-btn
+        color="indigo darken-4"
+        @click='addReport()'
+        class="white--text ma-1"
+        v-if='defaultStage._id !== undefined'
+        v-show='defaultStage.closed === 0'
+      >
+        繳交本階段成果
+      </v-btn>
+    </div>
     <v-divider></v-divider>
     <v-lazy
       :options="{
@@ -340,7 +365,7 @@
         </v-badge>
         <v-list-item-content class="text-left">
           <v-list-item-title>
-            <span v-if='item.locked'>[關閉自動批改]</span>
+            <span v-if='item.locked'>[已禁止撤回和自動批改]</span>
             <span v-if='(item.tick - defaultStage.endTick) > 0'>[遲交]</span>
             繳交人：{{ getCoworkers(item.coworkers) }}
           </v-list-item-title>
@@ -351,28 +376,17 @@
           </v-list-item-subtitle>
         </v-list-item-content>
         <v-list-item-action class='d-flex flex-row'>
-          <v-tooltip bottom>
-            <template v-slot:activator="{ on, attrs }">
-              <v-btn icon v-bind="attrs" v-on="on" @click='viewReport(item)'>
-                <v-icon>fa-eye</v-icon>
-              </v-btn>
-            </template>
-            <span>檢視報告</span>
-          </v-tooltip>
-          <v-tooltip bottom v-if="isSupervisor" v-show='item.gained === 0'>
-            <template v-slot:activator="{ on, attrs }">
-              <v-btn
-                icon
-                @click.stop='lockReport(item)'
-                v-bind="attrs" v-on="on"
-              >
-                <v-icon v-if='item.locked'>fa-lock-open</v-icon>
-                <v-icon v-else>fa-lock</v-icon>
-              </v-btn>
-            </template>
-            <span v-if='item.locked'>解鎖報告（恢復自動批改）</span>
-            <span v-else>鎖住報告（禁止自動批改）</span>
-          </v-tooltip>
+          <v-btn @click='viewReport(item)' class='ma-1'>
+            檢視成果
+          </v-btn>
+          <v-btn
+            @click='lockReport(item)'
+            v-if="isSupervisor" v-show='item.gained === 0'
+             class='ma-1'
+          >
+            <span v-if='item.locked'>解鎖報告</span>
+            <span v-else>鎖住報告</span>
+          </v-btn>
           <v-menu
             offset-y
             attach
@@ -381,28 +395,22 @@
             v-if='isSupervisor || isLeader(item)'
           >
             <template v-slot:activator="{ on: menu, attrs }">
-              <v-tooltip bottom>
-                <template v-slot:activator="{ on: tooltip }">
-                  <v-btn
-                    icon
-                    v-bind="attrs"
-                    v-on="{ ...tooltip, ...menu }"
-                    v-show='item.gained === 0'
-                  >
-                    <v-icon>fas fa-trash</v-icon>
-                  </v-btn>
-                </template>
-                <span>撤銷報告</span>
-              </v-tooltip>
+              <v-btn
+                v-bind="attrs"
+                v-on="{ ...menu }"
+                v-show='item.gained === 0'
+              >
+                撤回階段成果
+              </v-btn>
             </template>
             <v-sheet class='d-flex flex-column pa-1'>
-              <div class='text-h6'>確認撤銷報告？不會退回你原本的押金喔</div>
+              <div class='text-h6'>確認撤回階段成果？不會退回你原本的押金喔</div>
               <v-btn
                 color='red accent-4'
                 class='white--text ma-1'
                 @click='revokeReport(item)'
               >
-                撤銷報告
+                確認撤回階段成果
               </v-btn>
               <div class='text-caption'>如果你只是誤觸，請隨意點擊其他地方即會關閉本對話框</div>
             </v-sheet>
@@ -561,7 +569,7 @@ export default {
       }
     },
     socketlockReport: function(status) {
-      this.$emit('toastPop', status ? '報告鎖定' : '報告解鎖');
+      this.$emit('toastPop', status ? '階段成果鎖定' : '階段成果解鎖');
       this.$socket.client.emit('getReport', this.defaultReport);
     },
     lockReport: function(item) {
@@ -773,9 +781,9 @@ export default {
       this.$socket.client.emit('rejectReport', report);
     },
     isLeader: function(report) {
-      return _filter(this.leaders, (leader) => {
+      return (_filter(this.leaders, (leader) => {
         return leader === report._id;
-      }) > 0;
+      })).length > 0;
     },
     socketgetStage: function(data) {
       this.reportList = [];
@@ -864,10 +872,15 @@ export default {
       this.savedCoworker = _filter(data, (user) => {
         return user._id !== oriobj.currentUser._id;
       });
+    },
+    viewDesc: function() {
+      this.descW = true;
     }
   },
   data () {
     return {
+      googlelinkW: false,
+      descW: false,
       userBalance: 0,
       groupGap: 0,
       previewReport: 0,

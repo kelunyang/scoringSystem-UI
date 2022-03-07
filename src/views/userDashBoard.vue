@@ -1,5 +1,65 @@
 <template>
   <v-sheet>
+    <v-dialog v-model="lonerW" fullscreen hide-overlay transition='dialog-bottom-transition'>
+      <v-card>
+        <v-toolbar dark color='primary'>
+          <v-btn icon dark @click='lonerW = false'>
+            <v-icon>fa-times</v-icon>
+          </v-btn>
+          <v-toolbar-title>檢查沒有組的人</v-toolbar-title>
+        </v-toolbar>
+        <v-card-text class='text-left black--text text-body-1 pa-2 d-flex flex-column'>
+          <v-text-field label='關鍵字（可搜尋用戶名）' hint='支援正規表達式，用|表示OR，用(?=.*集合一)(?=.*集合二)表示AND' outlined clearable dense v-model='lonerKeyword'></v-text-field>
+          <tag-filter
+            @updateTags='updateTags'
+            :mustSelected='false'
+            :single='false'
+            :selectedItem='lonerTags'
+            @valueUpdated='updatelonerTag'
+            :candidatedItem='savedTags'
+            :createable='false'
+            label='選擇你想查詢的歸屬標籤'
+          />
+          <v-btn
+            class='white--text ma-1'
+            @click='queryLoner()'
+            color='indigo darken-4'
+          >
+            查詢沒有組的人
+          </v-btn>
+          <div class='text-caption text-center' v-if='loners.length === 0'>你查詢的範圍都有組囉</div>
+          <v-simple-table v-if='loners.length > 0'>
+            <template v-slot:default>
+              <thead>
+                <tr>
+                  <th class="text-left">
+                    姓名
+                  </th>
+                  <th class="text-left">
+                    單位
+                  </th>
+                  <th class="text-left">
+                    標籤
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="loner in loners"
+                  :key="loner._id"
+                >
+                  <td>
+                    {{ loner.name }}
+                  </td>
+                  <td>{{ loner.unit }}</td>
+                  <td>{{ tagName(loner.tags) }}</td>
+                </tr>
+              </tbody>
+            </template>
+          </v-simple-table>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
     <v-dialog
       v-model="userSelectorW"
       persistent
@@ -285,15 +345,13 @@
         <v-card-text class='pa-0 ma-0 text-left black--text text-body-1'>
           <v-container class='pa-5'>
             <v-row class='d-flex flex-row'>
-              <v-col>
-                <v-tooltip bottom>
-                  <template v-slot:activator="{ on, attrs }">
-                    <v-btn icon v-bind="attrs" v-on="on" @click='addGroupW = true'>
-                      <v-icon>fa-plus</v-icon>
-                    </v-btn>
-                  </template>
-                  <span>新增分組</span>
-                </v-tooltip>                    
+              <v-col class='d-flex flex-row'>
+                <v-btn @click='addGroupW = true'>
+                  新增分組
+                </v-btn>
+                <v-btn @click='checkLoner()'>
+                  檢查無組別者
+                </v-btn>                 
               </v-col>
             </v-row>
             <v-row>
@@ -550,89 +608,63 @@
             <span v-else>[已結束]</span>
             {{ item.name }}
           </div>
-          <div class='align-center flex-grow-0 flex-shrink-1 ma-0 pa-0 d-flex flex-row'>
-            <v-tooltip top v-if='isLeader(item)'>
-              <template v-slot:activator="{ on, attrs }">
-                <v-btn @click="manageMembers(item)" v-bind="attrs" v-on="on" icon>
-                  <v-icon>fa-users</v-icon>
-                </v-btn>
-              </template>
-              <span>新增／刪除組員</span>
-            </v-tooltip>
-            <v-tooltip top v-if='isSupervisor(item)'>
-              <template v-slot:activator="{ on, attrs }">
-                <v-btn @click="groupEditor(item)" v-bind="attrs" v-on="on" icon>
-                  <v-icon>fa-user-cog</v-icon>
-                </v-btn>
-              </template>
-              <span>組別管理</span>
-            </v-tooltip>
-            <v-tooltip top v-if='isSupervisor(item)'>
-              <template v-slot:activator="{ on, attrs }">
-                <v-btn @click="stageEditor(item)" v-bind="attrs" v-on="on" icon>
-                  <v-icon>fa-code-branch</v-icon>
-                </v-btn>
-              </template>
-              <span>回合管理</span>
-            </v-tooltip>
-            <v-tooltip top v-if='isSupervisor(item)'>
-              <template v-slot:activator="{ on, attrs }">
-                <v-btn @click="eventViewer(item)" v-bind="attrs" v-on="on" icon>
-                  <v-icon>fa-clipboard</v-icon>
-                </v-btn>
-              </template>
-              <span>檢視事件</span>
-            </v-tooltip>
-            <v-tooltip top>
-              <template v-slot:activator="{ on, attrs }">
-                <v-btn v-if='isSupervisor(item)' @click="queryUsers(item)" v-bind="attrs" v-on="on" icon>
-                  <v-icon>fa-money-bill-alt</v-icon>
-                </v-btn>
-                <v-btn v-else @click="assetViewer(currentUser, item)" v-bind="attrs" v-on="on" icon>
-                  <v-icon>fa-money-bill-alt</v-icon>
-                </v-btn>
-              </template>
-              <span>檢視帳本</span>
-            </v-tooltip>
-            <v-tooltip top>
-              <template v-slot:activator="{ on, attrs }">
-                <v-btn link :href='"#/reportViewer/" + item._id' v-bind="attrs" v-on="on" icon>
-                  <v-icon>fa-sign-in-alt</v-icon>
-                </v-btn>
-              </template>
-              <span>進入活動</span>
-            </v-tooltip>
-          </div>
         </div>
         <div class='d-flex flex-column'>
           <div class='text-center text-caption grey--text darken-1 flex-grow-1' v-if='item.stages.length === 0'>
-            本活動沒有任何回合，點右上方樹枝圖案去增加回合吧
+            本活動沒有任何回合<span v-if='isSupervisor(item)'>，點右上方樹枝圖案去增加回合吧</span>
           </div>
-          <v-stepper v-model="item.stepPointer" width="100%">
-            <v-stepper-header>
-              <template
-                v-for='(stage, index) in item.stages'
-              >
-                <v-stepper-step
-                  :key='stage._id'
-                  :complete="item.stepPointer > index"
-                  :step='index + 1'
-                  complete-icon='fa-check-circle'
-                  edit-icon='fa-pencil-alt'
-                >
-                  <span :class='(index + 1) === item.stepPointer ? "text--indigo darken-4" : ""'>
-                    <v-icon v-if='stage.matchPoint'>fa-bomb</v-icon>
-                    <v-icon v-if='stage.closed > 0'>fa-times-circle</v-icon>
-                    {{ stage.name }}
-                  </span>
-                </v-stepper-step>
-                <v-divider
-                  :key='"divider" + stage._id'
-                  v-if='(index + 1) !== item.stages.length'
-                ></v-divider>
-              </template>
-            </v-stepper-header>
-          </v-stepper>
+          <div class='d-flex flex-row'>
+            <div class='flex-grow-1 pa-0 flex-shrink-0'>
+              <v-stepper v-model="item.stepPointer" width="100%">
+                <v-stepper-header>
+                  <template
+                    v-for='(stage, index) in item.stages'
+                  >
+                    <v-stepper-step
+                      :key='stage._id'
+                      :complete="item.stepPointer > index"
+                      :step='index + 1'
+                      complete-icon='fa-check-circle'
+                      edit-icon='fa-pencil-alt'
+                    >
+                      <span :class='(index + 1) === item.stepPointer ? "text--indigo darken-4" : ""'>
+                        <v-icon v-if='stage.matchPoint'>fa-bomb</v-icon>
+                        <v-icon v-if='stage.closed > 0'>fa-times-circle</v-icon>
+                        {{ stage.name }}
+                      </span>
+                    </v-stepper-step>
+                    <v-divider
+                      :key='"divider" + stage._id'
+                      v-if='(index + 1) !== item.stages.length'
+                    ></v-divider>
+                  </template>
+                </v-stepper-header>
+              </v-stepper>
+            </div>
+            <div class='d-flex flex-row flex-wrap align-center flex-grow-0 flex-shrink-1'>
+              <v-btn v-if='isLeader(item)' @click="manageMembers(item)" class='ma-1'>
+                新增／刪除組員
+              </v-btn>
+              <v-btn v-if='isSupervisor(item)' @click="groupEditor(item)" class='ma-1'>
+                組別管理
+              </v-btn>
+              <v-btn v-if='isSupervisor(item)' @click="stageEditor(item)" class='ma-1'>
+                回合管理
+              </v-btn>
+              <v-btn v-if='isSupervisor(item)' @click="eventViewer(item)" class='ma-1'>
+                檢視事件
+              </v-btn>
+              <v-btn v-if='isSupervisor(item)' @click="queryUsers(item)" class='ma-1'>
+                檢視帳本
+              </v-btn>
+              <v-btn v-else @click="assetViewer(currentUser, item)" class='ma-1'>
+                檢視帳本
+              </v-btn>
+              <v-btn color="red darken-4" link :href='"#/reportViewer/" + item._id' class='ma-1 white--text'>
+                進入活動
+              </v-btn>
+            </div>
+          </div>
         </div>
       </div>
     </v-lazy>
@@ -682,6 +714,7 @@ export default {
     this.$socket.client.off('orderStages', this.socketorderStages);
     this.$socket.client.off('getSelectedUsers', this.socketgetSupervisors);
     this.$socket.client.off('getSchemaUsers', this.socketgetSchemaUsers);
+    this.$socket.client.off('getLoner', this.socketgetLoner);
   },
   components: { 
     TagFilter: () => import(/* webpackChunkName: 'TagFilter', webpackPrefetch: true */ './modules/TagFilter'),
@@ -741,6 +774,7 @@ export default {
     this.$socket.client.on('orderStages', this.socketorderStages);
     this.$socket.client.on('getSelectedUsers', this.socketgetSupervisors);
     this.$socket.client.on('getSchemaUsers', this.socketgetSchemaUsers);
+    this.$socket.client.on('getLoner', this.socketgetLoner);
   },
   computed: {
     savedTags: function () {
@@ -751,6 +785,25 @@ export default {
     }
   },
   methods: {
+    socketgetLoner: function(loners) {
+      this.loners = loners;
+    },
+    updatelonerTag: function(value) {
+      this.lonerTags = value;
+    },
+    tagName: function(tags) {
+      let oriobj = this;
+      return _toString(_map(tags, (tag) => {
+        let nameTag = _filter(oriobj.savedTags, (stag) => {
+          return stag._id === tag;
+        });
+        if(nameTag.length > 0) {
+          return nameTag[0].name;
+        } else {
+          return "";
+        }
+      }));
+    },
     balanceCSV: function() {
       this.$socket.client.emit('getSchemaBalance', {
         sid: this.defaultSchema._id,
@@ -1208,9 +1261,24 @@ export default {
         oriobj.balanceHeight = 200;
       })
     },
+    checkLoner: function() {
+      this.loners = [];
+      this.lonerW = true;
+    },
+    queryLoner: function() {
+      this.$socket.client.emit('getLoner', {
+        sid: this.defaultSchema._id,
+        keywords: this.lonerKeyword,
+        tags: this.lonerTags
+      });
+    }
   },
   data () {
     return {
+      lonerKeyword: "",
+      lonerTags: [],
+      lonerW: false,
+      loners: [],
       loadingUser: false,
       selectedUser: undefined,
       listedsUser: undefined,
