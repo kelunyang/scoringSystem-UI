@@ -194,6 +194,14 @@
                     v-model="defaultSchema.workerRate"
                     thumb-label
                   ></v-slider>
+                  <div class='text-subtitle-2 font-weight-blod'>評分做空獎勵倍率</div>
+                  <v-slider
+                    :label='"獎勵倍率為[" + defaultSchema.shortBonus + "倍]"'
+                    :min='1'
+                    :max='10'
+                    v-model="defaultSchema.shortBonus"
+                    thumb-label
+                  ></v-slider>
                   <div class='text-subtitle-2 font-weight-blod'>自動評分啟動標準（當你的組數小於你設定的值的時候，會改用組數）</div>
                   <v-slider
                     :label='"["+Math.floor(defaultSchema.gapRate * 100)+"%]的組評分就會自動評分"'

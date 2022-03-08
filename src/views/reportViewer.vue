@@ -124,7 +124,7 @@
             這回合是決勝點，會關閉自動評分，最終得分會把點數在乘上名次（按照評分結果決定）
           </v-alert>
           <v-alert outlined type="info" icon='fa-info-circle' class='text-left'>
-            收到並完成回復{{ groupGap }}份評分後會啟動自動評分（並關閉互評），現在已經收到{{ defaultReport.audits.length }}份，快來評分吧！
+            <span v-if='falseAudit'>這份報告有負評，已關閉自動評分</span><span v-else>收到並完成回復{{ groupGap }}份評分後會啟動自動評分（並關閉互評）</span>，現在已經收到{{ defaultReport.audits.length }}份評分，<span v-if='isAuthor'>你可以確認對方的評分是否正確</span><span v-else>快來給這份報告一個評分吧！</span>
           </v-alert>
           <apexchart type="bar" width='100%' :height="scoreHeight" :options="chartOptions" :series="chartSeries"></apexchart>
           <v-btn class='ma-1' v-if='!isAuthor' v-show='enableAudit' @click='addAudit'>給予評分</v-btn>
@@ -165,7 +165,7 @@
                 </v-btn>
                 <v-btn
                   @click='setFeedback(item)'
-                  v-if='isAuthor' v-show='item.feedbackTick === 0'
+                  v-if='isAuthor' v-show='acceptFeedback(item)'
                   class='ma-1'
                 >
                   回復評分
@@ -194,7 +194,7 @@
           <div class='text-subtitle-2 font-weight-blod'>好評／負評</div>
           <v-switch
             v-model="defaultAudit.short"
-            label="我要給負評"
+            :label="'我要給負評（負評成功積點放大' + defaultSchema.shortBonus + '倍）'"
           ></v-switch>
           <div class='text-subtitle-2 font-weight-blod'>共同作者</div>
           <tag-filter
@@ -511,7 +511,17 @@ export default {
       if(this.auditW) {
         this.$socket.client.emit('previewAudit', {
           report: this.defaultReport,
-          value: this.defaultAudit.value
+          value: this.defaultAudit.value,
+          short: this.defaultAudit.short
+        });
+      }
+    },
+    'defaultAudit.short': function () {
+      if(this.auditW) {
+        this.$socket.client.emit('previewAudit', {
+          report: this.defaultReport,
+          value: this.defaultAudit.value,
+          short: this.defaultAudit.short
         });
       }
     },
@@ -547,6 +557,14 @@ export default {
     }
   },
   methods: {
+    acceptFeedback: function(audit) {
+      if(this.defaultReport.gained === 0) {
+        if(audit.feedbackTick === 0) {
+          return true;
+        }
+      }
+      return false;
+    },
     getConfirmed: function() {
       return (_filter(this.defaultReport.audits, (audit) => {
         return audit.confirm > 0;

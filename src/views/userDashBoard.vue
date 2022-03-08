@@ -93,7 +93,7 @@
         <v-btn
           class='white--text ma-1'
           color='red darken-4'
-          @click='userSelectorW = false'
+          @click='closeuserquery()'
         >
           關閉對話框
         </v-btn>
@@ -548,14 +548,9 @@
                           {{ member.balance }}
                         </td>
                         <td class='text-center'>
-                          <v-tooltip top>
-                            <template v-slot:activator="{ on, attrs }">
-                              <v-btn @click="assetViewer(member.uid, undefined)" v-bind="attrs" v-on="on" icon>
-                                <v-icon>fa-money-bill-alt</v-icon>
-                              </v-btn>
-                            </template>
-                            <span>檢視帳本</span>
-                          </v-tooltip>
+                          <v-btn @click="assetViewer(member.uid, undefined)">
+                            檢視帳本
+                          </v-btn>
                         </td>
                       </tr>
                     </tbody>
@@ -617,57 +612,55 @@
           <div class='text-center text-caption grey--text darken-1 flex-grow-1' v-if='item.stages.length === 0'>
             本活動沒有任何回合<span v-if='isSupervisor(item)'>，點右上方樹枝圖案去增加回合吧</span>
           </div>
-          <div class='d-flex flex-row'>
-            <div class='flex-grow-1 pa-0 flex-shrink-0'>
-              <v-stepper v-model="item.stepPointer" width="100%">
-                <v-stepper-header>
-                  <template
-                    v-for='(stage, index) in item.stages'
+          <div class='ma-1'>
+            <v-stepper v-model="item.stepPointer" width="100%">
+              <v-stepper-header>
+                <template
+                  v-for='(stage, index) in item.stages'
+                >
+                  <v-stepper-step
+                    :key='stage._id'
+                    :complete="item.stepPointer > index"
+                    :step='index + 1'
+                    complete-icon='fa-check-circle'
+                    edit-icon='fa-pencil-alt'
                   >
-                    <v-stepper-step
-                      :key='stage._id'
-                      :complete="item.stepPointer > index"
-                      :step='index + 1'
-                      complete-icon='fa-check-circle'
-                      edit-icon='fa-pencil-alt'
-                    >
-                      <span :class='(index + 1) === item.stepPointer ? "text--indigo darken-4" : ""'>
-                        <v-icon v-if='stage.matchPoint'>fa-bomb</v-icon>
-                        <v-icon v-if='stage.closed > 0'>fa-times-circle</v-icon>
-                        {{ stage.name }}
-                      </span>
-                    </v-stepper-step>
-                    <v-divider
-                      :key='"divider" + stage._id'
-                      v-if='(index + 1) !== item.stages.length'
-                    ></v-divider>
-                  </template>
-                </v-stepper-header>
-              </v-stepper>
-            </div>
-            <div class='d-flex flex-row flex-wrap align-center flex-grow-0 flex-shrink-1'>
-              <v-btn v-if='isLeader(item)' @click="manageMembers(item)" class='ma-1'>
-                新增／刪除組員
-              </v-btn>
-              <v-btn v-if='isSupervisor(item)' @click="groupEditor(item)" class='ma-1'>
-                組別管理
-              </v-btn>
-              <v-btn v-if='isSupervisor(item)' @click="stageEditor(item)" class='ma-1'>
-                回合管理
-              </v-btn>
-              <v-btn v-if='isSupervisor(item)' @click="eventViewer(item)" class='ma-1'>
-                檢視事件
-              </v-btn>
-              <v-btn v-if='isSupervisor(item)' @click="queryUsers(item)" class='ma-1'>
-                檢視帳本
-              </v-btn>
-              <v-btn v-else @click="assetViewer(currentUser, item)" class='ma-1'>
-                檢視帳本
-              </v-btn>
-              <v-btn color="red darken-4" link :href='"#/reportViewer/" + item._id' class='ma-1 white--text'>
-                進入活動
-              </v-btn>
-            </div>
+                    <span :class='(index + 1) === item.stepPointer ? "text--indigo darken-4" : ""'>
+                      <v-icon v-if='stage.matchPoint'>fa-bomb</v-icon>
+                      <v-icon v-if='stage.closed > 0'>fa-times-circle</v-icon>
+                      {{ stage.name }}
+                    </span>
+                  </v-stepper-step>
+                  <v-divider
+                    :key='"divider" + stage._id'
+                    v-if='(index + 1) !== item.stages.length'
+                  ></v-divider>
+                </template>
+              </v-stepper-header>
+            </v-stepper>
+          </div>
+          <div class='d-flex flex-row flex-wrap justify-end'>
+            <v-btn v-if='isLeader(item)' @click="manageMembers(item)" class='ma-1'>
+              新增／刪除組員
+            </v-btn>
+            <v-btn v-if='isSupervisor(item)' @click="groupEditor(item)" class='ma-1'>
+              組別管理
+            </v-btn>
+            <v-btn v-if='isSupervisor(item)' @click="stageEditor(item)" class='ma-1'>
+              回合管理
+            </v-btn>
+            <v-btn v-if='isSupervisor(item)' @click="eventViewer(item)" class='ma-1'>
+              檢視事件
+            </v-btn>
+            <v-btn v-if='isSupervisor(item)' @click="queryUsers(item)" class='ma-1'>
+              檢視帳本
+            </v-btn>
+            <v-btn v-else @click="assetViewer(currentUser, item)" class='ma-1'>
+              檢視帳本
+            </v-btn>
+            <v-btn color="red darken-4" link :href='"#/reportViewer/" + item._id' class='ma-1 white--text'>
+              進入活動
+            </v-btn>
           </div>
         </div>
       </div>
@@ -827,6 +820,11 @@ export default {
       this.schemaUsers = data;
       this.userSelectorW = true;
     },
+    closeuserquery: function() {
+      this.schemaUsers = [];
+      this.listedsUser = undefined;
+      this.userSelectorW = false;
+    },
     queryUsers: function(schema) {
       this.defaultSchema = schema;
       this.$socket.client.emit('getSchemaUsers', schema._id);
@@ -915,6 +913,8 @@ export default {
       }
     },
     filterAsset: function() {
+      this.assetLog = [];
+      this.balanceList = [];
       this.$socket.client.emit('getPersonalAccounting', {
         sid: this.defaultSchema._id,
         uid: this.currentUser._id,
@@ -922,8 +922,6 @@ export default {
         assetNum: this.assetNum,
         assetKeyword: this.assetKeyword
       });
-      this.assetLog = [];
-      this.balanceList = [];
     },
     socketgetPersonalAccounting: function(data) {
       this.assetLog = data;

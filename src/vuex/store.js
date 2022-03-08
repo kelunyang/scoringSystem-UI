@@ -50,7 +50,7 @@ const store = new Store({
       systemName: ''
     },
     savedTags: [],
-    siteColor: '#D3B865',
+    siteColor: '#a08b4c',
     isiOS: false,
     isIE: false,
     isSafari: false,
