@@ -168,6 +168,7 @@
                   <th class="text-left">時間</th>
                   <th class="text-left">點數</th>
                   <th class="text-left">註解</th>
+                  <th v-if='isSupervisor(defaultSchema)' class="text-left">&nbsp;</th>
                 </tr>
               </thead>
               <tbody>
@@ -183,6 +184,9 @@
                   </td>
                   <td class="text-left">
                     {{ event.desc }}
+                  </td>
+                  <td class='text-right' v-if='isSupervisor(defaultSchema)'>
+                    <v-btn @click='rejectAccounting(event)'>撤銷紀錄</v-btn>
                   </td>
                 </tr>
               </tbody>
@@ -715,6 +719,7 @@ export default {
     this.$socket.client.off('getSelectedUsers', this.socketgetSupervisors);
     this.$socket.client.off('getSchemaUsers', this.socketgetSchemaUsers);
     this.$socket.client.off('getLoner', this.socketgetLoner);
+    this.$socket.client.off('rejectAccounting', this.socketrejectAccounting);
   },
   components: { 
     TagFilter: () => import(/* webpackChunkName: 'TagFilter', webpackPrefetch: true */ './modules/TagFilter'),
@@ -775,6 +780,7 @@ export default {
     this.$socket.client.on('getSelectedUsers', this.socketgetSupervisors);
     this.$socket.client.on('getSchemaUsers', this.socketgetSchemaUsers);
     this.$socket.client.on('getLoner', this.socketgetLoner);
+    this.$socket.client.on('rejectAccounting', this.socketrejectAccounting);
   },
   computed: {
     savedTags: function () {
@@ -785,6 +791,12 @@ export default {
     }
   },
   methods: {
+    socketrejectAccounting: function() {
+      this.filterAsset();
+    },
+    rejectAccounting: function(event) {
+      this.$socket.client.emit('rejectAccounting', event);
+    },
     socketgetLoner: function(loners) {
       this.loners = loners;
     },
