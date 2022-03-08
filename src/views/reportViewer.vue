@@ -22,6 +22,7 @@
           class='white--text ma-1'
           @click='addFeedback'
           color='indigo darken-4'
+          :disabled='suggestedfeedBackValue === 0 || defaultAudit.feedback === 0'
         >
           送出評分
         </v-btn>
@@ -270,7 +271,7 @@
             minHeight="10vh"
             hint='請不要留白'
           />
-          <v-btn class='ma-1 white--text' :disabled='suggestedValue === 0' color='red accent-4' @click='submitReport'>送出成果</v-btn>
+          <v-btn class='ma-1 white--text' :disabled='suggestedValue === 0 || defaultReport.value === 0' color='red accent-4' @click='submitReport'>送出成果</v-btn>
           <v-btn
             @click='viewDesc()'
             v-if='defaultStage._id !== undefined'

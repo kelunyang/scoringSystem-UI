@@ -53,7 +53,7 @@
                   ></v-slider>
                   <div class='text-subtitle-2 font-weight-blod'>允許用戶投注其財產的比例</div>
                   <v-slider
-                    :label='"允許投注率["+(defaultSchema.betRate * 100)+"%]"'
+                    :label='"允許投注率["+Math.floor(defaultSchema.betRate * 100)+"%]"'
                     :min='0.01'
                     :max='0.1'
                     step='0.01'
@@ -94,7 +94,7 @@
                   ></v-slider>
                   <div class='text-subtitle-2 font-weight-blod'>自動評分啟動標準（當你的組數小於你設定的值的時候，會改用組數）</div>
                   <v-slider
-                    :label='"["+(defaultSchema.gapRate * 100)+"%]的組評分就會自動評分"'
+                    :label='"["+Math.floor(defaultSchema.gapRate * 100)+"%]的組評分就會自動評分"'
                     :min='0.1'
                     :max='1'
                     step='0.1'
@@ -163,7 +163,7 @@
                   ></v-slider>
                   <div class='text-subtitle-2 font-weight-blod'>允許用戶投注其財產的比例</div>
                   <v-slider
-                    :label='"允許投注率["+ (defaultSchema.betRate * 100) +"%]"'
+                    :label='"允許投注率["+ Math.floor(defaultSchema.betRate * 100) +"%]"'
                     :min='0.01'
                     :max='0.1'
                     step='0.01'
@@ -196,7 +196,7 @@
                   ></v-slider>
                   <div class='text-subtitle-2 font-weight-blod'>自動評分啟動標準（當你的組數小於你設定的值的時候，會改用組數）</div>
                   <v-slider
-                    :label='"["+(defaultSchema.gapRate * 100)+"%]的組評分就會自動評分"'
+                    :label='"["+Math.floor(defaultSchema.gapRate * 100)+"%]的組評分就會自動評分"'
                     :min='0.1'
                     :max='1'
                     step='0.1'
