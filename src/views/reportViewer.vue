@@ -88,6 +88,10 @@
           <v-alert outlined type="info" icon='fa-info-circle' class='text-left'>
             你的評分預估可以幫該報告負責人得到{{ previewReport }}點（以實際工作者計算），你已勾選{{ getConfirmed() }}份評分，他們都可以拿到積分
           </v-alert>
+          <v-switch
+            v-model="ignoreTime"
+            label="不計入時間分（如果你要懲罰特殊的人群）"
+          ></v-switch>
           <v-slider
             :label='"給分為"+defaultReport.grantedValue+"點"'
             min='0'
@@ -124,10 +128,10 @@
             這回合是決勝點，會關閉自動評分，最終得分會把點數在乘上名次（按照評分結果決定）
           </v-alert>
           <v-alert outlined type="info" icon='fa-info-circle' class='text-left'>
-            <span v-if='falseAudit'>這份報告有負評，已關閉自動評分</span><span v-else>收到並完成回復{{ groupGap }}份評分後會啟動自動評分（並關閉互評）</span>，現在已經收到{{ defaultReport.audits.length }}份評分，<span v-if='isAuthor'>你可以確認對方的評分是否正確</span><span v-else>快來給這份報告一個評分吧！</span>
+            <span v-if='falseAudit'>這份報告有負評，已關閉自動評分</span><span v-else>收到並完成回復{{ groupGap }}份評分後會啟動自動評分（並關閉互評）</span>，現在已經收到{{ defaultReport.audits.length }}份評分<span v-if='isAuthor'>，你可以確認對方的評分是否正確</span><span v-if='allowAudit()'>，快來給這份報告一個評分吧！</span>
           </v-alert>
           <apexchart type="bar" width='100%' :height="scoreHeight" :options="chartOptions" :series="chartSeries"></apexchart>
-          <v-btn class='ma-1' v-if='!isAuthor' v-show='enableAudit' @click='addAudit'>給予評分</v-btn>
+          <v-btn class='ma-1' v-if='allowAudit()' v-show='enableAudit' @click='addAudit'>給予評分</v-btn>
           <div class='text-subtitle-2 font-weight-blod'>成果內容</div>
           <v-divider></v-divider>
           <div class='text-body-1' v-html="HTMLConverter(defaultReport.content)"></div>
@@ -142,13 +146,16 @@
             v-for='item in defaultReport.audits' :key='item._id'
           >
             <v-list-item>
+              <v-list-item-icon>
+                <v-icon v-if='item.short'>fa-thumbs-down</v-icon>
+                <v-icon v-else>fa-thumbs-up</v-icon>
+              </v-list-item-icon>
               <v-list-item-content class="text-left">
                 <v-list-item-title v-html="HTMLConverter(item.content)">
                 </v-list-item-title>
                 <v-list-item-subtitle>
-                  <span v-if='item.short'>[負評]</span>
-                  <span v-else>[好評]</span>
-                  <span>給分<span v-if='item.short' v-show='item.feedback > 0'>-</span>{{ item.value }}點</span>
+                  <span v-if='groupCheck(item)'>[你同組的評分]</span>
+                  <span>給分{{ item.value }}點</span>
                   <span> | 建立於{{ dateConvert(item.tick) }}</span>
                   <span v-show='isAuthor' v-if='item.feedbackTick === 0'>，快去回復他的評分吧</span>
                   <span v-if='item.feedbackTick > 0'> | 已於{{ dateConvert(item.feedbackTick) }}確認為{{ item.feedback }}，預估這份評分值{{ predictScore(item.value, item.feedback, item.short) }}</span>
@@ -336,7 +343,7 @@
         color="indigo darken-4"
         @click='addReport()'
         class="white--text ma-1"
-        v-if='defaultStage._id !== undefined'
+        v-if='stageAllowed()'
         v-show='defaultStage.closed === 0'
       >
         繳交本階段成果
@@ -366,6 +373,7 @@
         </v-badge>
         <v-list-item-content class="text-left">
           <v-list-item-title>
+            <span v-if='groupCheck(item)'>[你同組的報告]</span>
             <span v-if='item.locked'>[已禁止撤回和自動批改]</span>
             <span v-if='(item.tick - defaultStage.endTick) > 0'>[遲交]</span>
             繳交人：{{ getCoworkers(item.coworkers) }}
@@ -473,6 +481,7 @@ export default {
     this.$socket.client.off('getAuditionGap', this.socketgetAuditionGap);
     this.$socket.client.off('lockReport', this.socketlockReport);
     this.$socket.client.off('previewReport', this.socketpreviewReport);
+    this.$socket.client.off('getOwnGroup', this.socketgetOwnGroup);
   },
   components: { 
     TagFilter: () => import(/* webpackChunkName: 'TagFilter', webpackPrefetch: true */ './modules/TagFilter'),
@@ -480,7 +489,7 @@ export default {
     Avatar: () => import(/* webpackChunkName: 'Avatar', webpackPrefetch: true */ './modules/Avatar'),
   },
   created () {
-    this.$socket.client.emit('getSchema', this.sid);
+    this.$socket.client.emit('getOwnGroup', this.sid);
     this.$socket.client.on('getSchema', this.socketgetSchema);
     this.$socket.client.on('rejectReport', this.socketrejectReport);
     this.$socket.client.on('getReports', this.socketgetReports);
@@ -500,6 +509,7 @@ export default {
     this.$socket.client.on('previewReport', this.socketpreviewReport);
     this.$socket.client.on('getAuditionGap', this.socketgetAuditionGap);
     this.$socket.client.on('lockReport', this.socketlockReport);
+    this.$socket.client.on('getOwnGroup', this.socketgetOwnGroup);
   },
   watch: {
     'defaultAudit.feedback': function () {
@@ -557,6 +567,10 @@ export default {
     }
   },
   methods: {
+    socketgetOwnGroup: function(data) {
+      this.ownGroup = data;
+      this.$socket.client.emit('getSchema', this.sid);
+    },
     acceptFeedback: function(audit) {
       if(this.defaultReport.gained === 0) {
         if(audit.feedbackTick === 0) {
@@ -659,7 +673,10 @@ export default {
       this.$socket.client.emit('confirmAudit', this.defaultAudit);
     },
     saveGrant: function() {
-      this.$socket.client.emit('setGrant', this.defaultReport);
+      this.$socket.client.emit('setGrant', {
+        report: this.defaultReport,
+        ignoreTime: this.ignoreTime
+      });
     },
     socketauditFeedback: function() {
       this.$emit('toastPop', '評分完成');
@@ -696,7 +713,10 @@ export default {
       this.$socket.client.emit('getReport', this.defaultReport);
     },
     calcReport: function() {
-      this.$socket.client.emit('calcReport', this.defaultReport);
+      this.$socket.client.emit('calcReport', {
+        report: this.defaultReport,
+        ignoreTime: this.ignoreTime
+      });
     },
     viewReport: function(report) {
       this.defaultReport = report;
@@ -894,10 +914,52 @@ export default {
     },
     viewDesc: function() {
       this.descW = true;
+    },
+    groupCheck: function(item) {
+      if(this.ownGroup !== null) {
+        if(this.ownGroup._id === item.gid) {
+          return true;
+        }
+      }
+      return false;
+    },
+    allowAudit: function() {
+      if(this.isAuthor) {
+        return false;
+      } else {
+        if(this.ownGroup !== null) {
+          for(let i=0; i<this.defaultReport.audits.length; i++) {
+            if(this.defaultReport.audits[i].gid === this.ownGroup._id) {
+              return false;
+            }
+          }
+        }
+      }
+      return true;
+    },
+    stageAllowed: function() {
+      let stageCheck = false;
+      if(this.defaultStage._id !== undefined) {
+        stageCheck = true;
+        if(this.defaultStage.closed === 0) {
+          stageCheck = true;
+          if(this.ownGroup !== null) {
+            for(let i=0; i<this.reportList.length; i++) {
+              if(this.reportList[i].gid === this.ownGroup._id) {
+                stageCheck = false;
+                break;
+              }
+            }
+          }
+        }
+      }
+      return stageCheck;
     }
   },
   data () {
     return {
+      ignoreTime: false,
+      ownGroup: null,
       googlelinkW: false,
       descW: false,
       userBalance: 0,
