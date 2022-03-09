@@ -870,7 +870,7 @@ export default {
       }
     },
     socketgetStages: function(data) {
-      this.stageList = data;
+      this.stageList = _orderBy(data, ['order'], ['asc']);
     },
     socketorderStages: function() {
       this.$socket.client.emit('getJoined');
@@ -1121,6 +1121,7 @@ export default {
       this.leaders = data.leaderList;
       for(let i=0; i<this.schemaList.length; i++) {
         let schema = this.schemaList[i];
+        schema.stages = _orderBy(schema.stages, ['order'], ['asc']);
         for(let k=0; k<schema.stages.length; k++) {
           if(_inRange(now, schema.stages[k].startTick, schema.stages[k].endTick)) {
             schema.stepPointer = k;

@@ -854,6 +854,9 @@ export default {
     },
     socketgetSchema: function(data) {
       let now = dayjs().unix();
+      if(data !== null) {
+        data.stages = _orderBy(data.stages, ['order'], ['asc']);
+      }
       this.defaultSchema = data;
       for(let k=0; k<this.defaultSchema.stages.length; k++) {
         if(_inRange(now, this.defaultSchema.stages[k].startTick, this.defaultSchema.stages[k].endTick)) {
