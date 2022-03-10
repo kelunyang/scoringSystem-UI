@@ -69,6 +69,7 @@
           label='性別'
           outlined
         ></v-select>
+        <v-text-field outlined clearable dense prepend-icon='fa-user-astronaut' label='代表圖亂數' hint="如果你想換掉代表圖，可以在這邊亂輸入一堆字，可以跑出新的圖" v-model='currentUser.seed'></v-text-field>
         <!-- <div class='d-flex flex-row'>
           <v-icon>fa-link</v-icon>
           <span class="text-subtitle-2 font-weight-bold">社交媒體帳號綁定</span><br />
@@ -210,7 +211,8 @@ export default {
         password: this.password,
         name: this.currentUser.name,
         types: this.currentUser.types,
-        unit: this.currentUser.unit
+        unit: this.currentUser.unit,
+        seed: this.currentUser.seed
       });
     }
   },

@@ -138,11 +138,11 @@
               minHeight="10vh"
               hint='請不要留白'
             />
-            <v-file-input prepend-icon="fa-paperclip" v-model="feedbackFile" label='輔助說明文件／圖片上傳' :loading="uploadprogress !== 0">
+            <!-- <v-file-input prepend-icon="fa-paperclip" v-model="feedbackFile" label='輔助說明文件／圖片上傳' :loading="uploadprogress !== 0">
               <template v-slot:progress>
                 <v-progress-circular :value="uploadprogress"></v-progress-circular>速度：{{ uploadstatus }}
               </template>
-            </v-file-input>
+            </v-file-input> -->
             <div v-if="feedback.attachments.length > 0" class='d-flex flex-row flex-wrap'>
               <v-chip
                 v-for='file in feedback.attachments'

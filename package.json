@@ -36,6 +36,7 @@
     "mime-types": "^2.1.31",
     "moment": "^2.29.1",
     "moment-duration-format": "^2.3.2",
+    "object-hash": "^3.0.0",
     "paintablejs": "^1.1.1",
     "painterro": "^1.2.58",
     "papaparse": "^5.3.1",

@@ -23,7 +23,8 @@ const store = new Store({
       email: 'undefined@undefined.com',
       createDate: 0,
       modDate: 0,
-      lineDate: 0
+      lineDate: 0,
+      seed: ""
     },
     siteSettings: {
       version: {

@@ -8,6 +8,7 @@
 </template>
 <script>
   import { createAvatar } from '@dicebear/avatars';
+  import hash from 'object-hash';
   import * as male from '@dicebear/avatars-male-sprites';
   import * as female from '@dicebear/avatars-female-sprites';
   import * as human from '@dicebear/avatars-human-sprites';
@@ -30,8 +31,9 @@
         if(this.userObj.types === "female") {
           type = female;
         }
+        let hashValue = hash(this.userObj, {algorithm: 'sha1'});
         return createAvatar(type, {
-          seed: encodeURIComponent(this.userObj.name + this.userObj.unit + this.userObj._id),
+          seed: hashValue,
           dataUri: true,
           width: this.size,
           height: this.size
@@ -56,7 +58,8 @@
           _id: 'notSet',
           types: 'bottts',
           name: 'notSet',
-          unit: 'notSet'
+          unit: 'notSet',
+          seed: ""
         },
         sizeObj: 48
       }
