@@ -82,11 +82,11 @@
           <v-alert outlined type="info" icon='fa-info-circle' class='text-left' v-if='defaultReport.locked' v-show='isSupervisor'>
             這份報告已經被鎖住，你必須手動批改
           </v-alert>
-          <v-alert outlined type="info" icon='fa-info-circle' class='text-left' v-if='auditValues === 0' v-show='isSupervisor'>
+          <v-alert outlined type="info" icon='fa-info-circle' class='text-left' v-if='defaultReport.audits.length === 0' v-show='isSupervisor'>
             這份報告無人評分，系統自動將手動給分的上限改為自評分
           </v-alert>
           <v-alert outlined type="info" icon='fa-info-circle' class='text-left'>
-            你的評分預估可以幫該報告負責人得到{{ previewReport }}點（以實際工作者計算），你已勾選{{ getConfirmed() }}份評分，他們都可以拿到積分
+            你的評分預估可以幫該報告負責人得到{{ previewReport }}點（以實際工作者計算），你已勾選{{ getConfirmed() }}份評分
           </v-alert>
           <v-switch
             v-model="ignoreTime"
@@ -701,7 +701,8 @@ export default {
       this.defaultReport = data.report;
       this.isAuthor = data.isAuthor;
       this.falseAudit = data.falseAudit;
-      this.auditValues = data.auditValues <= 0 ? data.report.value : data.auditValues;
+      this.auditValues = data.auditValues <= 0 ? 1 : data.auditValues;
+      this.auditValues = data.report.audits.length > 0 ? this.auditValues : data.report.value;
       if(this.enableReportW) {
         this.reportW = true;
         this.enableReportW = false;

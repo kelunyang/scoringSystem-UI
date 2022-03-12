@@ -371,22 +371,16 @@
                     </v-list-item-subtitle>
                   </v-list-item-content>
                   <v-list-item-action class='d-flex flex-row'>
-                    <v-tooltip bottom>
-                      <template v-slot:activator="{ on, attrs }">
-                        <v-btn icon v-bind="attrs" v-on="on" @click='editGroup(item)'>
-                          <v-icon>fa-pencil-alt</v-icon>
-                        </v-btn>
-                      </template>
-                      <span>編輯小組</span>
-                    </v-tooltip>
-                    <v-tooltip bottom>
-                      <template v-slot:activator="{ on, attrs }">
-                        <v-btn v-bind="attrs" v-on="on" icon @click='removeGroup(item)'>
-                          <v-icon>fa-trash</v-icon>
-                        </v-btn>
-                      </template>
-                      <span>刪除小組</span>
-                    </v-tooltip>
+                    <v-btn @click='lockGroup(item)' class='ma-1'>
+                      <span v-if='item.locked'>解鎖小組</span>
+                      <span v-else>鎖定小組</span>
+                    </v-btn>
+                    <v-btn @click='editGroup(item)' class='ma-1'>
+                      編輯小組
+                    </v-btn>
+                    <v-btn @click='removeGroup(item)' class='ma-1'>
+                      刪除小組
+                    </v-btn>
                   </v-list-item-action>
                 </v-list-item>
               </v-col>
@@ -640,7 +634,7 @@
             </v-stepper>
           </div>
           <div class='d-flex flex-row flex-wrap justify-end'>
-            <v-btn v-if='isLeader(item)' @click="manageMembers(item)" class='ma-1'>
+            <v-btn v-show='isLeader(item)' v-if='!item.locked' @click="manageMembers(item)" class='ma-1'>
               新增／刪除組員
             </v-btn>
             <v-btn v-if='isSupervisor(item)' @click="groupEditor(item)" class='ma-1'>
@@ -713,6 +707,7 @@ export default {
     this.$socket.client.off('getSchemaUsers', this.socketgetSchemaUsers);
     this.$socket.client.off('getLoner', this.socketgetLoner);
     this.$socket.client.off('rejectAccounting', this.socketrejectAccounting);
+    this.$socket.client.off('setLocker', this.socketlockGroup);
   },
   components: { 
     TagFilter: () => import(/* webpackChunkName: 'TagFilter', webpackPrefetch: true */ './modules/TagFilter'),
@@ -774,6 +769,7 @@ export default {
     this.$socket.client.on('getSchemaUsers', this.socketgetSchemaUsers);
     this.$socket.client.on('getLoner', this.socketgetLoner);
     this.$socket.client.on('rejectAccounting', this.socketrejectAccounting);
+    this.$socket.client.on('setLocker', this.socketlockGroup);
   },
   computed: {
     savedTags: function () {
@@ -784,6 +780,13 @@ export default {
     }
   },
   methods: {
+    lockGroup: function(item) {
+      this.$socket.client.emit('setLocker',{
+        gid: item._id,
+        sid: this.defaultSchema._id,
+        locked: !item.locked
+      });
+    },
     socketrejectAccounting: function() {
       this.filterAsset();
     },
@@ -1016,6 +1019,12 @@ export default {
         sid: this.defaultSchema._id,
         gid: group._id
       });
+    },
+    socketlockGroup: function() {
+      this.$socket.client.emit('getGroups', {
+        sid: this.defaultSchema._id
+      });
+      this.$emit('toastPop', '鎖定完成');
     },
     socketaddGroup: function() {
       this.$socket.client.emit('getGroups', {

@@ -10,9 +10,9 @@
       </v-col>
     </v-row>
     <v-row v-if='currentUser._id === ""'>
-      <v-col class='d-flex flex-row pa-2 ma-0 justify-space-around'>
-        <v-btn color='light-blue darken-4' @click="submit" class='flex-grow-1 white--text'>登入</v-btn>
-        <v-btn color='red darken-4' class='white--text' @click='passwordReset'>忘記密碼，重新設定</v-btn>
+      <v-col class='d-flex flex-column pa-2 ma-0'>
+        <v-btn color='light-blue darken-4' @click="submit" class='ma-1 white--text'>登入</v-btn>
+        <v-btn color='red darken-4' class='ma-1 white--text' @click='passwordReset'>忘記密碼，重新設定</v-btn>
       </v-col>
     </v-row>
     <v-row v-if='currentUser._id !== ""'>
@@ -81,7 +81,7 @@ export default {
     },
     submit: async function () {
         let result = await axios.post('https://' + window.location.host + '/backend/login', {
-          user: this.name,
+          user: this.name.trim(),
           pass: this.pass
         }, {
           withCredentials: true
