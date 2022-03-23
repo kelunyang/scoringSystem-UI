@@ -1,14 +1,45 @@
 <template>
   <v-sheet>
+    <v-dialog v-model="groupfilterSelectorW" fullscreen hide-overlay transition='dialog-bottom-transition'>
+      <v-card>
+        <v-toolbar dark color='primary'>
+          <v-btn icon dark @click='groupfilterSelectorW = false'>
+            <v-icon>fa-times</v-icon>
+          </v-btn>
+          <v-toolbar-title>
+            過濾你想看到的群組
+          </v-toolbar-title>
+        </v-toolbar>
+        <v-card-text class='text-left black--text text-body-1 pa-2 d-flex flex-column'>
+          <tag-filter
+            v-if="isSupervisor"
+            :mustSelected='false'
+            :single='false'
+            :selectedItem='selectedfilterTags'
+            @valueUpdated='updateselectTags'
+            :candidatedItem='filterTagList'
+            :createable='false'
+            label='選擇你想查詢的歸屬標籤'
+          />
+          <v-btn class='ma-1' v-if='isSupervisor' @click='setfilterTag'>
+            查詢指定的標籤
+          </v-btn>
+          <v-btn
+            class='white--text ma-1'
+            color='red darken-4'
+            @click='groupfilterSelectorW = false'
+          >
+            關閉對話框
+          </v-btn>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
     <v-dialog
       v-model="feedbackW"
       persistent
       max-width="50%"
     >
       <v-sheet class='d-flex flex-column pa-1'>
-        <v-alert outlined type="info" icon='fa-info-circle' class='text-left'>
-          你的評分預估可以幫你得到{{ previewFeedback }}點（以實際工作者計算）
-        </v-alert>
         <v-slider
           v-if='defaultReport.grantedDate === 0'
           :label='"投入"+defaultAudit.feedback+"點"'
@@ -18,14 +49,36 @@
           :disabled='waitValue'
           thumb-label
         ></v-slider>
-        <v-btn
-          class='white--text ma-1'
-          @click='addFeedback'
-          color='indigo darken-4'
-          :disabled='suggestedfeedBackValue === 0 || defaultAudit.feedback === 0'
+        <span class='text-caption red--text'>你的評分預估可以幫你得到{{ previewFeedback }}點（以實際工作者計算）</span>
+        <v-menu
+          offset-y
+          attach
+          left
+          bottom
+          transition="slide-y-transition"
         >
-          送出評分
-        </v-btn>
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn
+              color='indigo darken-4'
+              class='white--text ma-1'
+              :disabled='suggestedfeedBackValue === 0 || defaultAudit.feedback === 0'
+              v-bind="attrs" v-on="on"
+            >
+              送出評分
+            </v-btn>
+          </template>
+          <v-sheet class='d-flex flex-column pa-1'>
+            <div class='text-h6'>確認送出評分？</div>
+            <v-btn
+              class='white--text ma-1'
+              color='red darken-4'
+              @click='addFeedback'
+            >
+              是，我要送出評分！
+            </v-btn>
+            <div class='text-caption'>如果你只是誤觸，請隨意點擊其他地方即會關閉本對話框</div>
+          </v-sheet>
+        </v-menu>
         <v-btn
           class='white--text ma-1'
           color='red darken-4'
@@ -195,9 +248,6 @@
           <v-alert outlined v-if='waitValue' type="info" icon='fa-info-circle' class='text-left'>
             用戶財產計算中請稍候
           </v-alert>
-        <v-alert outlined type="info" icon='fa-info-circle' class='text-left'>
-          你的評分預估可以幫你得到{{ previewAudit }}點（以實際工作者計算）
-        </v-alert>
           <div class='text-subtitle-2 font-weight-blod'>好評／負評</div>
           <v-switch
             v-model="defaultAudit.short"
@@ -215,7 +265,7 @@
             label='請輸入用戶名稱'
           />
           <div class='text-subtitle-2 font-weight-blod'>投入點數</div>
-          <div class='text-caption'>而這份階段成果的自評分為{{ defaultReport.value }}，而你的財產是{{ userBalance }}，因此你能投下去的點數不可以超過{{ auditsuggestValue }}</div>
+          <div class='text-caption'>這份階段成果的自評分為{{ defaultReport.value }}，而你的財產是{{ userBalance }}，因此你能投下去的點數不可以超過{{ auditsuggestValue }}</div>
           <v-slider
             :label='"投入"+defaultAudit.value+"點"'
             min='0'
@@ -224,6 +274,7 @@
             v-model="defaultAudit.value"
             thumb-label
           ></v-slider>
+          <span class='text-caption red--text'>你的評分預估可以幫你得到{{ previewAudit }}點（以實際工作者計算），<span v-if='defaultAudit.coworkers.length > 0'>共同作者有{{ defaultAudit.coworkers.length + 1 }}人，每個人出{{ Math.floor(defaultAudit.value / (defaultAudit.coworkers.length + 1)) }}點</span></span>
           <div class='text-subtitle-2 font-weight-blod'>給予短評（必填）</div>
           <Tip-Tap
             v-model="defaultAudit.content"
@@ -231,7 +282,36 @@
             minHeight="10vh"
             hint='請不要留白'
           />
-          <v-btn class='ma-1' :disabled='defaultAudit.content === ""' v-if='defaultAudit.value > 0' @click='submitAudit'>送出評分</v-btn>
+          <v-menu
+            offset-y
+            attach
+            left
+            bottom
+            transition="slide-y-transition"
+            v-if='defaultAudit.value > 0'
+          >
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                color='indigo darken-4'
+                class='white--text ma-1'
+                :disabled='defaultAudit.content === ""'
+                v-bind="attrs" v-on="on"
+              >
+                送出評分
+              </v-btn>
+            </template>
+            <v-sheet class='d-flex flex-column pa-1'>
+              <div class='text-h6'>確認送出評分？</div>
+              <v-btn
+                class='white--text ma-1'
+                color='red darken-4'
+                @click='submitAudit'
+              >
+                是，我要送出評分！
+              </v-btn>
+              <div class='text-caption'>如果你只是誤觸，請隨意點擊其他地方即會關閉本對話框</div>
+            </v-sheet>
+          </v-menu>
         </v-card-text>
       </v-card>
     </v-dialog>
@@ -247,9 +327,6 @@
           <v-alert outlined v-if='waitValue' type="info" icon='fa-info-circle' class='text-left'>
             用戶財產計算中請稍候
           </v-alert>
-          <v-alert outlined type="info" icon='fa-info-circle' class='text-left'>
-            你的自評分可以幫你得到{{ previewReport }}點，請注意，其他人對你的評分都不會超過你自己給的自評分
-          </v-alert>
           <div class='text-subtitle-2 font-weight-blod'>共同作者</div>
           <tag-filter
             :mustSelected='true'
@@ -261,7 +338,7 @@
             :createable='false'
             label='請輸入用戶名稱'
           />
-          <div v-if='suggestedValue > 0' class='text-subtitle-2 font-weight-blod'>投入點數（活動限制為參與評分者總點數的{{ defaultSchema.betRate * 100 }}%，因此最大值為{{ suggestedValue }}）</div>
+          <div v-if='suggestedValue > 0' class='text-subtitle-2 font-weight-blod'>投入點數（活動限制為參與評分者總點數的{{ defaultSchema.betRate * 100 }}%，因此最大值為{{ suggestedValue }}，請注意，其他人對你的評分都不會超過你自己給的自評分）</div>
           <v-slider
             v-if='suggestedValue > 0'
             :label='"投入"+defaultReport.value+"點"'
@@ -271,6 +348,7 @@
             v-model="defaultReport.value"
             thumb-label
           ></v-slider>
+          <span class='text-caption red--text'>你的自評分可以幫你得到{{ previewReport }}點<span v-if='defaultReport.coworkers.length > 0'>，共同作者有{{ defaultReport.coworkers.length + 1 }}人，每個人出{{ Math.ceil(defaultReport.value / (defaultReport.coworkers.length + 1)) }}點</span></span>
           <div class='text-subtitle-2 font-weight-blod'>成果內容（Google文件請貼連結）</div>
           <Tip-Tap
             v-model="defaultReport.content"
@@ -278,7 +356,35 @@
             minHeight="10vh"
             hint='請不要留白'
           />
-          <v-btn class='ma-1 white--text' :disabled='suggestedValue === 0 || defaultReport.value === 0' color='red accent-4' @click='submitReport'>送出成果</v-btn>
+          <v-menu
+            offset-y
+            attach
+            left
+            bottom
+            transition="slide-y-transition"
+          >
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                color='indigo darken-4'
+                class='white--text ma-1'
+                :disabled='suggestedValue === 0 || defaultReport.value === 0'
+                v-bind="attrs" v-on="on"
+              >
+                送出階段成果
+              </v-btn>
+            </template>
+            <v-sheet class='d-flex flex-column pa-1'>
+              <div class='text-h6'>確認階段成果？</div>
+              <v-btn
+                class='white--text ma-1'
+                color='red accent-4'
+                @click='submitReport'
+              >
+                是，我要送出本階段成果！
+              </v-btn>
+              <div class='text-caption'>如果你只是誤觸，請隨意點擊其他地方即會關閉本對話框</div>
+            </v-sheet>
+          </v-menu>
           <v-btn
             @click='viewDesc()'
             v-if='defaultStage._id !== undefined'
@@ -306,7 +412,7 @@
       {{ dateConvert(defaultStage.closed) }}起，本回合不收成果啦！
     </v-alert>
     <div class='d-flex flex-column pa-1'>
-      <div class='blue-grey--text darken-1 text-caption' v-if='defaultStage._id === undefined'>本活動共{{ defaultSchema.stages.length }}個回合，請點擊任何一個回合後點右下角繳交本階段成果</div>
+      <div class='blue-grey--text darken-1 text-caption' v-if='defaultStage._id === undefined'>本活動共{{ defaultSchema.stages.length }}個回合，請點擊任何一個回合後點右下角繳交本階段成果（旗子為目前開放的階段）</div>
       <v-stepper v-model="stepPointer">
         <v-stepper-header>
           <template
@@ -316,7 +422,7 @@
               :key='stage._id'
               :complete="stepPointer > index"
               :step='index + 1'
-              complete-icon='fa-check-circle'
+              complete-icon='fa-flag'
               edit-icon='fa-pencil-alt'
               @click="getStage(stage)"
             >
@@ -350,13 +456,31 @@
       </v-btn>
     </div>
     <v-divider></v-divider>
+    <apexchart v-if='reportList.length > 0' width="100%" type="bar" :options="reportOptions" :series="reportSeries" :height="reportHeight"></apexchart>
+    <v-btn-toggle v-model="reportFilters" multiple v-if='reportList.length > 0'>
+      <v-btn @click='orderBy === 0 ? 1 : 0'>
+        用「互評能拿最多分」排序
+      </v-btn>
+      <v-btn @click='filterCoworker = !filterCoworker'>
+        查看我是共同作者的成果
+      </v-btn>
+      <v-btn @click='groupFilter()'>
+        查看我這組的成果
+      </v-btn>
+      <v-btn v-if='isSupervisor' @click='groupfilterSelectorW = true'>
+        查看特定歸屬標籤的組別成果
+      </v-btn>
+      <v-btn @click='clearFilter'>
+        清除過濾器
+      </v-btn>
+    </v-btn-toggle>
     <v-lazy
       :options="{
         threshold: 0.5
       }"
       min-height="70"
       transition="fade-transition"
-      v-for='item in reportList' :key='item._id'
+      v-for='item in filteredReportList' :key='item._id'
     >
       <v-list-item>
         <v-badge
@@ -384,7 +508,7 @@
             <span> | 建立於{{ dateConvert(item.tick) }}</span>
           </v-list-item-subtitle>
         </v-list-item-content>
-        <v-list-item-action class='d-flex flex-row'>
+        <v-list-item-action class='d-flex flex-row align-center flex-justify-end'>
           <v-btn @click='viewReport(item)' class='ma-1'>
             檢視成果
           </v-btn>
@@ -424,6 +548,14 @@
               <div class='text-caption'>如果你只是誤觸，請隨意點擊其他地方即會關閉本對話框</div>
             </v-sheet>
           </v-menu>
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn icon v-bind="attrs" v-on="on" @click='groupFilter(item.gid)'>
+                <v-icon>fa-thumbtack</v-icon>
+              </v-btn>
+            </template>
+            <span>過濾這組的成果（只看這組的）</span>
+          </v-tooltip>
         </v-list-item-action>
       </v-list-item>
     </v-lazy>
@@ -441,6 +573,7 @@ import _inRange from 'lodash/inRange';
 import _orderBy from 'lodash/orderBy';
 import _unionWith from 'lodash/unionWith';
 import _toString from 'lodash/toString';
+import _intersectionWith from 'lodash/intersectionWith'
 import VueApexCharts from 'vue-apexcharts';
 import { marked } from 'marked';
 const renderer = new marked.Renderer();
@@ -482,6 +615,8 @@ export default {
     this.$socket.client.off('lockReport', this.socketlockReport);
     this.$socket.client.off('previewReport', this.socketpreviewReport);
     this.$socket.client.off('getOwnGroup', this.socketgetOwnGroup);
+    this.$socket.client.off('getGroupTags', this.socketgetGroupTags);
+    this.$socket.client.off('getTagGroups', this.socketgetTagGroups);
   },
   components: { 
     TagFilter: () => import(/* webpackChunkName: 'TagFilter', webpackPrefetch: true */ './modules/TagFilter'),
@@ -510,6 +645,8 @@ export default {
     this.$socket.client.on('getAuditionGap', this.socketgetAuditionGap);
     this.$socket.client.on('lockReport', this.socketlockReport);
     this.$socket.client.on('getOwnGroup', this.socketgetOwnGroup);
+    this.$socket.client.on('getGroupTags', this.socketgetGroupTags);
+    this.$socket.client.on('getTagGroups', this.socketgetTagGroups);
   },
   watch: {
     'defaultAudit.feedback': function () {
@@ -550,6 +687,19 @@ export default {
           value: this.defaultReport.grantedValue
         });
       }
+    },
+    filterGroups: {
+      handler: function() {
+        this.filterReport();
+      },
+      deep: true,
+      immediate: true
+    },
+    filterCoworker: function() {
+      this.filterReport();
+    },
+    orderBy: function() {
+      this.filterReport();
     }
   },
   computed: {
@@ -567,6 +717,32 @@ export default {
     }
   },
   methods: {
+    clearFilter: function() {
+      this.filterGroups = [];
+      this.reportFilters = [];
+    },
+    updateselectTags: function(value) {
+      this.selectedfilterTags = value;
+    },
+    socketgetTagGroups: function(data) {
+      let taggroups = _map(data, (group) => {
+        return group._id;
+      });
+      this.filterGroups = _unionWith(taggroups, this.filterGroups, (qgroup,fgroup) => {
+        return qgroup === fgroup;
+      })
+    },
+    setfilterTag: function() {
+      this.$socket.client.emit('getTagGroups', {
+        tid: this.defaultStage._id,
+        ids: this.selectedfilterTags
+      });
+    },
+    socketgetGroupTags: function(data) {
+      this.filterTagList = _intersectionWith(this.savedTags, data, (stag, gtag) => {
+        return stag._id === gtag;
+      })
+    },
     socketgetOwnGroup: function(data) {
       this.ownGroup = data;
       this.$socket.client.emit('getSchema', this.sid);
@@ -657,6 +833,33 @@ export default {
       this.chartSeries = series;
       Vue.nextTick(() => {
         oriobj.scoreHeight = 200;
+      })
+    },
+    renderReport: function() {
+      let oriobj = this;
+      let series = [];
+      let ungained = _filter(this.filteredReportList, (report) => {
+        return report.gained === 0;
+      });
+      let unAudit = _filter(ungained, (report) => {
+        return report.audits.length === 0;
+      });
+      series.push({
+        name: "已批改",
+        data: [this.filteredReportList.length - ungained.length]
+      });
+      series.push({
+        name: "無人評分",
+        data: [unAudit.length]
+      });
+      series.push({
+        name: "已有評分",
+        data: [ungained.length - unAudit.length]
+      });
+      this.reportSeries = series;
+      console.dir(series);
+      Vue.nextTick(() => {
+        oriobj.reportHeight = 130;
       })
     },
     socketconfirmAudit: function() {
@@ -827,6 +1030,9 @@ export default {
     },
     socketgetStage: function(data) {
       this.reportList = [];
+      this.filteredReportList = [];
+      this.selectedfilterTags = [];
+      this.groupList = [];
       this.leaders = [];
       this.defaultStage = data;
       this.$socket.client.emit('getReports', {
@@ -849,9 +1055,40 @@ export default {
       this.$socket.client.emit('getStage', stage);
     },
     socketgetReports: function(data) {
-      this.reportList = _orderBy(data.reports, ['gained', 'tick'], ['asc', 'desc']);
+      let reportGroup = _map(data.reports, (report) => {
+        return report.gid
+      });
+      this.$socket.client.emit('getGroupTags', reportGroup);
+      this.reportList = data.reports;
+      this.filterReport();
       this.isSupervisor = data.isSupervisor;
       this.leaders = data.leaders;
+      this.renderReport();
+    },
+    filterReport: function() {
+      let reportList = this.reportList;
+      let oriobj = this;
+      let groups = _map(reportList, (report) => {
+        return report.gid;
+      });
+      this.$socket.client.emit('getGroupTags', groups);
+      if(this.filterCoworker) {
+        reportList = _filter(reportList, (report) => {
+          return (_filter(report.coworkers, (coworker) => {
+            return coworker._id === oriobj.currentUser._id
+          })).length > 0
+        });
+      }
+      if(this.filterGroups.length > 0) {
+        reportList = _filter(reportList, (report) => {
+          return (_filter(oriobj.filterGroups, (group) => {
+            return group === report.gid
+          })).length > 0
+        });
+      }
+      this.filteredReportList = this.orderBy === 0 ?
+        _orderBy(reportList, ['gained', 'tick'], ['asc', 'desc']) :
+        _orderBy(reportList, ['gained', (item) => { return Math.abs(item.tick) }], ['asc', 'desc']);
     },
     socketgetSchema: function(data) {
       let now = dayjs().unix();
@@ -958,6 +1195,23 @@ export default {
         }
       }
       return stageCheck;
+    },
+    groupFilter: function(group) {
+      group = group === undefined ? this.ownGroup._id : group;
+      if(group !== null) {
+        if(_filter(this.filterGroups, (fgroup) => {
+          return fgroup === group;
+        }).length > 0) {
+          this.filterGroups = _filter(this.filterGroups, (fgroup) => {
+            return fgroup !== group;
+          });
+        } else {
+          this.filterGroups.push(group);
+        }
+      }
+    },
+    updatelonerTag: function(value) {
+      this.lonerTags = value;
     }
   },
   data () {
@@ -1146,7 +1400,65 @@ export default {
           }
         }
       },
-      scoreHeight: 100
+      scoreHeight: 100,
+      reportHeight: 50,
+      reportSeries: [
+        {
+          name: '0',
+          data: [0]
+        }
+      ],
+      reportOptions: {
+        chart: {
+          type: 'bar',
+          height: 150,
+          stacked: true,
+          stackType: '100%'
+        },
+        plotOptions: {
+          bar: {
+            horizontal: true,
+          },
+        },
+        stroke: {
+          width: 1,
+          colors: ['#fff']
+        },
+        colors: [
+          '#E76F51',
+          '#F8961E',
+          '#F9C74F',
+          '#90BE6D',
+          '#43AA8B',
+          '#577590'
+        ],
+        xaxis: {
+          categories: ['完成度'],
+        },
+        tooltip: {
+          y: {
+            formatter: function (val) {
+              return val + "個成果"
+            }
+          }
+        },
+        fill: {
+          opacity: 1
+        },
+        legend: {
+          position: 'top',
+          horizontalAlign: 'left',
+          offsetX: 40
+        }
+      },
+      filteredReportList: [],
+      filterCoworker: false,
+      filterGroups: [],
+      filterTagList: [],
+      selectedfilterTags: [],
+      orderBy: 0,
+      reportFilters: [],
+      groupfilterSelectorW: false,
     }
   }
 };

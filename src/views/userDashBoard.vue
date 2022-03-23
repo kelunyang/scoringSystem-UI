@@ -616,7 +616,7 @@
                     :key='stage._id'
                     :complete="item.stepPointer > index"
                     :step='index + 1'
-                    complete-icon='fa-check-circle'
+                    complete-icon='fa-flag'
                     edit-icon='fa-pencil-alt'
                   >
                     <span :class='(index + 1) === item.stepPointer ? "text--indigo darken-4" : ""'>
@@ -633,28 +633,31 @@
               </v-stepper-header>
             </v-stepper>
           </div>
-          <div class='d-flex flex-row flex-wrap justify-end'>
-            <v-btn v-show='isLeader(item)' v-if='!item.locked' @click="manageMembers(item)" class='ma-1'>
-              新增／刪除組員
-            </v-btn>
-            <v-btn v-if='isSupervisor(item)' @click="groupEditor(item)" class='ma-1'>
-              組別管理
-            </v-btn>
-            <v-btn v-if='isSupervisor(item)' @click="stageEditor(item)" class='ma-1'>
-              回合管理
-            </v-btn>
-            <v-btn v-if='isSupervisor(item)' @click="eventViewer(item)" class='ma-1'>
-              檢視事件
-            </v-btn>
-            <v-btn v-if='isSupervisor(item)' @click="queryUsers(item)" class='ma-1'>
-              檢視帳本
-            </v-btn>
-            <v-btn v-else @click="assetViewer(currentUser, item)" class='ma-1'>
-              檢視帳本
-            </v-btn>
-            <v-btn color="red darken-4" link :href='"#/reportViewer/" + item._id' class='ma-1 white--text'>
-              進入活動
-            </v-btn>
+          <div class='d-flex flex-row flex-wrap justify-space-between'>
+            <div class='d-flex flex-row flex-justify-start align-center'><v-icon>fa-flag</v-icon><div>：目前開放的階段</div></div>
+            <div class='d-flex flex-row flex-wrap justify-end align-center'>
+              <v-btn v-if='isLeader(item)' @click="manageMembers(item)" class='ma-1'>
+                新增／刪除組員
+              </v-btn>
+              <v-btn v-if='isSupervisor(item)' @click="groupEditor(item)" class='ma-1'>
+                組別管理
+              </v-btn>
+              <v-btn v-if='isSupervisor(item)' @click="stageEditor(item)" class='ma-1'>
+                回合管理
+              </v-btn>
+              <v-btn v-if='isSupervisor(item)' @click="eventViewer(item)" class='ma-1'>
+                檢視事件
+              </v-btn>
+              <v-btn v-if='isSupervisor(item)' @click="queryUsers(item)" class='ma-1'>
+                檢視帳本
+              </v-btn>
+              <v-btn v-else @click="assetViewer(currentUser, item)" class='ma-1'>
+                檢視帳本
+              </v-btn>
+              <v-btn color="red darken-4" link :href='"#/reportViewer/" + item._id' class='ma-1 white--text'>
+                進入活動
+              </v-btn>
+            </div>
           </div>
         </div>
       </div>

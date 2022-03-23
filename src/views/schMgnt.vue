@@ -370,32 +370,39 @@
             </v-list-item-subtitle>
           </v-list-item-content>
           <v-list-item-action class='d-flex flex-row'>
-            <v-tooltip bottom>
-              <template v-slot:activator="{ on, attrs }">
-                <v-btn icon v-bind="attrs" v-on="on" @click='statusSchema(item)'>
-                  <v-icon v-if='item.status === 1'>fa-square</v-icon>
-                  <v-icon v-else>fa-play</v-icon>
-                </v-btn>
-              </template>
+            <v-btn @click='statusSchema(item)'>
               <span v-if='item.status === 1'>結束活動</span>
               <span v-else>開始活動</span>
-            </v-tooltip>
-            <v-tooltip bottom>
+            </v-btn>
+            <v-btn @click='getSchemaSupervisors(item)'>
+              編輯活動
+            </v-btn>
+            <v-menu
+              offset-y
+              attach
+              left
+              bottom
+              transition="slide-y-transition"
+            >
               <template v-slot:activator="{ on, attrs }">
-                <v-btn icon v-bind="attrs" v-on="on" @click='getSchemaSupervisors(item)'>
-                  <v-icon>fa-pencil-alt</v-icon>
+                <v-btn
+                  v-bind="attrs" v-on="on"
+                >
+                  刪除活動
                 </v-btn>
               </template>
-              <span>編輯活動</span>
-            </v-tooltip>
-            <v-tooltip bottom>
-              <template v-slot:activator="{ on, attrs }">
-                <v-btn icon v-bind="attrs" v-on="on" @click='removeSchema(item)'>
-                  <v-icon>fa-trash</v-icon>
+              <v-sheet class='d-flex flex-column pa-1'>
+                <div class='text-h6'>確認刪除活動？</div>
+                <v-btn
+                  class='white--text ma-1'
+                  color='red darken-4'
+                  @click='removeSchema(item)'
+                >
+                  是，我要刪除活動！
                 </v-btn>
-              </template>
-              <span>刪除活動</span>
-            </v-tooltip>
+                <div class='text-caption'>如果你只是誤觸，請隨意點擊其他地方即會關閉本對話框</div>
+              </v-sheet>
+            </v-menu>
             <v-checkbox off-icon="far fa-square" on-icon="fa-check-square" v-model='selectedSchemas' :value='item._id'></v-checkbox>
           </v-list-item-action>
         </v-list-item>

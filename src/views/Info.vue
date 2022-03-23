@@ -129,7 +129,7 @@
           <v-toolbar dark color='primary'>
             <v-toolbar-title>編輯用戶回饋</v-toolbar-title>
           </v-toolbar>
-          <v-card-text class='text-left'>
+          <v-card-text class='text-left pa-3'>
             <v-select outlined :items='wishFeatures' label='指定功能' multiple v-model='feedback.type' v-if='feedback.parent === undefined'></v-select>
             <v-text-field v-model='feedback.title' v-if='feedback.parent === undefined' outlined clearable dense/>
             <Tip-Tap
@@ -162,6 +162,7 @@
             <v-btn
               color="red darken-4"
               class='white--text'
+              :disabled='feedback.title === "" || feedback.body === ""'
               @click="setFeedback"
             >
               儲存用戶回饋
@@ -178,7 +179,7 @@
           <v-toolbar dark color='primary'>
             <v-toolbar-title>發送LINE訊息給管理群</v-toolbar-title>
           </v-toolbar>
-          <v-card-text class='text-left'>
+          <v-card-text class='text-left pa-3'>
             <v-textarea
               label="LINE訊息"
               v-model="LINEbody"
@@ -551,7 +552,8 @@ export default {
     sendLINEnotify: function () {
       this.$socket.client.emit('sendLINEnotify', {
         body: turndownService.turndown(this.LINEbody),
-        type: 1
+        type: 1,
+        useLINE: true
       });
     },
     HTMLConverter: function (msg) {

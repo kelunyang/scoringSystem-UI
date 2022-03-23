@@ -1,5 +1,84 @@
 <template>
   <v-main class='pa-0'>
+    <v-dialog v-model='bulkmessageW' fullscreen hide-overlay transition='dialog-bottom-transition'>
+      <v-card>
+        <v-toolbar dark color='primary'>
+          <v-btn icon dark @click='closeBulkW'>
+            <v-icon>fa-times</v-icon>
+          </v-btn>
+          <v-toolbar-title>大量發送訊息</v-toolbar-title>
+        </v-toolbar>
+        <v-card-text class='ma-0 pa-0'>
+          <v-alert outlined type="info" icon='fa-info-circle' class='text-left'>
+            你可以下載範本檔後，把使用者的email和你要給他們的訊息都編輯好之後上傳，請注意，LINE notify有每日上限，Email寄太多也會被當作垃圾信
+          </v-alert>
+          <v-alert outlined type="info" icon='fas fa-paper-plane' class='text-left' v-if='msgSent !== ""'>
+            請稍後，正在處理...<span v-if='msgSent !== ""'>{{ msgSent }}</span>
+          </v-alert>
+          <v-container class='pa-5'>
+            <v-row>
+              <v-col class='d-flex flex-column'>
+                <tag-filter
+                  :mustSelected='false'
+                  :single='false'
+                  :selectedItem='bulkTags'
+                  @valueUpdated='updatebulkTags'
+                  :candidatedItem='savedTags'
+                  :createable='false'
+                  label='如果你想群發請在此查詢用戶歸屬標籤，否則直接下載即可'
+                />
+                <v-switch
+                  v-model="LINEtype"
+                  label="如果用戶有LINE，就用LINE通知（關閉的話就會改用Email）"
+                ></v-switch>
+                <v-btn v-if='bulkTags.length > 0' @click='generatebulkUsers' class="ma-1">按此下載範本CSV</v-btn>
+                <v-btn @click='generateemptyUsers' class="ma-1">按此空白範本CSV</v-btn>
+                <v-file-input
+                  prepend-icon="fa-paperclip" 
+                  v-model="bulkmsgFile" 
+                  label='上傳訊息清單' 
+                  accept="text/csv"
+                  :loading="bulkuploadprogress !== 0">
+                  <template v-slot:progress>
+                    <v-progress-circular :value="bulkuploadprogress"></v-progress-circular>速度：{{ bulkuploadstatus }}
+                  </template>
+                </v-file-input>
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col class='d-flex flex-column'>
+                <v-simple-table v-if='bulkLog.length > 0'>
+                  <template v-slot:default>
+                    <thead>
+                      <tr>
+                        <th
+                          class="text-left"
+                        >
+                          Email
+                        </th>
+                        <th
+                          class="text-left"
+                        >
+                          狀態
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr
+                        v-for="log in bulkLog"
+                        :key="log.email"
+                      >
+                        <td class="text-left">{{ log.email }}</td>
+                        <td class="text-left">{{ log.msg }}</td>
+                      </tr>
+                    </tbody>
+                  </template>
+                </v-simple-table>
+              </v-col>
+            </v-row>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
     <v-dialog v-model='editMsgW' fullscreen hide-overlay transition='dialog-bottom-transition'>
       <v-card>
           <v-toolbar dark color='primary'>
@@ -75,7 +154,7 @@
             <v-btn icon dark @click='lineW = false'>
               <v-icon>fa-times</v-icon>
             </v-btn>
-            <v-toolbar-title>LINE訊息紀錄</v-toolbar-title>
+            <v-toolbar-title>LINE&amp;Email訊息紀錄</v-toolbar-title>
           </v-toolbar>
           <v-card-text class='pa-0 ma-0 text-left black--text text-body-1'>
             <v-alert outlined type="info" icon='fa-info-circle' class='text-left'>
@@ -104,6 +183,9 @@
                               發送狀態
                             </th>
                             <th class="text-left">
+                              發送方式
+                            </th>
+                            <th class="text-left">
                               發送日期
                             </th>
                             <th class="text-left">
@@ -119,6 +201,11 @@
                             <td>
                               <v-icon v-if='message.status === 1'>fa-check</v-icon>
                               <v-icon v-if='message.status !== 1'>fa-times</v-icon>
+                            </td>
+                            <td>
+                              <span v-if='message.type === 0'>LINE</span>
+                              <span v-if='message.type === 1'>Email</span>
+                              <span v-if='message.type === 2'>大量發送不紀錄</span>
                             </td>
                             <td>{{ dateConvert(message.tick) }}</td>
                             <td>{{ message.uid.name }}</td>
@@ -190,8 +277,12 @@
     </v-row>
     <v-row>
         <v-col class='d-flex flex-column'>
-          <div class='text-h5 text-center pt-5 font-weight-black'>LINE Notify</div>
+          <div class='text-h5 text-center pt-5 font-weight-black'>LINE&amp;Email Notify</div>
           <v-divider inset></v-divider>
+          <v-switch
+            v-model="LINEtype"
+            label="如果用戶有LINE，就用LINE通知（關閉的話就會改用Email）"
+          ></v-switch>
           <v-textarea
             solo
             v-model="LINEbody"
@@ -200,10 +291,13 @@
             outlined clearable counter dense
           ></v-textarea>
           <v-btn @click='sendLINEnotify' class='ma-3'>
-            發出LINE通知
+            發出LINE&amp;Email通知
           </v-btn>
           <v-btn @click='openLINEHistory' class='ma-3'>
-            LINE notify發送紀錄
+            LINE&amp;Email發送紀錄
+          </v-btn>
+          <v-btn @click='bulkmessageW = true' class='ma-3'>
+            大量批次發送訊息
           </v-btn>
         </v-col>
     </v-row>
@@ -284,13 +378,17 @@ import dayjs from 'dayjs';
 import prettyBytes from 'pretty-bytes';
 import TurndownService from 'turndown';
 import { marked } from 'marked';
+import Papa from 'papaparse';
 let files = [];
 
 const turndownService = new TurndownService();
 
 export default {
   name: 'messageMgnt',
-  components: { TipTap: () => import(/* webpackChunkName: 'TipTap', webpackPrefetch: true */ './modules/TipTap') },
+  components: { 
+    TipTap: () => import(/* webpackChunkName: 'TipTap', webpackPrefetch: true */ './modules/TipTap'),
+    TagFilter: () => import(/* webpackChunkName: 'TagFilter', webpackPrefetch: true */ './modules/TagFilter')
+  },
   beforeDestroy () {
     this.$socket.client.off('getMessages', this.socketgetMessages);
     this.$socket.client.off('msgFileUploadDone', this.soketmsgFileUploadDone);
@@ -306,6 +404,12 @@ export default {
     this.$socket.client.off('removeMessageError', this.socketremoveMessageError);
     this.$socket.client.off('addMsg', this.socketaddMsg);
     this.$socket.client.off('saveMessage', this.socketsaveMessage);
+    this.$socket.client.off('getTagUsers', this.socketgetTagUsers);
+    this.$socket.client.off('bulkmsgsampleUploadDone', this.soketbulkmsgsampleUploadDone);
+    this.$socket.client.off('bulkmsgsampleUploadError', this.socketbulkmsgsampleUploadError);
+    this.$socket.client.off('requestbulkmsgsampleSlice', this.socketrequestbulkmsgsampleSlice);
+    this.$socket.client.off('bulkmsgsampleReport', this.socketbulkmsgsampleReport);
+    this.$socket.client.off('bulkmsgSent', this.socketbulkmsgSent);
   },
   created () {
     this.$emit('viewIn', {
@@ -329,8 +433,22 @@ export default {
     this.$socket.client.on('removeMessageError', this.socketremoveMessageError);
     this.$socket.client.on('addMsg', this.socketaddMsg);
     this.$socket.client.on('saveMessage', this.socketsaveMessage);
+    this.$socket.client.on('getTagUsers', this.socketgetTagUsers);
+    this.$socket.client.on('bulkmsgsampleUploadDone', this.soketbulkmsgsampleUploadDone);
+    this.$socket.client.on('bulkmsgsampleUploadError', this.socketbulkmsgsampleUploadError);
+    this.$socket.client.on('requestbulkmsgsampleSlice', this.socketrequestbulkmsgsampleSlice);
+    this.$socket.client.on('bulkmsgsampleReport', this.socketbulkmsgsampleReport);
+    this.$socket.client.on('bulkmsgSent', this.socketbulkmsgSent);
   },
   methods: {
+    closeBulkW: function() {
+      this.bulkmessageW = false;
+      this.bulkLog = [];
+      this.bulkmsgFile = undefined;
+      this.bulkuploadprogress = 0;
+      this.bulkuploadstatus = "";
+      this.msgSent = "";
+    },
     downloadFile: function (file) {
       this.$emit('downloadFile', file);
     },
@@ -391,11 +509,13 @@ export default {
       this.$emit('toastPop', '刪除檔案失敗（原因：' + data + '），請聯絡管理員');
       this.uploadprogress = 0;
       this.uploadstatus = '';
+      this.msgFile = undefined;
     },
     socketmsgFileUploadError: function (data) {
       this.$emit('toastPop', '上傳失敗（原因：' + data + '），請聯絡管理員');
       this.uploadprogress = 0;
       this.uploadstatus = '';
+      this.msgFile = undefined;
     },
     socketremoveMessage: function () {
       this.$emit('toastPop', '公告刪除完成！');
@@ -459,7 +579,8 @@ export default {
     sendLINEnotify: function () {
       this.$socket.client.emit('sendLINEnotify', {
         body: turndownService.turndown(this.LINEbody),
-        type: 0
+        type: 0,
+        useLINE: this.LINEtype
       });
     },
     sendBroadcast: function () {
@@ -483,9 +604,92 @@ export default {
       this.broadcastListPopulated = false;
       this.broadcastW = true;
       this.$socket.client.emit('getbroadcastLog');
+    },
+    downloadCSV: function() {
+      let output = "\ufeff"+ Papa.unparse(this.bulkSample);
+      let element = document.createElement('a');
+      let blob = new Blob([output], { type: 'text/csv' });
+      let url = window.URL.createObjectURL(blob);
+      element.setAttribute('href', url);
+      element.setAttribute('download', "大量訊息範本.csv");
+      element.click();
+    },
+    updatebulkTags: function(value) {
+      this.bulkTags = value;
+    },
+    generatebulkUsers: function() {
+      this.$socket.client.emit('getTagUsers', this.bulkTags);
+    },
+    socketgetTagUsers: function(data) {
+      this.bulkSample = [];
+      for(let i=0; i<data.result.length; i++) {
+        this.bulkSample.push({
+          Email: data.result[i].email,
+          "訊息內容": "範例內容",
+          "發送方式": this.LINEtype ? "L" : "E"
+        });
+      }
+      this.downloadCSV();
+    },
+    generateemptyUsers: function() {
+      this.bulkSample = [{
+        Email: "aaa@aaa.com",
+        "訊息內容": "範例內容",
+        "發送方式": this.LINEtype ? "L" : "E"
+      }];
+      this.downloadCSV();
+    },
+    soketbulkmsgsampleUploadDone: function() {
+      let oriobj = this;
+      this.bulkmsgFile = undefined;
+      this.bulkuploadprogress = 100;
+      this.msgSent = '上傳完成！';
+      this.bulkLog = [];
+      Vue.nextTick(() => {
+        oriobj.bulkuploadprogress = 0;
+        oriobj.bulkuploadstatus = '';
+      });
+    },
+    socketbulkmsgsampleUploadError: function(data) {
+      this.$emit('toastPop', '上傳失敗（原因：' + data + '），請聯絡管理員');
+      this.bulkmsgFile = undefined;
+      this.bulkuploadprogress = 0;
+      this.bulkuploadstatus = '';
+      this.msgSent = '';
+      this.bulkLog = [];
+    },
+    socketrequestbulkmsgsampleSlice: function(data) {
+      let oriobj = this;
+      let place = data.currentSlice * 100000;
+      let slice = files[data.uuid].file.slice(place, place + Math.min(100000, files[data.uuid].file.size - place));
+      this.bulkuploadprogress = Math.ceil((place / files[data.uuid].file.size) * 100);
+      let nowdiff = dayjs().valueOf() - files[data.uuid].starttick;
+      this.bulkuploadstatus = nowdiff === 0 ? '' : prettyBytes(place / (nowdiff/1000)) + '/s';
+      let fileReader = new FileReader();
+      fileReader.readAsArrayBuffer(slice);
+      fileReader.onload = () => {
+        var arrayBuffer = fileReader.result;
+        oriobj.$socket.client.emit('importbulkmsgFile', {
+          uuid: data.uuid,
+          name: files[data.uuid].file.name,
+          type: files[data.uuid].file.type,
+          size: files[data.uuid].file.size,
+          data: arrayBuffer
+        });
+      };
+    },
+    socketbulkmsgsampleReport: function(data) {
+      this.msgSent = data;
+    },
+    socketbulkmsgSent: function(data) {
+      this.msgSent = "執行完畢！";
+      this.bulkLog = data;
     }
   },
-  props: {
+  computed: {
+    savedTags: function () {
+      return this.$store.state.savedTags;
+    }
   },
   watch: {
     msgFile: {
@@ -515,10 +719,37 @@ export default {
           };
         }
       }
-    }
+    },
+    bulkmsgFile: {
+      immediate: true,
+      handler () {
+        if (this.bulkmsgFile !== undefined) {
+          let oriobj = this;
+          let fileReader = new FileReader();
+          let slice = this.bulkmsgFile.slice(0, 100000);
+          let uuid = uuidv4();
+          files[uuid] = {
+            file: this.bulkmsgFile,
+          };
+          fileReader.readAsArrayBuffer(slice);
+          fileReader.onload = () => {
+              var arrayBuffer = fileReader.result;
+              oriobj.$socket.client.emit('importbulkmsgFile', {
+                uuid: uuid,
+                name: oriobj.bulkmsgFile.name,
+                type: oriobj.bulkmsgFile.type,
+                size: oriobj.bulkmsgFile.size,
+                data: arrayBuffer
+              });
+          };
+        }
+      }
+    },
   },
   data () {
       return {
+        bulkTags: [],
+        LINEtype: true,
         broadcastTitle: '',
         broadcastBody: '',
         broadcastListPopulated: false,
@@ -563,7 +794,14 @@ export default {
           attachments: [],
           _id: undefined
         },
-        messageList: []
+        messageList: [],
+        bulkmessageW: false,
+        bulkSample: [],
+        bulkmsgFile: undefined,
+        bulkuploadprogress: 0,
+        bulkuploadstatus: '',
+        msgSent: '',
+        bulkLog: []
       };
   }
 };

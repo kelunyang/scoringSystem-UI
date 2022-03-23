@@ -8,6 +8,21 @@
     >
       第一次登入嗎？請記得填入你的密碼（已閃紅）喔！
     </v-alert>
+    <v-dialog v-model="linetipW" fullscreen hide-overlay transition='dialog-bottom-transition'>
+      <v-card>
+        <v-toolbar dark color='primary'>
+          <v-btn icon dark @click='linetipW = false'>
+            <v-icon>fa-times</v-icon>
+          </v-btn>
+          <v-toolbar-title>
+            說明：如何設定LINE一對一通知
+          </v-toolbar-title>
+        </v-toolbar>
+        <v-card-text class='text-left black--text text-body-1 pa-2 d-flex flex-column'>
+          <v-img width="100%" src="@/assets/lineSupport.png" />
+        </v-card-text>
+      </v-card>
+    </v-dialog>
     <v-dialog
       v-model="firstRunW"
       transition="dialog-bottom-transition"
@@ -24,7 +39,7 @@
           <div>請注意以下事項：</div>
           <ol>
             <li>你必須變更密碼，沒有密碼規則，隨便設定，但是只要你不改，你每次都會看到這個視窗</li>
-            <li>學生帳號的權限無法修改姓名，圖片是隨機的，不要嘗試了（但你可以改性別）</li>
+            <li>受限制帳號的權限無法修改姓名，不要嘗試了（但你可以改性別和輸入一些亂數來產生新的頭像）</li>
           </ol>
         </v-card-text>
         <v-card-actions>
@@ -70,30 +85,26 @@
           outlined
         ></v-select>
         <v-text-field outlined clearable dense prepend-icon='fa-user-astronaut' label='代表圖亂數' hint="如果你想換掉代表圖，可以在這邊亂輸入一堆字，可以跑出新的圖" v-model='currentUser.seed'></v-text-field>
-        <!-- <div class='d-flex flex-row'>
+        <div class='d-flex flex-row'>
           <v-icon>fa-link</v-icon>
           <span class="text-subtitle-2 font-weight-bold">社交媒體帳號綁定</span><br />
         </div>
         <span class="text-body-1 font-weight-bold" v-if='currentUser.lineDate === 0 || currentUser.lineDate === undefined'>
-          請授權機器人能用LINE Notify通知您專案進度
+          授權機器人能用LINE Notify通知
         </span>
         <span class="text-body-1 font-weight-bold" v-else>
           您已經於 {{ dateConvert(currentUser.lineDate) }} 綁定過了
         </span><br/>
         <v-btn :href='lineAPI' target='_blank' :class='firstRun'>
-          <v-icon>fab fa-line</v-icon>
-          綁定LINE Notify（會開新視窗）
+          按此綁定LINE Notify（會開新視窗）
         </v-btn><br />
-        <span>
-          <v-icon>fas fa-exclamation-triangle</v-icon>
-          請務必要把本平台的LINE Notify放到「1對1聊天接收LINE Notify通知」中（如下圖）！
-        </span>
-        <img width="100%" src="@/assets/lineSupport.png" />
-        <v-icon>fab fa-slack-hash</v-icon>
+        <v-btn @click="linetipW = true" class='ma-1'>
+          按此查看如何設定LINE一對一通知
+        </v-btn>
         <span class="text-subtitle-2 font-weight-bold">您所隸屬的使用者標籤：</span><br/>
         <div class='d-flex flex-row flex-wrap'>
           <v-chip v-for='(item, k) in currentUser.tags' :key='k' class='ma-2' :color='tagColor(k)' label text-color='white'>{{ item.name }}</v-chip>
-        </div> -->
+        </div>
         <v-btn color="red darken-4" class='white--text' @click="saveUser">儲存修改</v-btn>
       </v-col>
     </v-row>
@@ -225,6 +236,7 @@ export default {
   },
   data () {
     return {
+      linetipW: false,
       modify: false,
       firstRunW: true,
       lineKey: '',
