@@ -614,7 +614,7 @@
                 >
                   <v-stepper-step
                     :key='stage._id'
-                    :complete="item.stepPointer > index"
+                    :complete="item.stepPointer >= index"
                     :step='index + 1'
                     complete-icon='fa-flag'
                     edit-icon='fa-pencil-alt'
