@@ -1197,7 +1197,8 @@ export default {
       return stageCheck;
     },
     groupFilter: function(group) {
-      group = group === undefined ? this.ownGroup._id : group;
+      let ownGroupID = this.ownGroup === null ? null : this.ownGroup._id;
+      group = group === undefined ? ownGroupID : group;
       if(group !== null) {
         if(_filter(this.filterGroups, (fgroup) => {
           return fgroup === group;

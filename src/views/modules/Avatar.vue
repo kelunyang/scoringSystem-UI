@@ -31,7 +31,7 @@
         if(this.userObj.types === "female") {
           type = female;
         }
-        let hashValue = hash(this.userObj, {algorithm: 'sha1'});
+        let hashValue = hash(this.userObj._id + this.userObj.name + this.userObj.email + this.userObj.seed + this.userObj.unit, {algorithm: 'sha1'});
         return createAvatar(type, {
           seed: hashValue,
           dataUri: true,
@@ -59,6 +59,7 @@
           types: 'bottts',
           name: 'notSet',
           unit: 'notSet',
+          email: 'notSet@notSet.com',
           seed: ""
         },
         sizeObj: 48
