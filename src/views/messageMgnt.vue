@@ -624,18 +624,20 @@ export default {
       this.bulkSample = [];
       for(let i=0; i<data.result.length; i++) {
         this.bulkSample.push({
+          姓名: data.result[i].name,
           Email: data.result[i].email,
-          "訊息內容": "範例內容",
-          "發送方式": this.LINEtype ? "L" : "E"
+          訊息內容: "範例內容",
+          發送方式: this.LINEtype ? "L" : "E"
         });
       }
       this.downloadCSV();
     },
     generateemptyUsers: function() {
       this.bulkSample = [{
+        姓名: "aaa(本欄位沒有功能)",
         Email: "aaa@aaa.com",
-        "訊息內容": "範例內容",
-        "發送方式": this.LINEtype ? "L" : "E"
+        訊息內容: "範例內容",
+        發送方式: this.LINEtype ? "L" : "E"
       }];
       this.downloadCSV();
     },
