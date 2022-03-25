@@ -280,7 +280,7 @@
       @valueUpdated='updateRestrictTag'
       :candidatedItem='savedTags'
       :createable='true'
-      label='請輸入授權用戶管理功能的使用者標籤'
+      label='請輸入受限制的使用者標籤'
     />
     <div class='text-h5 text-center pt-5 font-weight-black'>機器人巡邏參數</div>
     <v-divider inset></v-divider>
