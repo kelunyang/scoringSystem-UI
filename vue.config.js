@@ -22,7 +22,7 @@ module.exports = {
   configureWebpack: {
     optimization: {
       minimize: true,
-      minimizer: [new UglifyJsPlugin()],
+      minimizer: [new UglifyJsPlugin({parallel: true})],
     },
     plugins: [
       new webpack.IgnorePlugin({
