@@ -40,6 +40,9 @@
       max-width="50%"
     >
       <v-sheet class='d-flex flex-column pa-1'>
+        <v-alert outlined type="info" icon='fa-dollar-sign' class='text-left' v-if='userBalance <= 0'>
+          你根本沒有點數，無法送出押金！
+        </v-alert>
         <v-slider
           v-if='defaultReport.grantedDate === 0'
           :label='"投入"+defaultAudit.feedback+"點"'
@@ -63,8 +66,9 @@
               class='white--text ma-1'
               :disabled='suggestedfeedBackValue === 0 || defaultAudit.feedback === 0'
               v-bind="attrs" v-on="on"
+              v-show="userBalance > 0"
             >
-              送出評分
+              回復對方互評
             </v-btn>
           </template>
           <v-sheet class='d-flex flex-column pa-1'>
@@ -248,6 +252,9 @@
           <v-alert outlined v-if='waitValue' type="info" icon='fa-info-circle' class='text-left'>
             用戶財產計算中請稍候
           </v-alert>
+          <v-alert outlined type="info" icon='fa-dollar-sign' class='text-left' v-if='userBalance <= 0'>
+            你根本沒有點數，無法送出押金！
+          </v-alert>
           <div class='text-subtitle-2 font-weight-blod'>好評／負評</div>
           <v-switch
             v-model="defaultAudit.short"
@@ -295,6 +302,7 @@
                 color='indigo darken-4'
                 class='white--text ma-1'
                 :disabled='defaultAudit.content === ""'
+                v-show='userBalance > 0'
                 v-bind="attrs" v-on="on"
               >
                 送出評分
@@ -326,6 +334,9 @@
         <v-card-text class='pa-0 ma-0 text-left black--text text-body-1 pa-2 d-flex flex-column'>
           <v-alert outlined v-if='waitValue' type="info" icon='fa-info-circle' class='text-left'>
             用戶財產計算中請稍候
+          </v-alert>
+          <v-alert outlined type="info" icon='fa-dollar-sign' class='text-left' v-if='userBalance <= 0'>
+            你根本沒有點數，無法送出押金！
           </v-alert>
           <div class='text-subtitle-2 font-weight-blod'>共同作者</div>
           <tag-filter
@@ -368,6 +379,7 @@
                 color='indigo darken-4'
                 class='white--text ma-1'
                 :disabled='suggestedValue === 0 || defaultReport.value === 0'
+                v-show="userBalance > 0"
                 v-bind="attrs" v-on="on"
               >
                 送出階段成果

@@ -923,7 +923,7 @@ export default {
       this.balanceList = [];
       this.$socket.client.emit('getPersonalAccounting', {
         sid: this.defaultSchema._id,
-        uid: this.currentUser._id,
+        uid: this.defaultUser._id,
         assetDates: this.assetDates,
         assetNum: this.assetNum,
         assetKeyword: this.assetKeyword
