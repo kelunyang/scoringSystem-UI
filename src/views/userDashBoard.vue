@@ -307,6 +307,20 @@
                       </v-tooltip>
                       <v-tooltip bottom>
                         <template v-slot:activator="{ on, attrs }">
+                          <v-btn
+                            icon
+                            @click.stop='noreplyStage(item)'
+                            v-bind="attrs" v-on="on"
+                          >
+                            <v-icon v-if='item.replyDisabled > 0'>fa-comment</v-icon>
+                            <v-icon v-else>fa-comment-slash</v-icon>
+                          </v-btn>
+                        </template>
+                        <span v-if='item.replyDisabled > 0'>啟動回合評分</span>
+                        <span v-else>禁止回合評分</span>
+                      </v-tooltip>
+                      <v-tooltip bottom>
+                        <template v-slot:activator="{ on, attrs }">
                           <v-btn icon v-bind="attrs" v-on="on" @click='getStage(item)'>
                             <v-icon>fa-pencil-alt</v-icon>
                           </v-btn>
@@ -696,6 +710,7 @@ export default {
     this.$socket.client.off('modStage', this.socketmodStage);
     this.$socket.client.off('removeStage', this.socketremoveStage);
     this.$socket.client.off('closeStage', this.socketcloseStage);
+    this.$socket.client.off('noreplyStage', this.socketnoreplyStage);
     this.$socket.client.off('getTagUsers', this.socketgetTagUsers);
     this.$socket.client.off('getGroups', this.socketgetGroups);
     this.$socket.client.off('addGroup', this.socketaddGroup);
@@ -757,6 +772,7 @@ export default {
     this.$socket.client.on('addStage', this.socketaddStage);
     this.$socket.client.on('modStage', this.socketmodStage);
     this.$socket.client.on('closeStage', this.socketcloseStage);
+    this.$socket.client.on('noreplyStage', this.socketnoreplyStage);
     this.$socket.client.on('removeStage', this.socketremoveStage);
     this.$socket.client.on('getTagUsers', this.socketgetTagUsers);
     this.$socket.client.on('getGroups', this.socketgetGroups);
@@ -1080,6 +1096,9 @@ export default {
     closeStage: function(stage) {
       this.$socket.client.emit('closeStage', stage);
     },
+    noreplyStage: function(stage) {
+      this.$socket.client.emit('noreplyStage', stage);
+    },
     removeStage: function(stage) {
       this.$socket.client.emit('removeStage', stage);
     },
@@ -1117,6 +1136,10 @@ export default {
     socketcloseStage: function () {
       this.$socket.client.emit('getStages', this.defaultSchema._id);
       this.$emit('toastPop', '關閉完成');
+    },
+    socketnoreplyStage: function () {
+      this.$socket.client.emit('getStages', this.defaultSchema._id);
+      this.$emit('toastPop', '禁止回合回復操作完成');
     },
     socketremoveStage: function () {
       this.$socket.client.emit('getStages', this.defaultSchema._id);

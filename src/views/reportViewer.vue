@@ -43,6 +43,9 @@
         <v-alert outlined type="info" icon='fa-dollar-sign' class='text-left' v-if='userBalance <= 0'>
           你根本沒有點數，無法送出押金！
         </v-alert>
+        <v-alert outlined type="info" icon='fa-dollar-sign' class='text-left' v-if='userBalance < defaultAudit.value'>
+          你擁有的點數比對方給你的還少，你最多只能回復{{ intConvert(this.userBalance/this.defaultAudit.value) }}%而已，建議你等手上有更多點數再來回復
+        </v-alert>
         <v-slider
           v-if='defaultReport.grantedDate === 0'
           :label='"投入"+defaultAudit.feedback+"點"'
@@ -183,6 +186,9 @@
           </v-alert>
           <v-alert outlined v-if='defaultStage.matchPoint' type="info" icon='fa-info-circle' class='text-left'>
             這回合是決勝點，會關閉自動評分，最終得分會把點數在乘上名次（按照評分結果決定）
+          </v-alert>
+          <v-alert outlined v-if='defaultStage.replyDisabled > 0' type="info" icon='fa-comment-slash' class='text-left'>
+            本回合暫停評分，請等待開放評分時再來
           </v-alert>
           <v-alert outlined type="info" icon='fa-info-circle' class='text-left'>
             <span v-if='falseAudit'>這份報告有負評，已關閉自動評分</span><span v-else>收到並完成回復{{ groupGap }}份評分後會啟動自動評分（並關閉互評）</span>，現在已經收到{{ defaultReport.audits.length }}份評分<span v-if='isAuthor'>，你可以確認對方的評分是否正確</span><span v-if='allowAudit()'>，快來給這份報告一個評分吧！</span>
@@ -422,6 +428,9 @@
     </v-alert>
     <v-alert outlined type="error" icon='fa-skull' v-if='defaultStage.closed > 0' class='text-left'>
       {{ dateConvert(defaultStage.closed) }}起，本回合不收成果啦！
+    </v-alert>
+    <v-alert outlined type="info" icon='fa-comment-slash' v-if='defaultStage.replyDisabled' class='text-left'>
+      {{ dateConvert(defaultStage.replyDisabled) }}起，本回合禁止評分啦！（你還是可以發成果）
     </v-alert>
     <div class='d-flex flex-column pa-1'>
       <div class='blue-grey--text darken-1 text-caption' v-if='defaultStage._id === undefined'>本活動共{{ defaultSchema.stages.length }}個回合，請點擊任何一個回合後點右下角繳交本階段成果（旗子為目前開放的階段）</div>
@@ -729,6 +738,9 @@ export default {
     }
   },
   methods: {
+    intConvert: function(val) {
+      return parseInt(Math.floor(val * 100));
+    },
     clearFilter: function() {
       this.filterGroups = [];
       this.reportFilters = [];
@@ -916,7 +928,7 @@ export default {
       this.defaultReport = data.report;
       this.isAuthor = data.isAuthor;
       this.falseAudit = data.falseAudit;
-      this.auditValues = data.auditValues <= 0 ? 1 : data.auditValues;
+      this.auditValues = data.auditValues <= 0 ? data.report.value : data.auditValues;
       this.auditValues = data.report.audits.length > 0 ? this.auditValues : data.report.value;
       if(this.enableReportW) {
         this.reportW = true;
@@ -1177,18 +1189,21 @@ export default {
       return false;
     },
     allowAudit: function() {
-      if(this.isAuthor) {
-        return false;
-      } else {
-        if(this.ownGroup !== null) {
-          for(let i=0; i<this.defaultReport.audits.length; i++) {
-            if(this.defaultReport.audits[i].gid === this.ownGroup._id) {
-              return false;
+      if(this.defaultStage.replyDisabled === 0) {
+        if(this.isAuthor) {
+          return false;
+        } else {
+          if(this.ownGroup !== null) {
+            for(let i=0; i<this.defaultReport.audits.length; i++) {
+              if(this.defaultReport.audits[i].gid === this.ownGroup._id) {
+                return false;
+              }
             }
           }
         }
+        return true;
       }
-      return true;
+      return false;
     },
     stageAllowed: function() {
       let stageCheck = false;
