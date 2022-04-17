@@ -162,6 +162,7 @@
           ></v-slider>
           <v-btn class='ma-1' @click='saveGrant()'>強制寫入評分</v-btn>
           <v-btn class='ma-1' v-if='!falseAudit' @click='calcReport()'>啟動自動評分</v-btn>
+          <span class='text-caption red--text'>如果是決勝點，你必須在同標籤報告都完成評分後，再按下評分按鈕才會發點數（因為決勝點得看名次發點）</span>
         </v-card-text>
       </v-card>
     </v-dialog>
@@ -173,7 +174,9 @@
           </v-btn>
           <v-toolbar-title>
             檢視{{ getCoworkers(defaultReport.coworkers) }}的本階段成果
-            <span v-if='defaultReport.grantedDate > 0'>(已在{{ dateConvert(defaultReport.grantedDate) }}批改，獲得{{ defaultReport.grantedValue }}點)</span>
+            <span v-if='defaultReport.grantedDate > 0'>(已在{{ dateConvert(defaultReport.grantedDate) }}批改，</span>
+            <span v-if='defaultReport.gained > 0'>獲得{{ defaultReport.grantedValue }}點)</span>
+            <span v-if='defaultReport.gained === 0'>尚未發點</span>
           </v-toolbar-title>
           <v-spacer></v-spacer>
           <v-btn icon dark v-if="isSupervisor" v-show='defaultReport.gained === 0' @click='falserateW = true'>
