@@ -270,7 +270,7 @@
             <span v-if='falseAudit'>這份報告有負評，已關閉自動評分</span><span v-else>收到並完成回復{{ groupGap }}份評分後會啟動自動評分（並關閉互評）</span>，現在已經收到{{ defaultReport.audits.length }}份評分<span v-if='isAuthor'>，你可以確認對方的評分是否正確</span><span v-if='allowAudit()'>，快來給這份報告一個評分吧！</span>
           </v-alert>
           <v-btn class='ma-1 white--text' v-if='allowAudit()' v-show='enableAudit' @click='addAudit' color='red darken-4'>給予評分</v-btn>
-          <v-btn class='ma-1' v-if='defaultReport.intervention.length > 0 || isSupervisor' @click='viewIntervention(defaultReport, 0)'>{{ isSupervisor ? "新增／" : "" }}查看批改建議</v-btn>
+          <v-btn class='ma-1' v-if='defaultReport.intervention.length > 0 || isSupervisor' @click='viewIntervention(defaultReport, 0)'>{{ isSupervisor ? "新增／" : "" }}查看批改建議（{{ defaultReport.intervention.length }}）</v-btn>
           <apexchart type="bar" width='100%' :height="scoreHeight" :options="chartOptions" :series="chartSeries"></apexchart>
           <div class='text-subtitle-2 font-weight-blod'>成果內容</div>
           <v-divider></v-divider>
@@ -316,7 +316,7 @@
                   v-if='item.intervention.length > 0 || isSupervisor'
                   class='ma-1'
                 >
-                  {{ isSupervisor ? "新增／" : "" }}查看批改建議
+                  {{ isSupervisor ? "新增／" : "" }}查看批改建議({{ item.intervention.length }})
                 </v-btn>
                 <v-btn
                   @click='setFeedback(item)'
@@ -950,32 +950,34 @@ export default {
       let oriobj = this;
       let interventOpetions = {...this.interventOpetions};
       let values = _orderBy(this.interventions, ['tick'], ['asc']);
-      interventOpetions.xaxis.categories = _map(values, (intervent) => {
-        return oriobj.dateConvert(intervent.tick)
-      });
-      let avgScore = [];
-      let meanScore = _meanBy(this.interventions, (intervent) => {
-        return intervent.value;
-      });
-      for(let i=0; i<this.interventions.length; i++) {
-        avgScore.push(meanScore);
-      }
-      let interventSeries = [{ 
-        name: "評分調整比例",
-        type: 'column',
-        data: _map(values, (intervent) => {
+      if(values.length > 0) {
+        interventOpetions.xaxis.categories = _map(values, (intervent) => {
+          return oriobj.dateConvert(intervent.tick)
+        });
+        let avgScore = [];
+        let meanScore = _meanBy(this.interventions, (intervent) => {
           return intervent.value;
-        })
-      },{
-        name: "平均調整比例",
-        type: 'line',
-        data: avgScore
-      }];
-      this.interventOpetions = interventOpetions;
-      this.interventSeries = interventSeries;
-      Vue.nextTick(() => {
-        oriobj.interventHeight = 200;
-      })
+        });
+        for(let i=0; i<this.interventions.length; i++) {
+          avgScore.push(meanScore);
+        }
+        let interventSeries = [{ 
+          name: "評分調整比例",
+          type: 'column',
+          data: _map(values, (intervent) => {
+            return intervent.value;
+          })
+        },{
+          name: "平均調整比例",
+          type: 'line',
+          data: avgScore
+        }];
+        this.interventOpetions = interventOpetions;
+        this.interventSeries = interventSeries;
+        Vue.nextTick(() => {
+          oriobj.interventHeight = 200;
+        });
+      }
     },
     renderChart: function() {
       let oriobj = this;
