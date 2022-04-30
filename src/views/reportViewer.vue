@@ -1,5 +1,78 @@
 <template>
   <v-sheet>
+    <v-dialog v-model="interventionW" fullscreen hide-overlay transition='dialog-bottom-transition'>
+      <v-card>
+        <v-toolbar dark color='primary'>
+          <v-btn icon dark @click='interventionW = false'>
+            <v-icon>fa-times</v-icon>
+          </v-btn>
+          <v-toolbar-title>
+            檢視批改建議（目前為{{ interventions.length > 0 ? calcIntervention : "無" }}）
+          </v-toolbar-title>
+        </v-toolbar>
+        <v-card-text class='text-left black--text text-body-1 pa-2 d-flex flex-column'>
+          <v-text-field v-if='isSupervisor' outlined clearable dense label='批改建議內容' v-model='interventionObj.content'></v-text-field>
+          <v-slider
+            v-if='isSupervisor'
+            :label='"調整為"+interventionObj.value+"%"'
+            min='0'
+            max='200'
+            v-model="interventionObj.value"
+            thumb-label
+          ></v-slider>
+          <v-btn
+            class='white--text ma-1'
+            color='blue darken-4'
+            v-if='isSupervisor'
+            :disabled='interventionObj.content === ""'
+            @click='addIntervention'
+          >
+            送出批改建議
+          </v-btn>
+          <apexchart v-if="interventions.length > 0" type="line" width='100%' :height="interventHeight" :options="interventOpetions" :series="interventSeries"></apexchart>
+          <v-simple-table v-if="interventions.length > 0" class='black--text'>
+            <template v-slot:default>
+              <thead>
+                <tr>
+                  <th class="text-left">
+                    建議內容
+                  </th>
+                  <th class="text-center" style="width:25px">
+                    調整比例
+                  </th>
+                  <th class="text-right">
+                    時間和批改者
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="intervention in interventions"
+                  :key="intervention._id"
+                >
+                  <td class='text-left'>
+                    {{ intervention.content }}
+                  </td>
+                  <td class='text-center'>
+                    {{ intervention.value }}%
+                  </td>
+                  <td class="text-right">
+                    {{ dateConvert(intervention.tick) }}（{{ intervention.user.name }}）
+                  </td>
+                </tr>
+              </tbody>
+            </template>
+          </v-simple-table>
+          <v-btn
+            class='white--text ma-1'
+            color='red darken-4'
+            @click='interventionW = false'
+          >
+            關閉對話框
+          </v-btn>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
     <v-dialog v-model="groupfilterSelectorW" fullscreen hide-overlay transition='dialog-bottom-transition'>
       <v-card>
         <v-toolbar dark color='primary'>
@@ -196,8 +269,9 @@
           <v-alert outlined type="info" icon='fa-info-circle' class='text-left'>
             <span v-if='falseAudit'>這份報告有負評，已關閉自動評分</span><span v-else>收到並完成回復{{ groupGap }}份評分後會啟動自動評分（並關閉互評）</span>，現在已經收到{{ defaultReport.audits.length }}份評分<span v-if='isAuthor'>，你可以確認對方的評分是否正確</span><span v-if='allowAudit()'>，快來給這份報告一個評分吧！</span>
           </v-alert>
+          <v-btn class='ma-1 white--text' v-if='allowAudit()' v-show='enableAudit' @click='addAudit' color='red darken-4'>給予評分</v-btn>
+          <v-btn class='ma-1' v-if='defaultReport.intervention.length > 0 || isSupervisor' @click='viewIntervention(defaultReport, 0)'>{{ isSupervisor ? "新增／" : "" }}查看批改建議</v-btn>
           <apexchart type="bar" width='100%' :height="scoreHeight" :options="chartOptions" :series="chartSeries"></apexchart>
-          <v-btn class='ma-1' v-if='allowAudit()' v-show='enableAudit' @click='addAudit'>給予評分</v-btn>
           <div class='text-subtitle-2 font-weight-blod'>成果內容</div>
           <v-divider></v-divider>
           <div class='text-body-1' v-html="HTMLConverter(defaultReport.content)"></div>
@@ -211,23 +285,24 @@
             transition="fade-transition"
             v-for='item in defaultReport.audits' :key='item._id'
           >
-            <v-list-item>
-              <v-list-item-icon>
-                <v-icon v-if='item.short'>fa-thumbs-down</v-icon>
-                <v-icon v-else>fa-thumbs-up</v-icon>
-              </v-list-item-icon>
-              <v-list-item-content class="text-left">
-                <v-list-item-title v-html="HTMLConverter(item.content)">
-                </v-list-item-title>
-                <v-list-item-subtitle>
-                  <span v-if='groupCheck(item)'>[你同組的評分]</span>
-                  <span>給分{{ item.value }}點</span>
-                  <span> | 建立於{{ dateConvert(item.tick) }}</span>
-                  <span v-show='isAuthor' v-if='item.feedbackTick === 0'>，快去回復他的評分吧</span>
-                  <span v-if='item.feedbackTick > 0'> | 已於{{ dateConvert(item.feedbackTick) }}確認為{{ item.feedback }}，預估這份評分值{{ predictScore(item.value, item.feedback, item.short) }}</span>
-                </v-list-item-subtitle>
-              </v-list-item-content>
-              <v-list-item-action class='d-flex flex-row'>
+            <div class='ma-1 flex-column'>
+              <div class='flex-row'>
+                <div>
+                  <v-icon v-if='item.short'>fa-thumbs-down</v-icon>
+                  <v-icon v-else>fa-thumbs-up</v-icon>
+                </div>
+                <div class="text-left flex-column">
+                  <div v-html="HTMLConverter(item.content)"></div>
+                  <div>
+                    <span v-if='groupCheck(item)'>[你同組的評分]</span>
+                    <span>給分{{ item.value }}點</span>
+                    <span> | 建立於{{ dateConvert(item.tick) }}</span>
+                    <span v-show='isAuthor' v-if='item.feedbackTick === 0'>，快去回復他的評分吧</span>
+                    <span v-if='item.feedbackTick > 0'> | 已於{{ dateConvert(item.feedbackTick) }}確認為{{ item.feedback }}，預估這份評分值{{ predictScore(item.value, item.feedback, item.short) }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class='d-flex flex-row justify-end'>
                 <v-btn
                   @click='agreeAudit(item)'
                   v-if="isSupervisor" v-show='defaultReport.gained === 0'
@@ -237,14 +312,21 @@
                   <span v-if='item.confirm > 0'>撤回認可</span>
                 </v-btn>
                 <v-btn
+                  @click='viewIntervention(item, 1)'
+                  v-if='item.intervention.length > 0 || isSupervisor'
+                  class='ma-1'
+                >
+                  {{ isSupervisor ? "新增／" : "" }}查看批改建議
+                </v-btn>
+                <v-btn
                   @click='setFeedback(item)'
                   v-if='isAuthor' v-show='acceptFeedback(item)'
                   class='ma-1'
                 >
                   回復評分
                 </v-btn>
-              </v-list-item-action>
-            </v-list-item>
+              </div>
+            </div>
           </v-lazy>
         </v-card-text>
       </v-card>
@@ -358,7 +440,7 @@
             :createable='false'
             label='請輸入用戶名稱'
           />
-          <div v-if='suggestedValue > 0' class='text-subtitle-2 font-weight-blod'>投入點數（活動限制為參與評分者總點數的{{ defaultSchema.betRate * 100 }}%，因此最大值為{{ suggestedValue }}，請注意，其他人對你的評分都不會超過你自己給的自評分）</div>
+          <div v-if='suggestedValue > 0' class='text-subtitle-2 font-weight-blod'>投入點數（活動限制為參與評分者總點數的{{ defaultSchema.betRate * 100 }}%，因此最大值為{{ suggestedValue }}，請注意，自評分也就是這份報告的給分上限）</div>
           <v-slider
             v-if='suggestedValue > 0'
             :label='"投入"+defaultReport.value+"點"'
@@ -368,7 +450,7 @@
             v-model="defaultReport.value"
             thumb-label
           ></v-slider>
-          <span class='text-caption red--text'>你的自評分可以幫你得到{{ previewReport }}點<span v-if='defaultReport.coworkers.length > 0'>，共同作者有{{ defaultReport.coworkers.length + 1 }}人，每個人出{{ Math.ceil(defaultReport.value / (defaultReport.coworkers.length + 1)) }}點</span></span>
+          <span class='text-caption red--text'>如果其他人和你的看法相同，你的自評分可以幫你得到{{ previewReport }}點<span v-if='defaultReport.coworkers.length > 0'>，共同作者有{{ defaultReport.coworkers.length + 1 }}人，每個人出{{ Math.ceil(defaultReport.value / (defaultReport.coworkers.length + 1)) }}點</span></span>
           <div class='text-subtitle-2 font-weight-blod'>成果內容（Google文件請貼連結）</div>
           <Tip-Tap
             v-model="defaultReport.content"
@@ -506,33 +588,30 @@
       transition="fade-transition"
       v-for='item in filteredReportList' :key='item._id'
     >
-      <v-list-item>
-        <v-badge
-          :color="item.gained > 0 ? 'teal darken-4' : 'red darken-4'"
-          inline
-          tile
-        >
-          <template v-slot:badge>
-            <span v-if="item.coworkers.length > 0">作者×{{ item.coworkers.length }}</span>
-          </template>
-          <v-list-item-avatar size='36'>
+      <div class='d-flex flex-column ma-1'>
+        <div class='d-flex flex-row'>
+          <div class='d-flex flex-column justify-center align-center ma-1'>
             <Avatar :user='firstCoworker(item.coworkers)' :size='36'/>
-          </v-list-item-avatar>
-        </v-badge>
-        <v-list-item-content class="text-left">
-          <v-list-item-title>
-            <span v-if='groupCheck(item)'>[你同組的報告]</span>
-            <span v-if='item.locked'>[已禁止撤回和自動批改]</span>
-            <span v-if='(item.tick - defaultStage.endTick) > 0'>[遲交]</span>
-            繳交人：{{ getCoworkers(item.coworkers) }}
-          </v-list-item-title>
-          <v-list-item-subtitle>
-            <span>{{ item.audits.length }}個評分</span>
-            <span v-if='item.gained > 0'> | 得分： {{ item.grantedValue }}(批改於{{ dateConvert(item.grantedDate) }})</span>
-            <span> | 建立於{{ dateConvert(item.tick) }}</span>
-          </v-list-item-subtitle>
-        </v-list-item-content>
-        <v-list-item-action class='d-flex flex-row align-center flex-justify-end'>
+            <div v-if="item.coworkers.length > 0" class="text-caption">作者×{{ item.coworkers.length }}</div>
+          </div>
+          <div class='d-flex flex-column ma-1 align-center justify-center'>
+            <span :class="item.gained > 0 ? 'teal darken-4' : 'red darken-4'" class='white--text text-caption'>{{ item.gained > 0 ? "已批改" : "未批改" }}</span>
+            <span class='text-caption'>互評×{{ item.audits.length }}</span>
+          </div>
+          <div class='ma-1 d-flex flex-column ma-1 align-center font-weight-bold text-caption'>
+            <span v-if='groupCheck(item)' class="blue--text darken-4">同組</span>
+            <span v-if='item.locked' class="red--text darken-4">鎖定</span>
+            <span v-if='(item.tick - defaultStage.endTick) > 0' class="red--text darken-4">遲交</span>
+          </div>
+          <div class="d-flex flex-column pa-1">
+            <div class='text-left font-weight-bold'>繳交人：{{ getCoworkers(item.coworkers) }}</div>
+            <div class='text-left text-body-2'>
+              <span>建立於{{ dateConvert(item.tick) }}</span>
+              <span v-if='item.gained > 0'> | 得分： {{ item.grantedValue }}(批改於{{ dateConvert(item.grantedDate) }})</span>
+            </div>
+          </div>
+        </div>
+        <div class='d-flex flex-row align-center justify-end'>
           <v-btn @click='viewReport(item)' class='ma-1'>
             檢視成果
           </v-btn>
@@ -572,16 +651,9 @@
               <div class='text-caption'>如果你只是誤觸，請隨意點擊其他地方即會關閉本對話框</div>
             </v-sheet>
           </v-menu>
-          <v-tooltip bottom>
-            <template v-slot:activator="{ on, attrs }">
-              <v-btn icon v-bind="attrs" v-on="on" @click='groupFilter(item.gid)'>
-                <v-icon>fa-thumbtack</v-icon>
-              </v-btn>
-            </template>
-            <span>過濾這組的成果（只看這組的）</span>
-          </v-tooltip>
-        </v-list-item-action>
-      </v-list-item>
+          <v-btn @click='groupFilter(item.gid)'>只看這組的成果</v-btn>
+        </div>
+      </div>
     </v-lazy>
   </v-sheet>
 </template>
@@ -591,6 +663,7 @@
 import Vue from 'vue';
 import dayjs from 'dayjs';
 import _sumBy from 'lodash/sumBy';
+import _meanBy from 'lodash/meanBy';
 import _map from 'lodash/map';
 import _filter from 'lodash/filter';
 import _inRange from 'lodash/inRange';
@@ -641,6 +714,8 @@ export default {
     this.$socket.client.off('getOwnGroup', this.socketgetOwnGroup);
     this.$socket.client.off('getGroupTags', this.socketgetGroupTags);
     this.$socket.client.off('getTagGroups', this.socketgetTagGroups);
+    this.$socket.client.off('getInterventions', this.socketgetInterventions);
+    this.$socket.client.off('addIntervention', this.socketaddIntervention);
   },
   components: { 
     TagFilter: () => import(/* webpackChunkName: 'TagFilter', webpackPrefetch: true */ './modules/TagFilter'),
@@ -671,6 +746,8 @@ export default {
     this.$socket.client.on('getOwnGroup', this.socketgetOwnGroup);
     this.$socket.client.on('getGroupTags', this.socketgetGroupTags);
     this.$socket.client.on('getTagGroups', this.socketgetTagGroups);
+    this.$socket.client.on('getInterventions', this.socketgetInterventions);
+    this.$socket.client.on('addIntervention', this.socketaddIntervention);
   },
   watch: {
     'defaultAudit.feedback': function () {
@@ -727,6 +804,14 @@ export default {
     }
   },
   computed: {
+    calcIntervention: function() {
+      if(this.interventions.length > 0) {
+        return Math.ceil(_meanBy(this.interventions, (intervent) => {
+          return intervent.value;
+        })) + "%";
+      }
+      return "";
+    },
     enableAudit: function() {
       return this.groupGap - this.defaultReport.audits.length > 0;
     },
@@ -741,6 +826,28 @@ export default {
     }
   },
   methods: {
+    socketaddIntervention: function(data) {
+      this.viewIntervention(data, data.type);
+    },
+    addIntervention: function() {
+      this.$socket.client.emit('addIntervention', this.interventionObj);
+    },
+    socketgetInterventions: function(data) {
+      if(data._id === this.interventionObj._id) {
+        this.interventions = data.interventions;
+        this.renderIntervention();
+        if(!this.interventionW) {
+          this.interventionW = true;
+        }
+      }
+    },
+    viewIntervention: function(obj, type) {
+      this.interventionObj._id = obj._id;
+      this.interventionObj.type = type;
+      this.interventionObj.value = 0;
+      this.interventionObj.content = "";
+      this.$socket.client.emit('getInterventions', this.interventionObj);
+    },
     intConvert: function(val) {
       return parseInt(Math.floor(val * 100));
     },
@@ -839,6 +946,37 @@ export default {
       this.reportW = false;
       this.scoreHeight = 50;
     },
+    renderIntervention: function() {
+      let oriobj = this;
+      let interventOpetions = {...this.interventOpetions};
+      let values = _orderBy(this.interventions, ['tick'], ['asc']);
+      interventOpetions.xaxis.categories = _map(values, (intervent) => {
+        return oriobj.dateConvert(intervent.tick)
+      });
+      let avgScore = [];
+      let meanScore = _meanBy(this.interventions, (intervent) => {
+        return intervent.value;
+      });
+      for(let i=0; i<this.interventions.length; i++) {
+        avgScore.push(meanScore);
+      }
+      let interventSeries = [{ 
+        name: "評分調整比例",
+        type: 'column',
+        data: _map(values, (intervent) => {
+          return intervent.value;
+        })
+      },{
+        name: "平均調整比例",
+        type: 'line',
+        data: avgScore
+      }];
+      this.interventOpetions = interventOpetions;
+      this.interventSeries = interventSeries;
+      Vue.nextTick(() => {
+        oriobj.interventHeight = 200;
+      })
+    },
     renderChart: function() {
       let oriobj = this;
       let chartOptions = {...this.chartOptions};
@@ -884,7 +1022,6 @@ export default {
         data: [ungained.length - unAudit.length]
       });
       this.reportSeries = series;
-      console.dir(series);
       Vue.nextTick(() => {
         oriobj.reportHeight = 130;
       })
@@ -971,7 +1108,8 @@ export default {
         feedback: 0,
         feedbackTick: 0,
         feedbackUser: "",
-        short: false
+        short: false,
+        intervention: []
       };
       let coworkers = _unionWith(this.defaultAudit.coworkers, [this.currentUser._id], (a, b) => {
         return a === b;
@@ -1031,7 +1169,8 @@ export default {
         grantedValue: 0,
         gained: 0,
         visibility: false,
-        revokeTick: 0
+        revokeTick: 0,
+        intervention: []
       };
       let coworkers = _unionWith(this.defaultReport.coworkers, [this.currentUser._id], (a, b) => {
         return a === b;
@@ -1247,6 +1386,56 @@ export default {
   },
   data () {
     return {
+      interventHeight: 100,
+      interventOpetions: {
+        chart: {
+          height: 350,
+          type: 'line',
+          zoom: {
+            enabled: false
+          }
+        },
+        dataLabels: {
+          enabled: false
+        },
+        colors: [
+          '#E76F51',
+          '#F8961E'
+        ],
+        stroke: {
+          curve: 'straight'
+        },
+        grid: {
+          row: {
+            colors: ['#f3f3f3', 'transparent'],
+            opacity: 0.5
+          },
+        },
+        xaxis: {
+          categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
+        },
+        yaxis: [
+          {
+            labels: {
+              formatter: function(val) {
+                return val.toFixed(0);
+              }
+            }
+          }
+        ]
+      },
+      interventSeries: [{
+        name: "Desktops",
+        data: [10, 41, 35, 51, 49, 62, 69, 91, 148]
+      }],
+      interventionObj: {
+        _id: "",
+        type: 0,
+        content: "",
+        value: 0
+      },
+      interventions: [],
+      interventionW: false,
       ignoreTime: false,
       ownGroup: null,
       googlelinkW: false,
@@ -1291,7 +1480,8 @@ export default {
         feedbackTick: 0,
         feedbackUser: "",
         short: false,
-        _id: undefined
+        _id: undefined,
+        intervention: []
       },
       defaultReport: {
         content: "",
@@ -1308,7 +1498,8 @@ export default {
         gained: 0,
         visibility: false,
         revokeTick: 0,
-        _id: undefined
+        _id: undefined,
+        intervention: []
       },
       defaultUser: {
         _id: "",

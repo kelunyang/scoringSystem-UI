@@ -290,7 +290,7 @@
             placeholder='請不要留白'
             outlined clearable counter dense
           ></v-textarea>
-          <v-btn @click='sendLINEnotify' class='ma-3'>
+          <v-btn :disabled='LINEbody === ""' @click='sendLINEnotify' class='ma-3'>
             發出LINE&amp;Email通知
           </v-btn>
           <v-btn @click='openLINEHistory' class='ma-3'>
