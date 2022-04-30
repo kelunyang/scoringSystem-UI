@@ -285,19 +285,22 @@
             transition="fade-transition"
             v-for='item in defaultReport.audits' :key='item._id'
           >
-            <div class='ma-1 flex-column'>
-              <div class='flex-row'>
+            <div class='ma-1 flex-column ma-1'>
+              <div class='d-flex flex-row'>
                 <div>
                   <v-icon v-if='item.short'>fa-thumbs-down</v-icon>
                   <v-icon v-else>fa-thumbs-up</v-icon>
                 </div>
-                <div class="text-left flex-column">
+                <div class='ma-1 d-flex flex-column ma-1 align-center font-weight-bold text-caption'>
+                  <span v-if='groupCheck(item)' class="blue--text darken-4">同組評分</span>
+                  <span v-show='isAuthor' v-if='item.feedbackTick === 0' class="red--text darken-4">尚未確認</span>
+                  <span v-show='isAuthor' v-if='item.feedbackTick > 0' class="green--text darken-4">已經確認</span>
+                </div>
+                <div class="d-flex text-left flex-column">
                   <div v-html="HTMLConverter(item.content)"></div>
-                  <div>
-                    <span v-if='groupCheck(item)'>[你同組的評分]</span>
+                  <div class='text-left text-body-2'>
                     <span>給分{{ item.value }}點</span>
                     <span> | 建立於{{ dateConvert(item.tick) }}</span>
-                    <span v-show='isAuthor' v-if='item.feedbackTick === 0'>，快去回復他的評分吧</span>
                     <span v-if='item.feedbackTick > 0'> | 已於{{ dateConvert(item.feedbackTick) }}確認為{{ item.feedback }}，預估這份評分值{{ predictScore(item.value, item.feedback, item.short) }}</span>
                   </div>
                 </div>
