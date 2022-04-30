@@ -283,20 +283,20 @@
             }"
             min-height="70"
             transition="fade-transition"
-            v-for='item in defaultReport.audits' :key='item._id'
+            v-for='(item, bg) in defaultReport.audits' :key='item._id'
           >
-            <div class='ma-1 flex-column ma-1'>
+            <div class='ma-1 flex-column pa-1' :class='bg % 2 === 0 ? "grey lighten-4" : "white"'>
               <div class='d-flex flex-row'>
                 <div>
                   <v-icon v-if='item.short'>fa-thumbs-down</v-icon>
                   <v-icon v-else>fa-thumbs-up</v-icon>
                 </div>
-                <div class='ma-1 d-flex flex-column ma-1 align-center font-weight-bold text-caption'>
-                  <span v-if='groupCheck(item)' class="blue--text darken-4">同組評分</span>
-                  <span v-show='isAuthor' v-if='item.feedbackTick === 0' class="red--text darken-4">尚未確認</span>
-                  <span v-show='isAuthor' v-if='item.feedbackTick > 0' class="green--text darken-4">已經確認</span>
+                <div class='ma-1 d-flex flex-column ma-1 justify-center font-weight-bold text-caption'>
+                  <div v-if='groupCheck(item)' class="blue--text darken-4">同組評分</div>
+                  <div v-show='isAuthor' v-if='item.feedbackTick === 0' class="red--text darken-4">尚未確認</div>
+                  <div v-show='isAuthor' v-if='item.feedbackTick > 0' class="green--text darken-4">已經確認</div>
                 </div>
-                <div class="d-flex text-left flex-column">
+                <div class="d-flex text-left flex-column justify-center">
                   <div v-html="HTMLConverter(item.content)"></div>
                   <div class='text-left text-body-2'>
                     <span>給分{{ item.value }}點</span>
@@ -589,24 +589,25 @@
       }"
       min-height="70"
       transition="fade-transition"
-      v-for='item in filteredReportList' :key='item._id'
+      v-for='(item, bg) in filteredReportList' :key='item._id'
     >
-      <div class='d-flex flex-column ma-1'>
+      <div class='d-flex flex-column ma-1 pa-1' :class='bg % 2 === 0 ? "grey lighten-4" : "white"'>
         <div class='d-flex flex-row'>
           <div class='d-flex flex-column justify-center align-center ma-1'>
             <Avatar :user='firstCoworker(item.coworkers)' :size='36'/>
             <div v-if="item.coworkers.length > 0" class="text-caption">作者×{{ item.coworkers.length }}</div>
           </div>
           <div class='d-flex flex-column ma-1 align-center justify-center'>
-            <span :class="item.gained > 0 ? 'teal darken-4' : 'red darken-4'" class='white--text text-caption'>{{ item.gained > 0 ? "已批改" : "未批改" }}</span>
-            <span class='text-caption'>互評×{{ item.audits.length }}</span>
+            <span :class="item.gained > 0 ? 'teal darken-4' : 'red darken-4'" class='white--text text-caption pa-1'>{{ item.gained > 0 ? "已批改" : "未批改" }}</span>
+            <span class='text-caption'>各組互評×{{ item.audits.length }}</span>
+            <span class='text-caption'>批改建議×{{ item.intervention.length }}</span>
           </div>
-          <div class='ma-1 d-flex flex-column ma-1 align-center font-weight-bold text-caption'>
-            <span v-if='groupCheck(item)' class="blue--text darken-4">同組</span>
-            <span v-if='item.locked' class="red--text darken-4">鎖定</span>
-            <span v-if='(item.tick - defaultStage.endTick) > 0' class="red--text darken-4">遲交</span>
+          <div class='ma-1 d-flex flex-column ma-1 justify-center font-weight-bold text-caption'>
+            <div v-if='groupCheck(item)' class="blue--text darken-4">同組</div>
+            <div v-if='item.locked' class="red--text darken-4">鎖定</div>
+            <div v-if='(item.tick - defaultStage.endTick) > 0' class="red--text darken-4">遲交</div>
           </div>
-          <div class="d-flex flex-column pa-1">
+          <div class="d-flex flex-column pa-1 justify-center">
             <div class='text-left font-weight-bold'>繳交人：{{ getCoworkers(item.coworkers) }}</div>
             <div class='text-left text-body-2'>
               <span>建立於{{ dateConvert(item.tick) }}</span>
