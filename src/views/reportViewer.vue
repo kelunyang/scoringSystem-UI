@@ -332,6 +332,7 @@
                     <v-btn
                       v-bind="attrs"
                       v-on="{ ...menu }"
+                      v-if="item.feedbackTick === 0"
                     >
                       撤回互評
                     </v-btn>
