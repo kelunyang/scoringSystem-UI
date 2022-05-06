@@ -287,14 +287,14 @@
           >
             <div class='ma-1 flex-column pa-1' :class='bg % 2 === 0 ? "grey lighten-4" : "white"'>
               <div class='d-flex flex-row'>
-                <div>
+                <div class='pa-1 justify-center d-flex flex-column'>
                   <v-icon v-if='item.short'>fa-thumbs-down</v-icon>
                   <v-icon v-else>fa-thumbs-up</v-icon>
                 </div>
                 <div class='ma-1 d-flex flex-column ma-1 justify-center font-weight-bold text-caption'>
                   <div v-if='groupCheck(item)' class="blue--text darken-4">同組評分</div>
-                  <div v-show='isAuthor' v-if='item.feedbackTick === 0' class="red--text darken-4">尚未確認</div>
-                  <div v-show='isAuthor' v-if='item.feedbackTick > 0' class="green--text darken-4">已經確認</div>
+                  <div v-if='item.feedbackTick === 0' class="red--text darken-4">尚未確認</div>
+                  <div v-if='item.feedbackTick > 0' class="green--text darken-4">已經確認</div>
                 </div>
                 <div class="d-flex text-left flex-column justify-center">
                   <div v-html="HTMLConverter(item.content)"></div>
@@ -305,13 +305,13 @@
                   </div>
                 </div>
               </div>
-              <div class='d-flex flex-row justify-end'>
+              <div class='d-flex flex-row align-center justify-end'>
                 <v-btn
                   @click='agreeAudit(item)'
                   v-if="isSupervisor" v-show='defaultReport.gained === 0'
                   class='ma-1'
                 >
-                  <span v-if='item.confirm === 0'>認可評分</span>
+                  <span v-if='item.confirm === 0'>認可互評</span>
                   <span v-if='item.confirm > 0'>撤回認可</span>
                 </v-btn>
                 <v-btn
@@ -321,12 +321,39 @@
                 >
                   {{ isSupervisor ? "新增／" : "" }}查看批改建議({{ item.intervention.length }})
                 </v-btn>
+                <v-menu
+                  offset-y
+                  attach
+                  left
+                  transition="slide-y-transition"
+                  v-if='isSupervisor || isLeader(item, false)'
+                >
+                  <template v-slot:activator="{ on: menu, attrs }">
+                    <v-btn
+                      v-bind="attrs"
+                      v-on="{ ...menu }"
+                    >
+                      撤回互評
+                    </v-btn>
+                  </template>
+                  <v-sheet class='d-flex flex-column pa-1'>
+                    <div class='text-h6'>確認撤回互評？不會退回你原本的押金喔</div>
+                    <v-btn
+                      color='red accent-4'
+                      class='white--text ma-1'
+                      @click='revokeAudit(item)'
+                    >
+                      確認撤回互評
+                    </v-btn>
+                    <div class='text-caption'>如果你只是誤觸，請隨意點擊其他地方即會關閉本對話框</div>
+                  </v-sheet>
+                </v-menu>
                 <v-btn
                   @click='setFeedback(item)'
                   v-if='isAuthor' v-show='acceptFeedback(item)'
                   class='ma-1'
                 >
-                  回復評分
+                  回復互評
                 </v-btn>
               </div>
             </div>
@@ -632,7 +659,7 @@
             attach
             left
             transition="slide-y-transition"
-            v-if='isSupervisor || isLeader(item)'
+            v-if='isSupervisor || isLeader(item, true)'
           >
             <template v-slot:activator="{ on: menu, attrs }">
               <v-btn
@@ -696,6 +723,7 @@ export default {
     sid: String
   },
   beforeDestroy () {
+    this.$socket.client.off('rejectAudit', this.socketrejectAudit);
     this.$socket.client.off('rejectReport', this.socketrejectReport);
     this.$socket.client.off('getSchema', this.socketgetSchema);
     this.$socket.client.off('getStage', this.socketgetStage);
@@ -729,6 +757,7 @@ export default {
   created () {
     this.$socket.client.emit('getOwnGroup', this.sid);
     this.$socket.client.on('getSchema', this.socketgetSchema);
+    this.$socket.client.on('rejectAudit', this.socketrejectAudit);
     this.$socket.client.on('rejectReport', this.socketrejectReport);
     this.$socket.client.on('getReports', this.socketgetReports);
     this.$socket.client.on('getStage', this.socketgetStage);
@@ -830,6 +859,10 @@ export default {
     }
   },
   methods: {
+    socketrejectAudit: function() {
+      this.$emit('toastPop', '互評已撤銷');
+      this.$socket.client.emit('getReport', this.defaultReport);
+    },
     socketaddIntervention: function(data) {
       this.viewIntervention(data, data.type);
     },
@@ -1076,6 +1109,7 @@ export default {
       this.falseAudit = data.falseAudit;
       this.auditValues = data.auditValues <= 0 ? data.report.value : data.auditValues;
       this.auditValues = data.report.audits.length > 0 ? this.auditValues : data.report.value;
+      this.auditLeaders = data.auditLeaders;
       if(this.enableReportW) {
         this.reportW = true;
         this.enableReportW = false;
@@ -1187,6 +1221,7 @@ export default {
       });
     },
     socketrejectReport: function() {
+      this.$emit('toastPop', '階段成果已撤銷');
       this.$socket.client.emit('getReports', {
         sid: this.defaultSchema._id,
         rids: this.defaultStage.reports
@@ -1195,9 +1230,13 @@ export default {
     revokeReport: function(report) {
       this.$socket.client.emit('rejectReport', report);
     },
-    isLeader: function(report) {
-      return (_filter(this.leaders, (leader) => {
-        return leader === report._id;
+    revokeAudit: function(report) {
+      this.$socket.client.emit('rejectAudit', report);
+    },
+    isLeader: function(object, type) {
+      let query = type ? this.leaders : this.auditLeaders;
+      return (_filter(query, (leader) => {
+        return leader === object._id;
       })).length > 0;
     },
     socketgetStage: function(data) {
@@ -1392,6 +1431,7 @@ export default {
   },
   data () {
     return {
+      auditLeaders: [],
       interventHeight: 100,
       interventOpetions: {
         chart: {
