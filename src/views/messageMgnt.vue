@@ -10,7 +10,7 @@
         </v-toolbar>
         <v-card-text class='ma-0 pa-0'>
           <v-alert outlined type="info" icon='fa-info-circle' class='text-left'>
-            你可以下載範本檔後，把使用者的email和你要給他們的訊息都編輯好之後上傳，請注意，LINE notify有每日上限，Email寄太多也會被當作垃圾信
+            請記得把範本csv壓縮為一個zip之後上傳，如果你的訊息有附件，系統只會用email通知，請注意各種訊息方式都有上限
           </v-alert>
           <v-alert outlined type="info" icon='fas fa-paper-plane' class='text-left' v-if='msgSent !== ""'>
             請稍後，正在處理...<span v-if='msgSent !== ""'>{{ msgSent }}</span>
@@ -37,7 +37,7 @@
                   prepend-icon="fa-paperclip" 
                   v-model="bulkmsgFile" 
                   label='上傳訊息清單' 
-                  accept="text/csv"
+                  accept="application/zip"
                   :loading="bulkuploadprogress !== 0">
                   <template v-slot:progress>
                     <v-progress-circular :value="bulkuploadprogress"></v-progress-circular>速度：{{ bulkuploadstatus }}
@@ -76,6 +76,7 @@
                 </v-simple-table>
               </v-col>
             </v-row>
+          </v-container>
         </v-card-text>
       </v-card>
     </v-dialog>
@@ -379,7 +380,7 @@ import prettyBytes from 'pretty-bytes';
 import TurndownService from 'turndown';
 import { marked } from 'marked';
 import Papa from 'papaparse';
-let files = [];
+import _filter from 'lodash/filter';
 
 const turndownService = new TurndownService();
 
@@ -485,25 +486,33 @@ export default {
       this.LINEListPopulated = true;
     },
     socketrequestMsgSlice: function (data) {
-      let oriobj = this;
-      let place = data.currentSlice * 100000;
-      let slice = files[data.uuid].file.slice(place, place + Math.min(100000, files[data.uuid].file.size - place));
-      this.uploadprogress = Math.ceil((place / files[data.uuid].file.size) * 100);
-      let nowdiff = dayjs().valueOf() - files[data.uuid].starttick;
-      this.uploadstatus = nowdiff === 0 ? '' : prettyBytes(place / (nowdiff/1000)) + '/s';
-      let fileReader = new FileReader();
-      fileReader.readAsArrayBuffer(slice);
-      fileReader.onload = () => {
-        var arrayBuffer = fileReader.result;
-        oriobj.$socket.client.emit('sendMsgFile', {
-          uid: files[data.uuid]._id,
-          uuid: data.uuid,
-          name: files[data.uuid].file.name,
-          type: files[data.uuid].file.type,
-          size: files[data.uuid].file.size,
-          data: arrayBuffer
-        });
-      };
+      let filtered = _filter(this.tempFiles, (file) => {
+        return file.uuid === data.uuid;
+      });
+      if(filtered.length > 0) {
+        let pendingFile = filtered[0];
+        let oriobj = this;
+        let place = data.currentSlice * 100000;
+        let slice = pendingFile.file.slice(place, place + Math.min(100000, pendingFile.file.size - place));
+        this.uploadprogress = Math.ceil((place / pendingFile.file.size) * 100);
+        let nowdiff = dayjs().valueOf() - pendingFile.starttick;
+        this.uploadstatus = nowdiff === 0 ? '' : prettyBytes(place / (nowdiff/1000)) + '/s';
+        let fileReader = new FileReader();
+        fileReader.readAsArrayBuffer(slice);
+        fileReader.onload = () => {
+          var arrayBuffer = fileReader.result;
+          oriobj.$socket.client.emit('sendMsgFile', {
+            uid: pendingFile._id,
+            uuid: data.uuid,
+            name: pendingFile.file.name,
+            type: pendingFile.file.type,
+            size: pendingFile.file.size,
+            data: arrayBuffer
+          });
+        };
+      } else {
+        this.$emit('toastPop', '找不到檔案，請聯絡管理員');
+      }
     },
     socketFileDeleteError: function (data) {
       this.$emit('toastPop', '刪除檔案失敗（原因：' + data + '），請聯絡管理員');
@@ -627,7 +636,8 @@ export default {
           姓名: data.result[i].name,
           Email: data.result[i].email,
           訊息內容: "範例內容",
-          發送方式: this.LINEtype ? "L" : "E"
+          發送方式: this.LINEtype ? "L" : "E",
+          附件: ""
         });
       }
       this.downloadCSV();
@@ -637,7 +647,8 @@ export default {
         姓名: "aaa(本欄位沒有功能)",
         Email: "aaa@aaa.com",
         訊息內容: "範例內容",
-        發送方式: this.LINEtype ? "L" : "E"
+        發送方式: this.LINEtype ? "L" : "E",
+        附件: "aaa.jpg(檔名自己取放在zip裡只支援一個)"
       }];
       this.downloadCSV();
     },
@@ -661,24 +672,32 @@ export default {
       this.bulkLog = [];
     },
     socketrequestbulkmsgsampleSlice: function(data) {
-      let oriobj = this;
-      let place = data.currentSlice * 100000;
-      let slice = files[data.uuid].file.slice(place, place + Math.min(100000, files[data.uuid].file.size - place));
-      this.bulkuploadprogress = Math.ceil((place / files[data.uuid].file.size) * 100);
-      let nowdiff = dayjs().valueOf() - files[data.uuid].starttick;
-      this.bulkuploadstatus = nowdiff === 0 ? '' : prettyBytes(place / (nowdiff/1000)) + '/s';
-      let fileReader = new FileReader();
-      fileReader.readAsArrayBuffer(slice);
-      fileReader.onload = () => {
-        var arrayBuffer = fileReader.result;
-        oriobj.$socket.client.emit('importbulkmsgFile', {
-          uuid: data.uuid,
-          name: files[data.uuid].file.name,
-          type: files[data.uuid].file.type,
-          size: files[data.uuid].file.size,
-          data: arrayBuffer
-        });
-      };
+      let filtered = _filter(this.tempFiles, (file) => {
+        return file.uuid === data.uuid;
+      });
+      if(filtered.length > 0) {
+        let pendingFile = filtered[0];
+        let oriobj = this;
+        let place = data.currentSlice * 100000;
+        let slice = pendingFile.file.slice(place, place + Math.min(100000, pendingFile.file.size - place));
+        this.bulkuploadprogress = Math.ceil((place / pendingFile.file.size) * 100);
+        let nowdiff = dayjs().valueOf() - pendingFile.starttick;
+        this.bulkuploadstatus = nowdiff === 0 ? '' : prettyBytes(place / (nowdiff/1000)) + '/s';
+        let fileReader = new FileReader();
+        fileReader.readAsArrayBuffer(slice);
+        fileReader.onload = () => {
+          var arrayBuffer = fileReader.result;
+          oriobj.$socket.client.emit('importbulkmsgFile', {
+            uuid: data.uuid,
+            name: pendingFile.file.name,
+            type: pendingFile.file.type,
+            size: pendingFile.file.size,
+            data: arrayBuffer
+          });
+        };
+      } else {
+        this.$emit('toastPop', '找不到檔案，請聯絡管理員');
+      }
     },
     socketbulkmsgsampleReport: function(data) {
       this.msgSent = data;
@@ -702,11 +721,12 @@ export default {
           let fileReader = new FileReader();
           let slice = this.msgFile.slice(0, 100000);
           let uuid = uuidv4();
-          files[uuid] = {
+          this.tempFiles.push({
             _id: this.message._id,
             file: this.msgFile,
-            starttick: dayjs().valueOf()
-          };
+            starttick: dayjs().valueOf(),
+            uuid: uuid
+          });
           fileReader.readAsArrayBuffer(slice);
           fileReader.onload = () => {
               var arrayBuffer = fileReader.result;
@@ -730,9 +750,12 @@ export default {
           let fileReader = new FileReader();
           let slice = this.bulkmsgFile.slice(0, 100000);
           let uuid = uuidv4();
-          files[uuid] = {
+          this.tempFiles.push({
+            uuid: uuid,
             file: this.bulkmsgFile,
-          };
+            starttick: dayjs().valueOf(),
+          });
+          console.dir(this.tempFiles);
           fileReader.readAsArrayBuffer(slice);
           fileReader.onload = () => {
               var arrayBuffer = fileReader.result;
@@ -750,6 +773,7 @@ export default {
   },
   data () {
       return {
+        tempFiles: [],
         bulkTags: [],
         LINEtype: true,
         broadcastTitle: '',

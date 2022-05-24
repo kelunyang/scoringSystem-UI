@@ -50,6 +50,7 @@
                   </v-btn>
                 </v-col>
               </v-row>
+            </v-container>
           </v-card-text>
         </v-card>
       </v-dialog>

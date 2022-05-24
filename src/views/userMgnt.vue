@@ -269,6 +269,7 @@
                   </v-simple-table>
                 </v-col>
               </v-row>
+            </v-container>
           </v-card-text>
         </v-card>
       </v-dialog>
@@ -322,76 +323,76 @@
           </v-card>
       </v-dialog>
       <v-speed-dial style='margin-bottom: 80px' v-model="functionBtn" fixed bottom right direction="left" :open-on-hover="true" transition="slide-x-reverse-transition">
-          <template v-slot:activator>
-            <v-btn
-              v-model="functionBtn"
-              color="#006064"
-              dark
-              fab
+        <template v-slot:activator>
+          <v-btn
+            v-model="functionBtn"
+            color="#006064"
+            dark
+            fab
+          >
+            <v-icon v-if="functionBtn">fa-chevron-left</v-icon>
+            <v-icon v-else>fa-tools</v-icon>
+          </v-btn>
+        </template>
+        <v-tooltip bottom>
+          <template v-slot:activator="{ on, attrs }">
+            <v-badge
+              color="red"
+              :content="selectedUsers.length"
+              :value="selectedUsers.length"
+              overlap
             >
-              <v-icon v-if="functionBtn">fa-chevron-left</v-icon>
-              <v-icon v-else>fa-tools</v-icon>
-            </v-btn>
+              <v-btn
+                fab
+                dark
+                small
+                color="#BF360C"
+                @click.stop='enableDelW'
+                v-bind="attrs" v-on="on"
+              >
+                <v-icon>fa-trash-alt</v-icon>
+              </v-btn>
+            </v-badge>
           </template>
-          <v-tooltip bottom>
-            <template v-slot:activator="{ on, attrs }">
-              <v-badge
-                color="red"
-                :content="selectedUsers.length"
-                :value="selectedUsers.length"
-                overlap
+          <span>刪除 {{ selectedUsers.length }} 個用戶</span>
+        </v-tooltip>
+        <v-tooltip bottom>
+          <template v-slot:activator="{ on, attrs }">
+            <v-badge
+              color="red"
+              :content="selectedUsers.length"
+              :value="selectedUsers.length"
+              overlap
+            >
+              <v-btn
+                fab
+                dark
+                small
+                color="green"
+                v-bind="attrs" v-on="on"
+                @click.stop='tagUserW = true'
               >
-                <v-btn
+                <v-icon>fab fa-slack-hash</v-icon>
+              </v-btn>
+            </v-badge>
+          </template>
+          <span>設定 {{ selectedUsers.length }} 個用戶的使用者標籤</span>
+        </v-tooltip>
+        <v-tooltip bottom>
+          <template v-slot:activator="{ on, attrs }">
+              <v-btn
                   fab
                   dark
                   small
-                  color="#BF360C"
-                  @click.stop='enableDelW'
+                  color="indigo"
+                  @click.stop='openAddW'
                   v-bind="attrs" v-on="on"
-                >
-                  <v-icon>fa-trash-alt</v-icon>
-                </v-btn>
-              </v-badge>
-            </template>
-            <span>刪除 {{ selectedUsers.length }} 個用戶</span>
-          </v-tooltip>
-          <v-tooltip bottom>
-            <template v-slot:activator="{ on, attrs }">
-              <v-badge
-                color="red"
-                :content="selectedUsers.length"
-                :value="selectedUsers.length"
-                overlap
               >
-                <v-btn
-                  fab
-                  dark
-                  small
-                  color="green"
-                  v-bind="attrs" v-on="on"
-                  @click.stop='tagUserW = true'
-                >
-                  <v-icon>fab fa-slack-hash</v-icon>
-                </v-btn>
-              </v-badge>
-            </template>
-            <span>設定 {{ selectedUsers.length }} 個用戶的使用者標籤</span>
-          </v-tooltip>
-          <v-tooltip bottom>
-            <template v-slot:activator="{ on, attrs }">
-                <v-btn
-                    fab
-                    dark
-                    small
-                    color="indigo"
-                    @click.stop='openAddW'
-                    v-bind="attrs" v-on="on"
-                >
-                    <v-icon>fa-plus</v-icon>
-                </v-btn>
-            </template>
-            <span>新增使用者</span>
-          </v-tooltip>
+                  <v-icon>fa-plus</v-icon>
+              </v-btn>
+          </template>
+          <span>新增使用者</span>
+        </v-tooltip>
       </v-speed-dial>
       <v-fab-transition>
         <v-tooltip bottom>

@@ -552,26 +552,24 @@
       <div class='blue-grey--text darken-1 text-caption' v-if='defaultStage._id === undefined'>本活動共{{ defaultSchema.stages.length }}個回合，請點擊任何一個回合後點右下角繳交本階段成果（旗子為目前開放的階段）</div>
       <v-stepper v-model="stepPointer">
         <v-stepper-header>
-          <template
-            v-for='(stage, index) in defaultSchema.stages'
-          >
-            <v-stepper-step
-              :key='stage._id'
-              :complete="stepPointer >= index"
-              :step='index + 1'
-              complete-icon='fa-flag'
-              edit-icon='fa-pencil-alt'
-              @click="getStage(stage)"
-            >
-              <span :class='(index + 1) === stepPointer ? "text--indigo darken-4" : ""'>
-                <v-icon v-if='stage.matchPoint'>fa-bomb</v-icon>
-                {{ stage.name }}
-              </span>
-            </v-stepper-step>
-            <v-divider
-              :key='"divider" + stage._id'
-              v-if='(index + 1) !== defaultSchema.stages.length'
-            ></v-divider>
+          <template>
+            <div v-for='(stage, index) in defaultSchema.stages' :key='stage._id'>
+              <v-stepper-step
+                :complete="stepPointer >= index"
+                :step='index + 1'
+                complete-icon='fa-flag'
+                edit-icon='fa-pencil-alt'
+                @click="getStage(stage)"
+              >
+                <span :class='(index + 1) === stepPointer ? "text--indigo darken-4" : ""'>
+                  <v-icon v-if='stage.matchPoint'>fa-bomb</v-icon>
+                  {{ stage.name }}
+                </span>
+              </v-stepper-step>
+              <v-divider
+                v-if='(index + 1) !== defaultSchema.stages.length'
+              ></v-divider>
+            </div>
           </template>
         </v-stepper-header>
       </v-stepper>
