@@ -1,5 +1,126 @@
 <template>
   <v-sheet>
+    <v-dialog v-model="stageAccountingW" fullscreen hide-overlay transition='dialog-bottom-transition'>
+      <v-card>
+        <v-toolbar dark color='primary'>
+          <v-btn icon dark @click='stageAccountingW = false'>
+            <v-icon>fa-times</v-icon>
+          </v-btn>
+          <v-toolbar-title>
+            本階段押金運用狀況（該組在本回合的押金剩餘：{{ queryBalance }}）
+          </v-toolbar-title>
+        </v-toolbar>
+        <v-card-text class='text-left black--text text-body-1 pa-2 d-flex flex-column'>
+          <v-simple-table v-if="stageAccounting.length > 0" class='black--text'>
+            <template v-slot:default>
+              <thead>
+                <tr>
+                  <th class="text-center">
+                    押金點數
+                  </th>
+                  <th class="text-center">
+                    使用狀況
+                  </th>
+                  <th class="text-center">
+                    確認時間
+                  </th>
+                  <th class="text-right">
+                    &nbsp;
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="accounting in stageAccounting"
+                  :key="accounting._id"
+                >
+                  <td class="text-center">
+                    {{ accounting.value }}
+                  </td>
+                  <td class="text-center">
+                    {{ accounting.comment }}
+                  </td>
+                  <td class="text-center">
+                    {{ dateConvert(accounting.tick) }}
+                  </td>
+                  <td>
+                    <v-btn v-if="isSupervisor" color="primary" @click='rejectDeposit(accounting)'>取消帳目</v-btn>
+                  </td>
+                </tr>
+              </tbody>
+            </template>
+          </v-simple-table>
+          <div v-else>無資料（或者是你沒有權限存取別人的小組帳本）</div>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+    <v-dialog v-model="depositW" fullscreen hide-overlay transition='dialog-bottom-transition'>
+      <v-card>
+        <v-toolbar dark color='primary'>
+          <v-btn icon dark @click='depositW = false'>
+            <v-icon>fa-times</v-icon>
+          </v-btn>
+          <v-toolbar-title>
+            <span v-if="isSupervisor">本階段各組參與狀況</span><span v-else>本階段參與狀況</span>
+          </v-toolbar-title>
+        </v-toolbar>
+        <v-card-text class='text-left black--text text-body-1 pa-2 d-flex flex-column'>
+          <v-alert outlined type="error" icon='fa-dollar-sign' class='text-left' v-if='notConfirm'>
+            貴組尚未全員確認是否參與本回合，你可以按左上方關閉本對話框，但將會無法發表報告、評分（可以檢視別人的報告）
+          </v-alert>
+          <v-simple-table v-if="deposits.length > 0" class='black--text'>
+            <template v-slot:default>
+              <thead>
+                <tr>
+                  <th class="text-center">
+                    姓名
+                  </th>
+                  <th class="text-center">
+                    押金點數
+                  </th>
+                  <th class="text-center">
+                    參與狀態
+                  </th>
+                  <th class="text-center">
+                    確認時間
+                  </th>
+                  <th class="text-right">
+                    &nbsp;
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="deposit in deposits"
+                  :key="deposit._id"
+                >
+                  <td class='text-center'>
+                    {{ deposit.uid.name }}
+                  </td>
+                  <td class="text-center">
+                    {{ deposit.value }}
+                  </td>
+                  <td class="text-center">
+                    <span v-if="deposit.confirmTick === 0">尚未確認</span>
+                    <span v-else>{{ deposit.confirm ? "是" : "否" }}{{ deposit.confirmTick > 0 ? "[" + dateConvert(deposit.confirmTick) + "]" : "" }}</span>
+                  </td>
+                  <td class="text-center">
+                    {{ deposit.joinTick > 0 ? dateConvert(deposit.joinTick) : "" }}
+                  </td>
+                  <td class="text-right d-flex flex-row">
+                    <v-btn v-show="deposit.joinTick === 0" v-if="currentUser._id === deposit.uid._id" color="primary" @click='joinStage(1)' class='flex-shrink-1 ma-1'>加入回合</v-btn>
+                    <v-btn v-show="deposit.joinTick === 0" v-if="currentUser._id === deposit.uid._id" @click="joinStage(0)" class='flex-shrink-1 ma-1'>不加入</v-btn>
+                    <v-btn v-show="deposit.joinTick === 0" v-if="depositSupervisor" color="error" @click="joinStage(2, deposit.uid._id)" class='flex-shrink-1 ma-1'>踢除用戶</v-btn>
+                    <v-btn v-show="deposit.joinTick > 0" color="primary" @click="depositAccounting(deposit)" class='flex-shrink-1 ma-1'>查詢回合帳本</v-btn>
+                  </td>
+                </tr>
+              </tbody>
+            </template>
+          </v-simple-table>
+          <div v-else>無資料（應該是還沒有用戶點進來這個階段）</div>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
     <v-dialog v-model="interventionW" fullscreen hide-overlay transition='dialog-bottom-transition'>
       <v-card>
         <v-toolbar dark color='primary'>
@@ -113,8 +234,11 @@
       max-width="50%"
     >
       <v-sheet class='d-flex flex-column pa-1'>
+        <v-alert outlined type="error" icon='fa-dollar-sign' class='text-left' v-if='notConfirm'>
+          貴組尚未全員確認是否參與本回合，你可以按左上方關閉本對話框，但將會無法發表報告、評分（可以檢視別人的報告）
+        </v-alert>
         <v-alert outlined type="info" icon='fa-dollar-sign' class='text-left' v-if='userBalance <= 0'>
-          你根本沒有點數，無法送出押金！
+          你根本沒有點數，無法送出押金！（可能是你並沒有參與這個回合）
         </v-alert>
         <v-alert outlined type="info" icon='fa-dollar-sign' class='text-left' v-if='userBalance < defaultAudit.value'>
           你擁有的點數比對方給你的還少，你最多只能回復{{ intConvert(this.userBalance/this.defaultAudit.value) }}%而已，建議你等手上有更多點數再來回復
@@ -124,6 +248,7 @@
           :label='"投入"+defaultAudit.feedback+"點"'
           :min='minFeedback'
           :max='suggestedfeedBackValue'
+          :step='defaultStage.depositStep'
           v-model="defaultAudit.feedback"
           :disabled='waitValue'
           thumb-label
@@ -209,6 +334,9 @@
           </v-toolbar-title>
         </v-toolbar>
         <v-card-text class='text-left black--text text-body-1 pa-2 d-flex flex-column'>
+          <v-alert outlined type="error" icon='fa-dollar-sign' class='text-left' v-if='notConfirm'>
+            貴組尚未全員確認是否參與本回合，你可以按左上方關閉本對話框，但將會無法發表報告、評分（可以檢視別人的報告）
+          </v-alert>
           <v-alert outlined type="info" icon='fa-info-circle' class='text-left' v-if='falseAudit' v-show='isSupervisor'>
             這份報告評分有負分，如果你要自動評分，你必須勾選評分結果無誤
           </v-alert>
@@ -371,11 +499,14 @@
           <v-toolbar-title>給予評分</v-toolbar-title>
         </v-toolbar>
         <v-card-text class='text-left black--text text-body-1 pa-2 d-flex flex-column'>
+          <v-alert outlined type="error" icon='fa-dollar-sign' class='text-left' v-if='notConfirm'>
+            貴組尚未全員確認是否參與本回合，你可以按左上方關閉本對話框，但將會無法發表報告、評分（可以檢視別人的報告）
+          </v-alert>
           <v-alert outlined v-if='waitValue' type="info" icon='fa-info-circle' class='text-left'>
             用戶財產計算中請稍候
           </v-alert>
           <v-alert outlined type="info" icon='fa-dollar-sign' class='text-left' v-if='userBalance <= 0'>
-            你根本沒有點數，無法送出押金！
+            你根本沒有點數，無法送出押金！（可能是你並沒有參與這個回合）
           </v-alert>
           <div class='text-subtitle-2 font-weight-blod'>好評／負評</div>
           <v-switch
@@ -400,6 +531,7 @@
             min='0'
             :max='auditsuggestValue'
             :disabled='waitValue'
+            :step='defaultStage.depositStep'
             v-model="defaultAudit.value"
             thumb-label
           ></v-slider>
@@ -454,11 +586,14 @@
           <v-toolbar-title>發送階段成果</v-toolbar-title>
         </v-toolbar>
         <v-card-text class='pa-0 ma-0 text-left black--text text-body-1 pa-2 d-flex flex-column'>
+          <v-alert outlined type="error" icon='fa-dollar-sign' class='text-left' v-if='notConfirm'>
+            貴組尚未全員確認是否參與本回合，你可以按左上方關閉本對話框，但將會無法發表報告、評分（可以檢視別人的報告）
+          </v-alert>
           <v-alert outlined v-if='waitValue' type="info" icon='fa-info-circle' class='text-left'>
             用戶財產計算中請稍候
           </v-alert>
           <v-alert outlined type="info" icon='fa-dollar-sign' class='text-left' v-if='userBalance <= 0'>
-            你根本沒有點數，無法送出押金！
+            你根本沒有點數，無法送出押金！（可能是你並沒有參與這個回合）
           </v-alert>
           <div class='text-subtitle-2 font-weight-blod'>共同作者</div>
           <tag-filter
@@ -471,13 +606,14 @@
             :createable='false'
             label='請輸入用戶名稱'
           />
-          <div v-if='suggestedValue > 0' class='text-subtitle-2 font-weight-blod'>投入點數（活動限制為參與評分者總點數的{{ defaultSchema.betRate * 100 }}%，因此最大值為{{ suggestedValue }}，請注意，自評分也就是這份報告的給分上限）</div>
+          <div v-if='suggestedValue > 0' class='text-subtitle-2 font-weight-blod'>你們這組的押金為{{ suggestedValue }}，每次下注為{{ defaultStage.depositStep }}的倍數，請注意，謹慎使用押金，押金還要拿去互評和確認彼此的分數）</div>
           <v-slider
             v-if='suggestedValue > 0'
             :label='"投入"+defaultReport.value+"點"'
             min='0'
             :max='suggestedValue'
             :disabled='waitValue'
+            :step='defaultStage.depositStep'
             v-model="defaultReport.value"
             thumb-label
           ></v-slider>
@@ -694,6 +830,7 @@ import Vue from 'vue';
 import dayjs from 'dayjs';
 import _sumBy from 'lodash/sumBy';
 import _meanBy from 'lodash/meanBy';
+import _uniqBy from 'lodash/uniqBy';
 import _map from 'lodash/map';
 import _filter from 'lodash/filter';
 import _inRange from 'lodash/inRange';
@@ -727,7 +864,7 @@ export default {
     this.$socket.client.off('getSchema', this.socketgetSchema);
     this.$socket.client.off('getStage', this.socketgetStage);
     this.$socket.client.off('getTagUsers', this.socketgetTagUsers);
-    this.$socket.client.off('getSchemaBalance', this.socketgetSchemaBalance);
+    this.$socket.client.off('getDepositBalance', this.socketgetDepositBalance);
     this.$socket.client.off('getReports', this.socketgetReports);
     this.$socket.client.off('getCoworkers', this.socketgetCoworkers);
     this.$socket.client.off('addReport', this.socketaddReport);
@@ -747,6 +884,10 @@ export default {
     this.$socket.client.off('getTagGroups', this.socketgetTagGroups);
     this.$socket.client.off('getInterventions', this.socketgetInterventions);
     this.$socket.client.off('addIntervention', this.socketaddIntervention);
+    this.$socket.client.off('getDeposit', this.socketgetDeposit);
+    this.$socket.client.off('joinStage', this.socketjoinStage);
+    this.$socket.client.off('getDepositAccounting', this.socketgetDepositAccounting);
+    this.$socket.client.off('rejectDeposit', this.socketrejectDeposit);
   },
   components: { 
     TagFilter: () => import(/* webpackChunkName: 'TagFilter', webpackPrefetch: true */ './modules/TagFilter'),
@@ -756,12 +897,13 @@ export default {
   created () {
     this.$socket.client.emit('getOwnGroup', this.sid);
     this.$socket.client.on('getSchema', this.socketgetSchema);
+    this.$socket.client.on('getDeposit', this.socketgetDeposit);
     this.$socket.client.on('rejectAudit', this.socketrejectAudit);
     this.$socket.client.on('rejectReport', this.socketrejectReport);
     this.$socket.client.on('getReports', this.socketgetReports);
     this.$socket.client.on('getStage', this.socketgetStage);
     this.$socket.client.on('getTagUsers', this.socketgetTagUsers);
-    this.$socket.client.on('getSchemaBalance', this.socketgetSchemaBalance);
+    this.$socket.client.on('getDepositBalance', this.socketgetDepositBalance);
     this.$socket.client.on('getCoworkers', this.socketgetCoworkers);
     this.$socket.client.on('addReport', this.socketaddReport);
     this.$socket.client.on('addAudit', this.socketaddAudit);
@@ -780,6 +922,9 @@ export default {
     this.$socket.client.on('getTagGroups', this.socketgetTagGroups);
     this.$socket.client.on('getInterventions', this.socketgetInterventions);
     this.$socket.client.on('addIntervention', this.socketaddIntervention);
+    this.$socket.client.on('joinStage', this.socketjoinStage);
+    this.$socket.client.on('getDepositAccounting', this.socketgetDepositAccounting);
+    this.$socket.client.on('rejectDeposit', this.socketrejectDeposit);
   },
   watch: {
     'defaultAudit.feedback': function () {
@@ -836,6 +981,25 @@ export default {
     }
   },
   computed: {
+    notConfirm: function() {
+      if(!this.isSupervisor) {
+        let groups = _uniqBy(this.deposits, (deposit) => {
+          return deposit.gid;
+        });
+        if(groups.length === 1) {
+          let notConfirm = _filter(this.deposits, (deposit) => {
+            return deposit.joinTick === 0;
+          });
+          return notConfirm.length > 0;
+        }
+      }
+      return false;
+    },
+    queryBalance: function() {
+      return _sumBy(this.stageAccounting, (accounting) => {
+        return accounting.value;
+      });
+    },
     calcIntervention: function() {
       if(this.interventions.length > 0) {
         return Math.ceil(_meanBy(this.interventions, (intervent) => {
@@ -858,6 +1022,59 @@ export default {
     }
   },
   methods: {
+    socketrejectDeposit: function() {
+      this.$socket.client.emit('getDepositAccounting', {
+        tid: this.defaultStage._id,
+        gid: this.defaultGroup._id
+      });
+    },
+    socketgetDepositAccounting: function(data) {
+      this.stageAccounting = data;
+      this.stageAccountingW = true;
+    },
+    rejectDeposit: function(accounting) {
+      this.$socket.client.emit('rejectDeposit', accounting);
+    },
+    depositAccounting: function(deposit) {
+      this.defaultGroup._id = deposit.gid;
+      this.$socket.client.emit('getDepositAccounting', {
+        tid: this.defaultStage._id,
+        gid: this.defaultGroup._id
+      });
+    },
+    socketjoinStage: function(data) {
+      this.$emit('toastPop', data ? "加入回合設定完成！" : "您無法加入回合！");
+      this.$socket.client.emit('getDeposit', {
+        tid: this.defaultStage._id,
+      });
+    },
+    joinStage: function(status, user) {
+      if(status === 0) {
+        this.$socket.client.emit('joinStage', {
+          tid: this.defaultStage._id,
+          confirm: false
+        });
+      } else if(status === 1) {
+        this.$socket.client.emit('joinStage', {
+          tid: this.defaultStage._id,
+          confirm: true
+        });
+      } else {
+        this.$socket.client.emit('joinStage', {
+          tid: this.defaultStage._id,
+          confirm: false,
+          queryUser: user
+        });
+      }
+    },
+    socketgetDeposit: function(data) {
+      this.$socket.client.emit('getDepositBalance', {
+        tid: this.defaultStage._id
+      });
+      this.deposits = _orderBy(data.deposits, ['gid', 'value'], ['asc', 'desc']);
+      this.depositSupervisor = data.isSupervisor;
+      this.depositW = true;
+    },
     socketrejectAudit: function() {
       this.$emit('toastPop', '互評已撤銷');
       this.$socket.client.emit('getReport', this.defaultReport);
@@ -1097,9 +1314,8 @@ export default {
       this.defaultAudit = item;
       this.minFeedback = item.feedback < this.minFeedback ? item.feedback : this.minFeedback;
       this.waitValue = true;
-      this.$socket.client.emit('getSchemaBalance', {
-        sid: this.defaultSchema._id,
-        uids: [this.currentUser._id]
+      this.$socket.client.emit('getDepositBalance', {
+        tid: this.defaultStage._id
       });
     },
     socketgetReport: function(data) {
@@ -1150,12 +1366,8 @@ export default {
         short: false,
         intervention: []
       };
-      let coworkers = _unionWith(this.defaultAudit.coworkers, [this.currentUser._id], (a, b) => {
-        return a === b;
-      });
-      this.$socket.client.emit('getSchemaBalance', {
-        sid: this.defaultSchema._id,
-        uids: coworkers
+      this.$socket.client.emit('getDepositBalance', {
+        tid: this.defaultStage._id
       });
     },
     socketaddAudit: function() {
@@ -1179,12 +1391,10 @@ export default {
     submitReport: function() {
       this.$socket.client.emit('addReport', this.defaultReport);
     },
-    socketgetSchemaBalance: function(data) {
+    socketgetDepositBalance: function(data) {
       let oriobj = this;
-      this.userBalance = _sumBy(data.data, (user) => {
-        return user.balance;
-      });
-      this.suggestedValue = Math.floor(this.userBalance * this.defaultSchema.betRate);
+      this.userBalance = data;
+      this.suggestedValue = Math.floor(this.userBalance);
       this.auditsuggestValue = this.defaultReport.value > this.userBalance ? this.userBalance : this.defaultReport.value;
       this.suggestedfeedBackValue = this.userBalance > this.defaultAudit.value ? this.defaultAudit.value : this.userBalance;
       Vue.nextTick(() => {
@@ -1211,12 +1421,8 @@ export default {
         revokeTick: 0,
         intervention: []
       };
-      let coworkers = _unionWith(this.defaultReport.coworkers, [this.currentUser._id], (a, b) => {
-        return a === b;
-      });
-      this.$socket.client.emit('getSchemaBalance', {
-        sid: this.defaultSchema._id,
-        uids: coworkers
+      this.$socket.client.emit('getDepositBalance', {
+        tid: this.defaultStage._id
       });
     },
     socketrejectReport: function() {
@@ -1248,6 +1454,9 @@ export default {
       this.$socket.client.emit('getReports', {
         sid: this.defaultSchema._id,
         rids: this.defaultStage.reports
+      });
+      this.$socket.client.emit('getDeposit', {
+        tid: this.defaultStage._id,
       });
       this.$emit('toastPop', '活動回合已載入');
     },
@@ -1318,10 +1527,6 @@ export default {
         module: '評分模組',
         location: '/reportViewer'
       });
-      this.$socket.client.emit('getSchemaBalance', {
-        sid: this.defaultSchema._id,
-        uids: []
-      });
       this.$socket.client.emit('getAuditionGap', this.defaultSchema);
     },
     dateConvert: function (time) {
@@ -1330,29 +1535,25 @@ export default {
     updateACoworkers: function(value) {
       this.defaultAudit.coworkers = value;
       this.waitValue = true;
-      this.$socket.client.emit('getSchemaBalance', {
-        sid: this.defaultSchema._id,
-        uids: _unionWith(value, [this.currentUser._id], (a, b) => {
-          return a === b;
-        })
+      this.$socket.client.emit('getDepositBalance', {
+        tid: this.defaultStage._id
       });
     },
     updateCoworkers: function(value) {
       this.defaultReport.coworkers = value;
       this.waitValue = true;
-      let coworkers = _unionWith(value, [this.currentUser._id], (a, b) => {
-        return a === b;
-      });
-      this.$socket.client.emit('getSchemaBalance', {
-        sid: this.defaultSchema._id,
-        uids: coworkers
+      this.$socket.client.emit('getDepositBalance', {
+        tid: this.defaultStage._id
       });
     },
     plusTag: function (val) {
       this.$emit('addTag', val);
     },
     fetchCoworkers: function() {
-      this.$socket.client.emit('getCoworkers', this.defaultSchema._id );
+      this.$socket.client.emit('getCoworkers', {
+        sid: this.defaultSchema._id,
+        tid: this.defaultStage._id
+      });
     },
     updateTags: function() {
       this.$emit('updateTags');
@@ -1430,6 +1631,11 @@ export default {
   },
   data () {
     return {
+      stageAccountingW: false,
+      stageAccounting: [],
+      depositW: false,
+      deposits: [],
+      depositSupervisor: false,
       auditLeaders: [],
       interventHeight: 100,
       interventOpetions: {
@@ -1558,7 +1764,6 @@ export default {
         groups: [],
         stages: [],
         initCapital: 0,
-        betRate: 0,
         status: 0,
         leaderRate: 0,
         workerRate: 0,
@@ -1580,7 +1785,9 @@ export default {
         sid: "",
         matchPoint: false,
         reports:[],
-        closed: 0
+        closed: 0,
+        depositStep: 10,
+        defaultDeposit: 100
       },
       defaultGroup: {
         createTick: 0,
@@ -1589,7 +1796,8 @@ export default {
         sid: "",
         leaders: [],
         members: [],
-        tags: []
+        tags: [],
+        _id: ""
       },
       chartSeries: [
         {

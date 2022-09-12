@@ -439,6 +439,22 @@
                   v-model="defaultStage.value"
                   thumb-label
                 ></v-slider>
+                <div class='text-subtitle-2 font-weight-blod'>押金</div>
+                <v-slider
+                  :label='"加入回合必須投注"+defaultStage.defaultDeposit+"點"'
+                  :min='100'
+                  :max='1000'
+                  v-model="defaultStage.defaultDeposit"
+                  thumb-label
+                ></v-slider>
+                <div class='text-subtitle-2 font-weight-blod'>押金投注刻度（每次要投注多少）</div>
+                <v-slider
+                  :label='"押金刻度每次為"+defaultStage.depositStep+"點"'
+                  :min='10'
+                  :max='100'
+                  v-model="defaultStage.depositStep"
+                  thumb-label
+                ></v-slider>
                 <div class='text-subtitle-2 font-weight-blod'>回合開始日期</div>
                 <VueCtkDateTimePicker :noKeyboard='true' :inline='true' v-model="stagestartDate" label='請選擇開始日期' locale='zh-tw' format='YYYY-MM-DD HH:mm:ss' class='ma-2' />
                 <div class='text-subtitle-2 font-weight-blod'>回合結束日期</div>
@@ -623,26 +639,25 @@
           <div class='ma-1'>
             <v-stepper v-model="item.stepPointer" width="100%">
               <v-stepper-header>
-                <template
-                  v-for='(stage, index) in item.stages'
-                >
-                  <v-stepper-step
-                    :key='stage._id'
-                    :complete="item.stepPointer >= index"
-                    :step='index + 1'
-                    complete-icon='fa-flag'
-                    edit-icon='fa-pencil-alt'
-                  >
-                    <span :class='(index + 1) === item.stepPointer ? "text--indigo darken-4" : ""'>
-                      <v-icon v-if='stage.matchPoint'>fa-bomb</v-icon>
-                      <v-icon v-if='stage.closed > 0'>fa-times-circle</v-icon>
-                      {{ stage.name }}
-                    </span>
-                  </v-stepper-step>
-                  <v-divider
-                    :key='"divider" + stage._id'
-                    v-if='(index + 1) !== item.stages.length'
-                  ></v-divider>
+                <template>
+                  <div v-for='(stage, index) in item.stages' :key='stage._id'>
+                    <v-stepper-step
+                      :complete="item.stepPointer >= index"
+                      :step='index + 1'
+                      complete-icon='fa-flag'
+                      edit-icon='fa-pencil-alt'
+                    >
+                      <span :class='(index + 1) === item.stepPointer ? "text--indigo darken-4" : ""'>
+                        <v-icon v-if='stage.matchPoint'>fa-bomb</v-icon>
+                        <v-icon v-if='stage.closed > 0'>fa-times-circle</v-icon>
+                        {{ stage.name }}
+                      </span>
+                    </v-stepper-step>
+                    <v-divider
+                      :key='"divider" + stage._id'
+                      v-if='(index + 1) !== item.stages.length'
+                    ></v-divider>
+                  </div>
                 </template>
               </v-stepper-header>
             </v-stepper>
@@ -1401,7 +1416,9 @@ export default {
         value: 0,
         sid: "",
         matchPoint: false,
-        closed: 0
+        closed: 0,
+        depositStep: 10,
+        defaultDeposit: 100
       },
       defaultGroup: {
         createTick: 0,

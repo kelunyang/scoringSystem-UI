@@ -51,15 +51,6 @@
                     v-model="defaultSchema.initCapital"
                     thumb-label
                   ></v-slider>
-                  <div class='text-subtitle-2 font-weight-blod'>允許用戶投注其財產的比例</div>
-                  <v-slider
-                    :label='"允許投注率["+Math.floor(defaultSchema.betRate * 100)+"%]"'
-                    :min='0.01'
-                    :max='0.1'
-                    step='0.01'
-                    v-model="defaultSchema.betRate"
-                    thumb-label
-                  ></v-slider>
                   <div class='text-subtitle-2 font-weight-blod'>組員的回饋點數比例</div>
                   <v-slider
                     :label='"回饋比例為["+defaultSchema.memberRate+"倍]"'
@@ -159,15 +150,6 @@
                     :min='100'
                     :max='10000'
                     v-model="defaultSchema.initCapital"
-                    thumb-label
-                  ></v-slider>
-                  <div class='text-subtitle-2 font-weight-blod'>允許用戶投注其財產的比例</div>
-                  <v-slider
-                    :label='"允許投注率["+ Math.floor(defaultSchema.betRate * 100) +"%]"'
-                    :min='0.01'
-                    :max='0.1'
-                    step='0.01'
-                    v-model="defaultSchema.betRate"
                     thumb-label
                   ></v-slider>
                   <div class='text-subtitle-2 font-weight-blod'>組員的回饋點數比例</div>
@@ -527,7 +509,6 @@ export default {
           groups: [],
           stages: [],
           initCapital: 0,
-          betRate: 0.01,
           status: 0,
           memberRate: 0,
           workerRate: 0,
@@ -592,7 +573,6 @@ export default {
           groups: [],
           stages: [],
           initCapital: 0,
-          betRate: 0.01,
           status: 0,
           leaderRate: 0,
           workerRate: 0,
