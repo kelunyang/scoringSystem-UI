@@ -110,7 +110,7 @@
                   <td class="text-right d-flex flex-row">
                     <v-btn v-show="deposit.joinTick === 0" v-if="currentUser._id === deposit.uid._id" color="primary" @click='joinStage(1)' class='flex-shrink-1 ma-1'>加入回合</v-btn>
                     <v-btn v-show="deposit.joinTick === 0" v-if="currentUser._id === deposit.uid._id" @click="joinStage(0)" class='flex-shrink-1 ma-1'>不加入</v-btn>
-                    <v-btn v-show="deposit.joinTick === 0" v-if="depositSupervisor" color="error" @click="joinStage(2, deposit.uid._id)" class='flex-shrink-1 ma-1'>踢除用戶</v-btn>
+                    <v-btn v-show="deposit.joinTick === 0" v-if="depositSupervisor" :disable="currentUser._id === deposit.uid._id" color="error" @click="joinStage(2, deposit.uid._id)" class='flex-shrink-1 ma-1'>踢除用戶</v-btn>
                     <v-btn v-show="deposit.joinTick > 0" color="primary" @click="depositAccounting(deposit)" class='flex-shrink-1 ma-1'>查詢回合帳本</v-btn>
                   </td>
                 </tr>
