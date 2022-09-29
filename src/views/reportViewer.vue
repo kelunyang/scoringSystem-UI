@@ -68,6 +68,20 @@
           <v-alert outlined type="error" icon='fa-dollar-sign' class='text-left' v-if='notConfirm'>
             貴組尚未全員確認是否參與本回合，你可以按左上方關閉本對話框，但將會無法發表報告、評分（可以檢視別人的報告）
           </v-alert>
+          <v-alert outlined type="info" icon='fa-dollar-sign' class='text-left' v-if='stageJoined === -1'>
+            你不在該活動的名單中
+          </v-alert>
+          <v-alert outlined type="info" icon='fa-dollar-sign' class='text-left' v-if='stageJoined === 0'>
+            你尚未加入回合，請按下面的按鍵決定你到底要不要加入回合
+          </v-alert>
+          <v-alert outlined type="info" icon='fa-dollar-sign' class='text-left' v-if="stageJoined > 0">
+            你已經加入回合
+          </v-alert>
+          <div class="d-flex flex-row pa-2">
+            <v-btn v-if="stageJoined === 0" color="primary" @click='joinStage(1)' class='flex-shrink-1 ma-1'>我要加入回合</v-btn>
+            <v-btn v-if="stageJoined === 0" @click="joinStage(0)" class='flex-shrink-1 ma-1'>我不加入回合</v-btn>
+            <v-btn v-show='!notConfirm' v-if="stageJoined > 0" color="primary" @click="depositAccounting(undefined)" class='flex-shrink-1 ma-1'>查詢本組回合帳本</v-btn>
+          </div>
           <v-simple-table v-if="deposits.length > 0" class='black--text'>
             <template v-slot:default>
               <thead>
@@ -108,10 +122,9 @@
                     {{ deposit.joinTick > 0 ? dateConvert(deposit.joinTick) : "" }}
                   </td>
                   <td class="text-right d-flex flex-row">
-                    <v-btn v-show="deposit.joinTick === 0" v-if="currentUser._id === deposit.uid._id" color="primary" @click='joinStage(1)' class='flex-shrink-1 ma-1'>加入回合</v-btn>
-                    <v-btn v-show="deposit.joinTick === 0" v-if="currentUser._id === deposit.uid._id" @click="joinStage(0)" class='flex-shrink-1 ma-1'>不加入</v-btn>
                     <v-btn v-show="deposit.joinTick === 0" v-if="depositSupervisor" :disable="currentUser._id === deposit.uid._id" color="error" @click="joinStage(2, deposit.uid._id)" class='flex-shrink-1 ma-1'>踢除用戶</v-btn>
-                    <v-btn v-show="deposit.joinTick > 0" color="primary" @click="depositAccounting(deposit)" class='flex-shrink-1 ma-1'>查詢回合帳本</v-btn>
+                    <v-btn v-show="showRevoke(deposit)" v-if="depositSupervisor" :disable="currentUser._id === deposit.uid._id" color="info" @click="revokeStage(deposit.uid._id)" class='flex-shrink-1 ma-1'>恢復用戶</v-btn>
+                    <v-btn v-show="isSupervisor" color="primary" @click="depositAccounting(deposit)" class='flex-shrink-1 ma-1'>查詢該組回合帳本</v-btn>
                   </td>
                 </tr>
               </tbody>
@@ -888,6 +901,7 @@ export default {
     this.$socket.client.off('joinStage', this.socketjoinStage);
     this.$socket.client.off('getDepositAccounting', this.socketgetDepositAccounting);
     this.$socket.client.off('rejectDeposit', this.socketrejectDeposit);
+    this.$socket.client.off('revokeDeposit', this.socketrevokeDeposit);
   },
   components: { 
     TagFilter: () => import(/* webpackChunkName: 'TagFilter', webpackPrefetch: true */ './modules/TagFilter'),
@@ -925,6 +939,7 @@ export default {
     this.$socket.client.on('joinStage', this.socketjoinStage);
     this.$socket.client.on('getDepositAccounting', this.socketgetDepositAccounting);
     this.$socket.client.on('rejectDeposit', this.socketrejectDeposit);
+    this.$socket.client.on('revokeDeposit', this.socketrevokeDeposit);
   },
   watch: {
     'defaultAudit.feedback': function () {
@@ -1022,6 +1037,24 @@ export default {
     }
   },
   methods: {
+    socketrevokeDeposit: function() {
+      this.$emit('toastPop', "用戶押金狀態修改完成，請通知用戶可以投放押金");
+    },
+    showRevoke: function(deposit) {
+      let now = dayjs().unix();
+      if(this.defaultStage.endTick > now) {
+        if(deposit.value === 0) {
+          if(deposit.joinTick > 0) return true;
+        }
+      }
+      return false;
+    },
+    revokeStage: function(user) {
+      this.$socket.client.emit('revokeDeposit', {
+        tid: this.defaultStage._id,
+        user: user
+      });
+    },
     socketrejectDeposit: function() {
       this.$socket.client.emit('getDepositAccounting', {
         tid: this.defaultStage._id,
@@ -1036,14 +1069,16 @@ export default {
       this.$socket.client.emit('rejectDeposit', accounting);
     },
     depositAccounting: function(deposit) {
-      this.defaultGroup._id = deposit.gid;
+      if(deposit !== undefined) {
+        this.defaultGroup._id = deposit.gid;
+      }
       this.$socket.client.emit('getDepositAccounting', {
         tid: this.defaultStage._id,
         gid: this.defaultGroup._id
       });
     },
     socketjoinStage: function(data) {
-      this.$emit('toastPop', data ? "加入回合設定完成！" : "您無法加入回合！");
+      this.$emit('toastPop', data ? "加入回合狀態修改完成！" : "您無法加入回合！");
       this.$socket.client.emit('getDeposit', {
         tid: this.defaultStage._id,
       });
@@ -1068,10 +1103,20 @@ export default {
       }
     },
     socketgetDeposit: function(data) {
+      let oriobj = this;
       this.$socket.client.emit('getDepositBalance', {
         tid: this.defaultStage._id
       });
       this.deposits = _orderBy(data.deposits, ['gid', 'value'], ['asc', 'desc']);
+      let stageCheck = _filter(this.deposits, (deposit) => {
+        return deposit.uid._id === oriobj.currentUser._id;
+      });
+      if(stageCheck.length > 0) {
+        this.stageJoined = stageCheck[0].joinTick
+        this.defaultGroup._id = stageCheck[0].gid;
+      } else {
+        this.stageJoined = -1;
+      }
       this.depositSupervisor = data.isSupervisor;
       this.depositW = true;
     },
@@ -1631,6 +1676,7 @@ export default {
   },
   data () {
     return {
+      stageJoined: 0,
       stageAccountingW: false,
       stageAccounting: [],
       depositW: false,
