@@ -408,7 +408,7 @@
             本回合暫停評分，請等待開放評分時再來
           </v-alert>
           <v-alert outlined type="info" icon='fa-info-circle' class='text-left'>
-            <span v-if='falseAudit'>這份報告有負評，已關閉自動評分</span><span v-else>收到並完成回復{{ groupGap }}份評分後會啟動自動評分（並關閉互評）</span>，現在已經收到{{ defaultReport.audits.length }}份評分<span v-if='isAuthor'>，你可以確認對方的評分是否正確</span><span v-if='allowAudit()'>，快來給這份報告一個評分吧！</span>
+            <span v-if='falseAudit'>這份報告有負評，已關閉自動評分</span><span v-else>收到{{ groupGap }}份評分後系統會關閉互評，報告組確認互評後，會啟動自動評分</span>，現在已經收到{{ defaultReport.audits.length }}份評分<span v-if='isAuthor'>，你可以確認對方的評分是否正確</span><span v-if='allowAudit()'>，快來給這份報告一個評分吧！</span>
           </v-alert>
           <v-btn class='ma-1 white--text' v-if='allowAudit()' v-show='enableAudit' @click='addAudit' color='red darken-4'>給予評分</v-btn>
           <v-btn class='ma-1' v-if='defaultReport.intervention.length > 0 || isSupervisor' @click='viewIntervention(defaultReport, 0)'>{{ isSupervisor ? "新增／" : "" }}查看批改建議（{{ defaultReport.intervention.length }}）</v-btn>
@@ -1622,18 +1622,20 @@ export default {
     },
     allowAudit: function() {
       if(this.defaultStage.replyDisabled === 0) {
-        if(this.isAuthor) {
-          return false;
-        } else {
-          if(this.ownGroup !== null) {
-            for(let i=0; i<this.defaultReport.audits.length; i++) {
-              if(this.defaultReport.audits[i].gid === this.ownGroup._id) {
-                return false;
+        if(!this.defaultReport.locked) {
+          if(this.isAuthor) {
+            return false;
+          } else {
+            if(this.ownGroup !== null) {
+              for(let i=0; i<this.defaultReport.audits.length; i++) {
+                if(this.defaultReport.audits[i].gid === this.ownGroup._id) {
+                  return false;
+                }
               }
             }
           }
+          return true;
         }
-        return true;
       }
       return false;
     },

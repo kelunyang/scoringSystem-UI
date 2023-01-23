@@ -480,6 +480,7 @@
           <v-container class='pa-5'>
             <v-row>
               <v-col class='d-flex flex-column'>
+                <v-alert type="info" outlined icon='fa-info' class='text-left'>調整組員將導致該組員失去自己已經投放的押金（因為你可能得先移除他，再加入），但該押金仍會在小組的帳本裡，因此不會改變回合的出資與回饋比例，請謹慎調整組員</v-alert>
                 <v-alert v-show='isSupervisor(defaultSchema)' type="error" outlined icon='fa-exclamation-triangle' class='text-left' v-if='!defaultSchema.tagGroupped'>本活動按照標籤分組，如果你隨意更改各組所屬的標籤，可能導致成員看不到分組</v-alert>
                 <div v-if='isSupervisor(defaultSchema)' class='text-subtitle-2 font-weight-blod'>分組標籤</div>
                 <tag-filter
