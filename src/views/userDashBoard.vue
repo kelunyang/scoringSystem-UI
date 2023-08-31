@@ -1,5 +1,120 @@
 <template>
   <v-sheet>
+    <v-dialog
+      v-model="addBonusW"
+      max-width="500px"
+    >
+      <v-card>
+        <v-card-title>新增獎勵點數（已選{{ selectedGroup.length }}組）</v-card-title>
+        <v-card-text class='text-left black--text text-body-1 pa-2 d-flex flex-column'>
+          <v-alert v-if="bonusAdded" type="info" outlined icon='fa-info' class='text-left'>獎勵發放完成！</v-alert>
+          <v-text-field outlined clearable dense label='獎勵名目' v-model='bonusName'></v-text-field>
+          <v-slider
+            :label='"新增"+defaultSchema.initCapital+"點"'
+            :min='0'
+            :max='10000'
+            step='100'
+            v-model="defaultSchema.initCapital"
+            thumb-label
+          ></v-slider>
+        </v-card-text>
+        <v-card-actions class='text-left black--text text-body-1 pa-2 d-flex flex-row'>
+          <v-btn
+            class='white--text ma-1'
+            @click='addBonus()'
+            color='red darken-4'
+          >
+            新增獎勵點數
+          </v-btn>
+          <v-btn
+            class='white--text ma-1'
+            @click='closeaddBonusW()'
+            color='indigo darken-4'
+          >
+            關閉本對話框
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog v-model="removeBonusW" fullscreen hide-overlay transition='dialog-bottom-transition'>
+      <v-card>
+        <v-toolbar dark color='primary'>
+          <v-btn icon dark @click='closeremoveBonusW()'>
+            <v-icon>fa-times</v-icon>
+          </v-btn>
+          <v-toolbar-title>查詢／撤回獎勵點數（已選擇{{ selectedGroup.length }}組）</v-toolbar-title>
+        </v-toolbar>
+        <v-card-text class='text-left black--text text-body-1 pa-2 d-flex flex-column'>
+          <v-alert v-if="accountingRemoved" type="info" outlined icon='fa-info' class='text-left'>帳目取消完成！</v-alert>
+          <v-text-field label='獎勵名目' hint='支援正規表達式' outlined clearable dense v-model='bonusName'></v-text-field>
+          <v-btn
+            class='white--text ma-1'
+            @click='queryBonus()'
+            color='indigo darken-4'
+          >
+            查詢帳目
+          </v-btn>
+          <v-btn
+            class='white--text ma-1'
+            @click='removeAccounting()'
+            color='red darken-4'
+            v-if="selectedAccounting.length > 0"
+          >
+            撤銷所選帳目（{{ selectedAccounting.length }}）
+          </v-btn>
+          <v-btn
+            class='white--text ma-1'
+            @click='selectAllAccounting()'
+            color='indigo darken-4'
+            v-if="queryAccounting.length > 0"
+          >
+            全選{{ queryAccounting.length }}筆記錄
+          </v-btn>
+          <v-btn
+            class='white--text ma-1'
+            @click='deselectAccounting()'
+            color='indigo darken-4'
+            v-if="selectedAccounting.length > 0"
+          >
+            取消選取{{ selectedAccounting.length }}筆記錄
+          </v-btn>
+          <div class='text-caption text-center' v-if='queryAccounting.length === 0'>你查詢的關鍵字沒有相關帳目</div>
+          <v-simple-table v-if='queryAccounting.length > 0'>
+            <template v-slot:default>
+              <thead>
+                <tr>
+                  <th class="text-left">
+                    &nbsp;
+                  </th>
+                  <th class="text-left">
+                    帳號
+                  </th>
+                  <th class="text-left">
+                    日期
+                  </th>
+                  <th class="text-left">
+                    點數
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="item in queryAccounting"
+                  :key="item._id"
+                >
+                  <td>
+                    <v-checkbox v-model="selectedAccounting" off-icon="far fa-square" on-icon="fa-check-square" :value="item._id"></v-checkbox>
+                  </td>
+                  <td>{{ item.user.name }}</td>
+                  <td>{{ dateConvert(item.tick) }}</td>
+                  <td>{{ item.value }}</td>
+                </tr>
+              </tbody>
+            </template>
+          </v-simple-table>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
     <v-dialog v-model="lonerW" fullscreen hide-overlay transition='dialog-bottom-transition'>
       <v-card>
         <v-toolbar dark color='primary'>
@@ -369,34 +484,56 @@
                 </v-btn>
                 <v-btn @click='checkLoner()'>
                   檢查無組別者
-                </v-btn>                 
+                </v-btn>
+                <v-btn v-if="selectedGroup.length > 0" @click='addBonusW = true'>
+                  新增獎勵點數
+                </v-btn>
+                <v-btn v-if="selectedGroup.length > 0" @click='removeBonusW = true'>
+                  查詢／移除獎勵點數
+                </v-btn>
+                <v-btn v-if="groupList.length > 0" @click='selectAllGroup'>
+                  全選{{ groupList.length }}個組
+                </v-btn>
+                <v-btn v-if="selectedGroup.length > 0" @click='deselectGroup'>
+                  取消選取{{ selectedGroup.length }}個組
+                </v-btn>
               </v-col>
             </v-row>
             <v-row>
               <v-col class='d-flex flex-column'>
-                <v-list-item v-for="item in groupList" :key='"stage" + item._id'>
-                  <v-list-item-content class="text-left">
-                    <v-list-item-title>
-                      <v-icon v-if='item.locked'>fa-user-lock</v-icon>
-                      組長：{{ arrayConverter(item.groupLeaderNames) }}
-                    </v-list-item-title>
-                    <v-list-item-subtitle>
-                      <span>組員共{{ item.members.length }}人</span>
-                    </v-list-item-subtitle>
-                  </v-list-item-content>
-                  <v-list-item-action class='d-flex flex-row'>
-                    <v-btn @click='lockGroup(item)' class='ma-1'>
-                      <span v-if='item.locked'>解鎖小組</span>
-                      <span v-else>鎖定小組</span>
-                    </v-btn>
-                    <v-btn @click='editGroup(item)' class='ma-1'>
-                      編輯小組
-                    </v-btn>
-                    <v-btn @click='removeGroup(item)' class='ma-1'>
-                      刪除小組
-                    </v-btn>
-                  </v-list-item-action>
-                </v-list-item>
+                <v-list-item-group
+                  multiple
+                  active-class=""
+                >
+                  <v-list-item v-for="item in groupList" :key='"stage" + item._id'>
+                    <template v-slot:default="{ active }">
+                      <v-list-item-action>
+                        <v-checkbox v-model="selectedGroup" off-icon="far fa-square" on-icon="fa-check-square" :value="item._id"></v-checkbox>
+                      </v-list-item-action>
+                      <v-list-item-content class="text-left">
+                        <v-list-item-title>
+                          <v-icon v-if='item.locked'>fa-user-lock</v-icon>
+                          組長：{{ arrayConverter(item.groupLeaderNames) }}
+                        </v-list-item-title>
+                        <v-list-item-subtitle>
+                          <span>組員共{{ item.members.length }}人</span>
+                        </v-list-item-subtitle>
+                      </v-list-item-content>
+                      <v-list-item-action class='d-flex flex-row'>
+                        <v-btn @click='lockGroup(item)' class='ma-1'>
+                          <span v-if='item.locked'>解鎖小組</span>
+                          <span v-else>鎖定小組</span>
+                        </v-btn>
+                        <v-btn @click='editGroup(item)' class='ma-1'>
+                          編輯小組
+                        </v-btn>
+                        <v-btn @click='removeGroup(item)' class='ma-1'>
+                          刪除小組
+                        </v-btn>
+                      </v-list-item-action>
+                    </template>
+                  </v-list-item>
+                </v-list-item-group>
               </v-col>
             </v-row>
           </v-container>
@@ -742,6 +879,9 @@ export default {
     this.$socket.client.off('getLoner', this.socketgetLoner);
     this.$socket.client.off('rejectAccounting', this.socketrejectAccounting);
     this.$socket.client.off('setLocker', this.socketlockGroup);
+    this.$socket.client.off('setBonus', this.socketsetBonus);
+    this.$socket.client.off('queryBonus', this.socketqueryBonus);
+    this.$socket.client.off('rejectBonusAccounting', this.socketrejectBonusAccounting);
   },
   components: { 
     TagFilter: () => import(/* webpackChunkName: 'TagFilter', webpackPrefetch: true */ './modules/TagFilter'),
@@ -805,6 +945,9 @@ export default {
     this.$socket.client.on('getLoner', this.socketgetLoner);
     this.$socket.client.on('rejectAccounting', this.socketrejectAccounting);
     this.$socket.client.on('setLocker', this.socketlockGroup);
+    this.$socket.client.on('setBonus', this.socketsetBonus);
+    this.$socket.client.on('queryBonus', this.socketqueryBonus);
+    this.$socket.client.on('rejectBonusAccounting', this.socketrejectBonusAccounting);
   },
   computed: {
     savedTags: function () {
@@ -1073,6 +1216,7 @@ export default {
         data[i].groupLeaderNames = "載入中...";
       }
       this.groupList = data;
+      this.bonusValue = this.defaultSchema.initCapital;
       this.$socket.client.emit('getLeaders', _map(this.groupList, (group) => { return group._id; }));
       this.$emit('toastPop', '分組列表已更新');
       if(this.isSupervisor(this.defaultSchema)) {
@@ -1132,6 +1276,18 @@ export default {
       } else {
         this.selectedSchemas = _map(this.schemafilteredList, '_id');
       }
+    },
+    selectAllAccounting: function () {
+      this.selectedAccounting = _map(this.queryAccounting, '_id');
+    },
+    selectAllGroup: function () {
+      this.selectedGroup = _map(this.groupList, '_id');
+    },
+    deselectAccounting: function () {
+      this.selectedAccounting = [];
+    },
+    deselectGroup: function () {
+      this.selectedGroup = [];
     },
     socketaddStage: function (data) {
       this.$socket.client.emit('getStage', {
@@ -1333,10 +1489,65 @@ export default {
         keywords: this.lonerKeyword,
         tags: this.lonerTags
       });
+    },
+    addBonus: function() {
+      this.$socket.client.emit('setBonus', {
+        sid: this.defaultSchema._id,
+        gid: this.selectedGroup,
+        desc: this.bonusName,
+        value: this.bonusValue
+      });
+    },
+    socketsetBonus: function(data) {
+      if(data) {
+        this.bonusAdded = true;
+        this.bonusValue = this.defaultSchema.initCapital;
+      }
+    },
+    queryBonus: function() {
+      this.$socket.client.emit('queryBonus', {
+        sid: this.defaultSchema._id,
+        gid: this.selectedGroup,
+        desc: this.bonusName
+      });
+    },
+    socketqueryBonus: function(data) {
+      this.queryAccounting = data
+    },
+    removeAccounting: function() {
+      this.$socket.client.emit('rejectBonusAccounting', {
+        sid: this.defaultSchema._id,
+        aids: this.selectedAccounting,
+        desc: this.bonusName
+      });
+    },
+    socketrejectBonusAccounting: function(data) {
+      if(data) {
+        this.queryBonus();
+        this.accountingRemoved = true;
+      }
+    },
+    closeaddBonusW: function() {
+      this.addBonusW = false;
+      this.bonusValue = this.defaultSchema.initCapital;
+      this.bonusName = "";
+    },
+    closeremoveBonusW: function() {
+      this.removeBonusW = false;
+      this.queryAccounting = [];
+      this.bonusName = "";
     }
   },
   data () {
     return {
+      queryAccounting: [],
+      selectedAccounting: [],
+      bonusAdded: false,
+      bonusValue: 0,
+      bonusName: "",
+      addBonusW: false,
+      removeBonusW: false,
+      selectedGroup: [],
       lonerKeyword: "",
       lonerTags: [],
       lonerW: false,
@@ -1404,7 +1615,8 @@ export default {
       },
       defaultSchema: {
         _id: "",
-        tagGroupped: false
+        tagGroupped: false,
+        initCapital: 0
       },
       defaultStage: {
         createTick: 0,

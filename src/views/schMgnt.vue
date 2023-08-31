@@ -43,9 +43,9 @@
                     :createable='false'
                     label='請輸入用戶名稱'
                   />
-                  <div class='text-subtitle-2 font-weight-blod'>初始點數</div>
+                  <div class='text-subtitle-2 font-weight-blod'>獎勵點數預設值</div>
                   <v-slider
-                    :label='"初始點數為"+defaultSchema.initCapital+"點"'
+                    :label='"獎勵點數為"+defaultSchema.initCapital+"點"'
                     :min='100'
                     :max='10000'
                     v-model="defaultSchema.initCapital"

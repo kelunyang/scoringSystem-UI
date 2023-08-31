@@ -80,7 +80,7 @@ export default {
         return dayjs.unix(time).format('YYYY/MM/DD HH:mm:ss');
     },
     submit: async function () {
-        let result = await axios.post('https://' + window.location.host + '/backend/login', {
+        let result = await axios.post('http://' + window.location.host + '/backend/login', {
           user: this.name.trim(),
           pass: this.pass
         }, {
