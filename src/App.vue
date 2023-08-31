@@ -497,7 +497,7 @@ renderer.link = (href, title, text) => {
   return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
 };
 
-const socketInstance = io('http://' + window.location.host + '/');
+const socketInstance = io('https://' + window.location.host + '/');
 Vue.use(VueSocketIOExt, socketInstance);
 dayjs.extend(duration);
 

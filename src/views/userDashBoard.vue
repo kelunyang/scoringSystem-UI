@@ -506,7 +506,7 @@
                   active-class=""
                 >
                   <v-list-item v-for="item in groupList" :key='"stage" + item._id'>
-                    <template v-slot:default="{ active }">
+                    <template>
                       <v-list-item-action>
                         <v-checkbox v-model="selectedGroup" off-icon="far fa-square" on-icon="fa-check-square" :value="item._id"></v-checkbox>
                       </v-list-item-action>
