@@ -266,7 +266,7 @@
           :disabled='waitValue'
           thumb-label
         ></v-slider>
-        <span class='text-caption red--text'>你的評分預估可以幫你得到{{ previewFeedback }}點（以實際工作者計算）</span>
+        <span class='text-caption red--text'>你的評分會使用你自己的錢包裡的點數，預估可以幫你得到{{ previewFeedback }}點（以實際工作者計算）</span>
         <v-menu
           offset-y
           attach

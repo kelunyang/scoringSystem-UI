@@ -85,7 +85,7 @@
           outlined
         ></v-select>
         <v-text-field outlined clearable dense prepend-icon='fa-user-astronaut' label='代表圖亂數' hint="如果你想換掉代表圖，可以在這邊亂輸入一堆字，可以跑出新的圖" v-model='currentUser.seed'></v-text-field>
-        <div class='d-flex flex-row'>
+        <!-- <div class='d-flex flex-row'>
           <v-icon>fa-link</v-icon>
           <span class="text-subtitle-2 font-weight-bold">社交媒體帳號綁定</span><br />
         </div>
@@ -100,7 +100,7 @@
         </v-btn><br />
         <v-btn @click="linetipW = true" class='ma-1'>
           按此查看如何設定LINE一對一通知
-        </v-btn>
+        </v-btn> -->
         <span class="text-subtitle-2 font-weight-bold">您所隸屬的使用者標籤：</span><br/>
         <div class='d-flex flex-row flex-wrap'>
           <v-chip v-for='(item, k) in currentUser.tags' :key='k' class='ma-2' :color='tagColor(k)' label text-color='white'>{{ item.name }}</v-chip>

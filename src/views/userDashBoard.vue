@@ -1530,6 +1530,7 @@ export default {
     closeaddBonusW: function() {
       this.addBonusW = false;
       this.bonusValue = this.defaultSchema.initCapital;
+      this.bonusAdded = false;
       this.bonusName = "";
     },
     closeremoveBonusW: function() {
