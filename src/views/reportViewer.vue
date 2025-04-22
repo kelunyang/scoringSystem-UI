@@ -878,6 +878,7 @@ export default {
     this.$socket.client.off('getStage', this.socketgetStage);
     this.$socket.client.off('getTagUsers', this.socketgetTagUsers);
     this.$socket.client.off('getDepositBalance', this.socketgetDepositBalance);
+    this.$socket.client.off('getUserBalance', this.socketgetUserBalance);
     this.$socket.client.off('getReports', this.socketgetReports);
     this.$socket.client.off('getCoworkers', this.socketgetCoworkers);
     this.$socket.client.off('addReport', this.socketaddReport);
@@ -918,6 +919,7 @@ export default {
     this.$socket.client.on('getStage', this.socketgetStage);
     this.$socket.client.on('getTagUsers', this.socketgetTagUsers);
     this.$socket.client.on('getDepositBalance', this.socketgetDepositBalance);
+    this.$socket.client.on('getUserBalance', this.socketgetUserBalance);
     this.$socket.client.on('getCoworkers', this.socketgetCoworkers);
     this.$socket.client.on('addReport', this.socketaddReport);
     this.$socket.client.on('addAudit', this.socketaddAudit);
@@ -1359,7 +1361,7 @@ export default {
       this.defaultAudit = item;
       this.minFeedback = item.feedback < this.minFeedback ? item.feedback : this.minFeedback;
       this.waitValue = true;
-      this.$socket.client.emit('getDepositBalance', {
+      this.$socket.client.emit('getUserBalance', {
         tid: this.defaultStage._id
       });
     },
@@ -1435,6 +1437,16 @@ export default {
     },
     submitReport: function() {
       this.$socket.client.emit('addReport', this.defaultReport);
+    },
+    socketgetUserBalance: function(data) {
+      let oriobj = this;
+      this.userBalance = data.balance;
+      this.suggestedValue = Math.floor(this.userBalance);
+      this.auditsuggestValue = this.defaultReport.value > this.userBalance ? this.userBalance : this.defaultReport.value;
+      this.suggestedfeedBackValue = this.userBalance > this.defaultAudit.value ? this.defaultAudit.value : this.userBalance;
+      Vue.nextTick(() => {
+        oriobj.waitValue = false;
+      });
     },
     socketgetDepositBalance: function(data) {
       let oriobj = this;
