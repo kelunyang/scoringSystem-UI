@@ -1122,13 +1122,6 @@ export default {
           path: '/userMgnt',
           items: [],
           vis: false
-        },
-        {
-          icon: 'fa-info-circle',
-          title: '關於本系統&許願池',
-          path: '/Info',
-          items: [],
-          vis: false
         }
       ]
     };
